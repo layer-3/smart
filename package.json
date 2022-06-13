@@ -11,7 +11,9 @@
     "eslint:fix": "eslint '**/*.{js,ts}' --fix",
     "prettier:fix": "prettier '**/*.{json,sol,md}' --write",
     "solhint:fix": "solhint 'contracts/**/*.sol' --fix",
-    "docs": "solidity-docgen --solc-module solc -t docs/templates && doctoc ./docs/*.md --maxlevel 3"
+    "docs:solc-0.7.4": "solidity-docgen --solc-module solc-0.7.4 -t docs/templates -i contracts/nitro-protocol",
+    "docs:solc-0.8.4": "solidity-docgen --solc-module solc-0.8.4 -t docs/templates -i contracts -e contracts/nitro-protocol",
+    "docs": "npm run docs:solc-0.7.4 && npm run docs:solc-0.8.4 && doctoc ./docs/*.md --maxlevel 3"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.13",
@@ -48,7 +50,8 @@
     "hardhat-gas-reporter": "^1.0.8",
     "prettier": "^2.6.2",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
-    "solc": "^0.8.13",
+    "solc-0.7.4": "npm:solc@^0.7.4",
+    "solc-0.8.4": "npm:solc@^0.8.4",
     "solhint": "^3.3.7",
     "solidity-coverage": "^0.7.18",
     "solidity-docgen": "^0.5.16",

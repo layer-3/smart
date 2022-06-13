@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol';
@@ -15,4 +15,6 @@ interface IYellow is IERC20Upgradeable, IAccessControlUpgradeable {
     function mint(address to, uint256 amount) external;
 
     function burn(address from, uint256 amount) external;
+
+    function pause() external;
 }
