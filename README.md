@@ -76,6 +76,15 @@ CONTRACT_ARGS=token,start,period,cliff,claiming_interval npx hardhat run scripts
 
 ## Yellow
 
+
+### Deploy on multiple networks with contract verification
+
+```shell
+cp .env.example .env
+# complete .env file information
+PRIVATE_KEY=0x... NETWORKS="mainnet bsc polygon avalanche" ./scripts/deploy-yellow-token.sh
+```
+
 ### Deploy Yellow
 
 ```shell
@@ -92,10 +101,10 @@ YELLOW_ADDRESS=0x... ADMIN_PRIVATE_KEY=0x... ACCOUNT=0x... npx hardhat run scrip
 
 ```shell
 # Deploy Simple Smart Contract
-PRIVATE_KEY=0x.. CONTRACT_FACTORY=Yellow CONTRACT_ARGS=Yellow,YELLOW,0x..,1000000000000000000000000000 npx hardhat run scripts/deploy-smart-contract.ts [--network <network>]
+PRIVATE_KEY=0x.. CONTRACT_FACTORY=Yellow CONTRACT_ARGS=Yellow,YELLOW,0x..,10000000000000000000000000000 npx hardhat run scripts/deploy-contract.ts [--network <network>]
 
 # Deploy Upgradable Smart Contract
-PRIVATE_KEY=0x.. CONTRACT_FACTORY=Yellow CONTRACT_ARGS=Yellow,YELLOW,0x..,1000000000000000000000000000 npx hardhat run scripts/deploy-upgradable-smart-contract.ts [--network <network>]
+PRIVATE_KEY=0x.. CONTRACT_FACTORY=Yellow CONTRACT_ARGS=Yellow,YELLOW,0x3bAFF670839d53E6e726B8B6193510E064C9ab7b,10000000000000000000000000000 npx hardhat run scripts/deploy-upgradable-contract.ts [--network <network>]
 
 # Upgrade Smart Contract
 PRIVATE_KEY=0x.. CONTRACT_FACTORY=Yellow CONTRACT_ADDRESS=0x.. npx hardhat run scripts/upgrade-smart-contract.ts [--network <network>]

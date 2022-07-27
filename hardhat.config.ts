@@ -74,6 +74,11 @@ const config: HardhatUserConfig = {
         mnemonic: 'blue yellow soon open speed web then enable rich work success matrix',
       },
     },
+    mainnet: {
+      url: process.env.MAINNET_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
     ropsten: {
       url: process.env.ROPSTEN_URL || '',
       accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
@@ -81,6 +86,36 @@ const config: HardhatUserConfig = {
     rinkeby: {
       url: process.env.RINKEBY_URL || '',
       accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    bsc: {
+      url: process.env.BSC_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    bscTestnet: {
+      url: process.env.BSC_TESTNET_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    polygon: {
+      url: process.env.POLYGON_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    polygonMumbai: {
+      url: process.env.POLYGON_MUMBAI_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    avalanche: {
+      url: process.env.AVALANCHE_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    avalancheFujiTestnet: {
+      url: process.env.AVALANCHE_FUJI_TESTNET_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     generic: {
       url: process.env.GENERIC_URL || '',
@@ -96,6 +131,49 @@ const config: HardhatUserConfig = {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: 'USD',
   },
+  etherscan: {
+    apiKey: {
+      mainnet: process.env.ETHERSCAN_API_KEY,
+      ropsten: process.env.ETHERSCAN_API_KEY,
+      rinkeby: process.env.ETHERSCAN_API_KEY,
+      goerli: process.env.ETHERSCAN_API_KEY,
+      kovan: process.env.ETHERSCAN_API_KEY,
+      // binance smart chain
+      bsc: process.env.BSCSCAN_API_KEY,
+      bscTestnet: process.env.BSCSCAN_TESTNET_API_KEY,
+      // huobi eco chain
+      heco: process.env.HECOINFO_API_KEY,
+      hecoTestnet: process.env.HECOINFO_TESTNET_API_KEY,
+      // fantom mainnet
+      opera: process.env.FTMSCAN_API_KEY,
+      ftmTestnet: process.env.FTMSCAN_TESTNET_API_KEY,
+      // optimism
+      optimisticEthereum: process.env.OPTIMISTIC_ETHERSCAN_API_KEY,
+      optimisticKovan: process.env.OPTIMISTIC_ETHERSCAN_KOVAN_API_KEY,
+      // polygon
+      polygon: process.env.POLYGONSCAN_API_KEY,
+      polygonMumbai: process.env.POLYGONSCAN_MUMBAI_API_KEY,
+      // arbitrum
+      arbitrumOne: process.env.ARBISCAN_API_KEY,
+      arbitrumTestnet: process.env.ARBISCAN_TESTNET_API_KEY,
+      // avalanche
+      avalanche: process.env.SNOWTRACE_API_KEY,
+      avalancheFujiTestnet: process.env.SNOWTRACE_TESTNET_API_KEY,
+      // moonbeam
+      moonbeam: process.env.MOONBEAM_MOONSCAN_API_KEY,
+      moonriver: process.env.MOONRIVER_MOONSCAN_API_KEY,
+      moonbaseAlpha: process.env.MOONBEAM_MOONSCAN_TESTNET_API_KEY,
+      // harmony
+      harmony: process.env.HARMONY_API_KEY,
+      harmonyTest: process.env.HARMONY_TESTNET_API_KEY,
+      // xdai and sokol don't need an API key, but you still need
+      // to specify one; any string placeholder will work
+      xdai: 'api-key',
+      sokol: 'api-key',
+      aurora: 'api-key',
+      auroraTestnet: 'api-key',
+    }
+  }
 };
 
 export default config;
