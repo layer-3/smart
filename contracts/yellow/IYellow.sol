@@ -9,10 +9,27 @@ interface IYellow is IERC20, IAccessControl {
   // ERC20
   // =================
 
-  function mint(address to, uint256 amount) external; // onlyRole(DEFAULT_ADMIN_ROLE)
+  /**
+   * @notice Create `amount` tokens and assigns them to `account`, increasing the total supply.
+   * @dev Require DEFAULT_ADMIN_ROLE to invoke. Require `account` not to be zero address.
+   * @param account Address to create tokens to.
+   * @param amount Amount of tokens to create.
+   */
+  function mint(address account, uint256 amount) external; // onlyRole(DEFAULT_ADMIN_ROLE)
 
-  function burn(address from, uint256 amount) external; // onlyRole(DEFAULT_ADMIN_ROLE)
+  /**
+   * @notice Destroy `amount` tokens from `account`, reducing the total supply.
+   * @dev Require DEFAULT_ADMIN_ROLE to invoke. Require `account` not to be zero address. Require `account` to have at least `amount` tokens.
+   * @param account Address to destroy tokens from.
+   * @param amount Amount of tokens to destroy.
+   */
+  function burn(address account, uint256 amount) external; // onlyRole(DEFAULT_ADMIN_ROLE)
 
+  /**
+   * @notice Increase the maxCap and owned token amount by all accounts.
+   * @dev Require DEFAULT_ADMIN_ROLE to invoke. Require `newCap` to be bigger than maxCap.
+   * @param newCap New market cap to set.
+   */
   function dilute(uint256 newCap) external; // onlyRole(DEFAULT_ADMIN_ROLE)
   
   // =================

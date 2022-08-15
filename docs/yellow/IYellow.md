@@ -15,47 +15,69 @@
 #### `mint`
 
 📋   &nbsp;&nbsp;
-No description
+Create `amount` tokens and assigns them to `account`, increasing the total supply.
+
+> Require DEFAULT_ADMIN_ROLE to invoke. Require `account` not to be zero address.
 
 
 ##### Declaration
 ```solidity
   function mint(
+    address account,
+    uint256 amount
   ) external
 ```
 
 
-
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`account` | address | Address to create tokens to.
+|`amount` | uint256 | Amount of tokens to create.
 
 #### `burn`
 
 📋   &nbsp;&nbsp;
-No description
+Destroy `amount` tokens from `account`, reducing the total supply.
+
+> Require DEFAULT_ADMIN_ROLE to invoke. Require `account` not to be zero address. Require `account` to have at least `amount` tokens.
 
 
 ##### Declaration
 ```solidity
   function burn(
+    address account,
+    uint256 amount
   ) external
 ```
 
 
-
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`account` | address | Address to destroy tokens from.
+|`amount` | uint256 | Amount of tokens to destroy.
 
 #### `dilute`
 
 📋   &nbsp;&nbsp;
-No description
+Increase the maxCap and owned token amount by all accounts.
+
+> Require DEFAULT_ADMIN_ROLE to invoke. Require `newCap` to be bigger than maxCap.
 
 
 ##### Declaration
 ```solidity
   function dilute(
+    uint256 newCap
   ) external
 ```
 
 
-
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`newCap` | uint256 | New market cap to set.
 
 #### `lock`
 
