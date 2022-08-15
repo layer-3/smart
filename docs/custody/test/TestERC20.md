@@ -1,68 +1,84 @@
 ## TestERC20
 
-### Contents
 
+
+
+
+### Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
+
+
 
 ### Functions
 
 #### `constructor`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 No description
 
-##### Declaration
 
+##### Declaration
 ```solidity
   function constructor(
   ) public ERC20
 ```
 
 ##### Modifiers:
-
 | Modifier |
-| -------- |
-| ERC20    |
+| --- |
+| ERC20 |
+
+
 
 #### `setBalance`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 No description
 
-##### Declaration
 
+##### Declaration
 ```solidity
   function setBalance(
   ) public
 ```
 
+
+
+
 #### `setUserBalance`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 No description
 
-##### Declaration
 
+##### Declaration
 ```solidity
   function setUserBalance(
   ) public onlyOwner
 ```
 
 ##### Modifiers:
-
-| Modifier  |
-| --------- |
+| Modifier |
+| --- |
 | onlyOwner |
+
+
 
 #### `_setBalance`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 No description
 
-##### Declaration
 
+##### Declaration
 ```solidity
   function _setBalance(
   ) internal
 ```
+
+
+
+
+
+

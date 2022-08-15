@@ -1,50 +1,53 @@
 ## SimpleVaultFactory
 
+
 SimpleVaultFactory provides bonding functionality between ERC20 tokens and SimpleVault in OpenDAX v4 testing.
 
-### Contents
 
+### Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
 
 ### Globals
 
-| Var               | Type                                        | Description |
-| ----------------- | ------------------------------------------- | ----------- |
-| brokerAndVaultArr | struct ISimpleVaultFactory.BrokerAndVault[] |             |
-| tokenAndMintArr   | struct ISimpleVaultFactory.TokenAndMint[]   |             |
+
+| Var | Type | Description |
+| --- | --- | --- |
+| brokerAndVaultArr | struct ISimpleVaultFactory.BrokerAndVault[] |  |
+| tokenAndMintArr | struct ISimpleVaultFactory.TokenAndMint[] |  |
+
 
 ### Functions
 
 #### `initialize`
 
-📋 &nbsp;&nbsp;
-Grants default admin role to msg.sender
+📋   &nbsp;&nbsp;
+Grant default admin role to msg.sender.
 
-> Grants default admin role to msg.sender
+> Grant default admin role to msg.sender.
 
 ##### Declaration
-
 ```solidity
   function initialize(
   ) public initializer
 ```
 
 ##### Modifiers:
-
-| Modifier    |
-| ----------- |
+| Modifier |
+| --- |
 | initializer |
+
+
 
 #### `addAdmin`
 
-📋 &nbsp;&nbsp;
-Grants DEFAULT_ADMIN_ROLE to account.
+📋   &nbsp;&nbsp;
+Grant DEFAULT_ADMIN_ROLE to account.
 
 > DEFAULT_ADMIN_ROLE rights required.
 
-##### Declaration
 
+##### Declaration
 ```solidity
   function addAdmin(
     address account
@@ -52,82 +55,24 @@ Grants DEFAULT_ADMIN_ROLE to account.
 ```
 
 ##### Modifiers:
-
 | Modifier |
-| -------- |
+| --- |
 | onlyRole |
 
 ##### Args:
-
-| Arg       | Type    | Description               |
-| --------- | ------- | ------------------------- |
-| `account` | address | Address to grant role to. |
-
-#### `addTokenAdmin`
-
-📋 &nbsp;&nbsp;
-Grants DEFAULT_ADMIN_ROLE to token specified.
-
-> Reverts if Factory does NOT have DEFAULT_ADMIN_ROLE of the SimpleERC20. DEFAULT_ADMIN_ROLE rights required.
-
-##### Declaration
-
-```solidity
-  function addTokenAdmin(
-    contract SimpleERC20 token,
-    address account
-  ) public onlyRole
-```
-
-##### Modifiers:
-
-| Modifier |
-| -------- |
-| onlyRole |
-
-##### Args:
-
-| Arg       | Type                 | Description                        |
-| --------- | -------------------- | ---------------------------------- |
-| `token`   | contract SimpleERC20 | SimpleERC20 which will grant role. |
-| `account` | address              | Address to grant role to.          |
-
-#### `addTokensAdmin`
-
-📋 &nbsp;&nbsp;
-Grants DEFAULT_ADMIN_ROLE to all tokens in the list.
-
-> It skips token of which Factory does NOT have DEFAULT_ADMIN_ROLE. DEFAULT_ADMIN_ROLE rights required.
-
-##### Declaration
-
-```solidity
-  function addTokensAdmin(
-    address account
-  ) public onlyRole
-```
-
-##### Modifiers:
-
-| Modifier |
-| -------- |
-| onlyRole |
-
-##### Args:
-
-| Arg       | Type    | Description               |
-| --------- | ------- | ------------------------- |
-| `account` | address | Address to grant role to. |
+| Arg | Type | Description |
+| --- | --- | --- |
+|`account` | address | Address to grant role to.
 
 #### `deployVault`
 
-📋 &nbsp;&nbsp;
-Deploy a new SimpleVault and add it to list of vaults for future usage.
+📋   &nbsp;&nbsp;
+Deploy a new SimpleVault and add it to list of vaults for future usage. Grants DEFAULT_ADMIN_ROLE of deployed SimpleVault to msg.sender.
 
-> DEFAULT_ADMIN_ROLE rights required. Vault must not be already present in the list.
+> Deploy a new SimpleVault and add it to list of vaults for future usage. Grants DEFAULT_ADMIN_ROLE of deployed SimpleVault to msg.sender.
+
 
 ##### Declaration
-
 ```solidity
   function deployVault(
     string name_,
@@ -135,28 +80,76 @@ Deploy a new SimpleVault and add it to list of vaults for future usage.
   ) public returns (contract SimpleVault)
 ```
 
-##### Args:
 
-| Arg       | Type    | Description                            |
-| --------- | ------- | -------------------------------------- |
-| `name_`   | string  | Name of the vault to create.           |
-| `broker_` | address | Broker address of the vault to create. |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`name_` | string | Name of the vault to create.
+|`broker_` | address | Broker address of the vault to create.
 
 ##### Returns:
+| Type | Description |
+| --- | --- |
+|`address` | Deployed SimpleVault address.
+#### `redeployVault`
 
-| Type      | Description                   |
-| --------- | ----------------------------- |
-| `address` | Deployed SimpleVault address. |
+📋   &nbsp;&nbsp;
+Redeploy SimpleVault: remove old vault and deploy a new one with the same name and broker.
 
+> Vault must be already present in the list. msg.sender must have DEFAULT_ADMIN_ROLE of SimpleVault.
+
+
+##### Declaration
+```solidity
+  function redeployVault(
+    contract SimpleVault vault
+  ) public returns (contract SimpleVault)
+```
+
+
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`vault` | contract SimpleVault | SimpleVault address to redeploy.
+
+##### Returns:
+| Type | Description |
+| --- | --- |
+|`address` | Redeployed SimpleVault address.
+#### `removeVault`
+
+📋   &nbsp;&nbsp;
+Remove SimpleVault from the list and burn all tokens from it.
+
+> DEFAULT_ADMIN_ROLE required on the Vault.
+
+
+##### Declaration
+```solidity
+  function removeVault(
+    contract SimpleVault vault
+  ) public returns (struct ISimpleVaultFactory.BrokerAndVault)
+```
+
+
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`vault` | contract SimpleVault | SimpleVault to remove.
+
+##### Returns:
+| Type | Description |
+| --- | --- |
+|`BrokerAndVault` | Structure contraining SimpleVault and broker addresses.
 #### `addToken`
 
-📋 &nbsp;&nbsp;
-Add deployed token to list of tokens and mint it to all vaults.
+📋   &nbsp;&nbsp;
+Add deployed token to list of tokens and mint it to all vaults. SimpleVaultFactory is required to have MINTER_ROLE and BURNER_ROLE of token being added.
 
 > DEFAULT_ADMIN_ROLE rights required. Token must not be already present in the list.
 
-##### Declaration
 
+##### Declaration
 ```solidity
   function addToken(
     contract SimpleERC20 token,
@@ -165,27 +158,25 @@ Add deployed token to list of tokens and mint it to all vaults.
 ```
 
 ##### Modifiers:
-
 | Modifier |
-| -------- |
+| --- |
 | onlyRole |
 
 ##### Args:
-
-| Arg                   | Type                 | Description                                 |
-| --------------------- | -------------------- | ------------------------------------------- |
-| `token`               | contract SimpleERC20 | SimpleERCC20 token address.                 |
-| `mint_per_deployment` | uint256              | Initial amount of tokens to mint to vaults. |
+| Arg | Type | Description |
+| --- | --- | --- |
+|`token` | contract SimpleERC20 | SimpleERC20 token address.
+|`mint_per_deployment` | uint256 | Initial amount of tokens to mint to vaults.
 
 #### `deployAndAddToken`
 
-📋 &nbsp;&nbsp;
-Deploy SimpleERC20 token, add it to list of tokens and mint it to all vaults.
+📋   &nbsp;&nbsp;
+Deploy SimpleERC20 token, add it to list of tokens and mint it to all vaults. Grants DEFAULT_ADMIN_ROLE of deployed SimpleERC20 to msg.sender.
 
-> DEFAULT_ADMIN_ROLE rights required.
+> DEFAULT_ADMIN_ROLE required.
+
 
 ##### Declaration
-
 ```solidity
   function deployAndAddToken(
     string name,
@@ -196,35 +187,31 @@ Deploy SimpleERC20 token, add it to list of tokens and mint it to all vaults.
 ```
 
 ##### Modifiers:
-
 | Modifier |
-| -------- |
+| --- |
 | onlyRole |
 
 ##### Args:
-
-| Arg                   | Type    | Description                                 |
-| --------------------- | ------- | ------------------------------------------- |
-| `name`                | string  | Token name.                                 |
-| `symbol`              | string  | Token symbol.                               |
-| `decimals`            | uint8   | Token decimal representation.               |
-| `mint_per_deployment` | uint256 | Initial amount of tokens to mint to vaults. |
+| Arg | Type | Description |
+| --- | --- | --- |
+|`name` | string | Token name.
+|`symbol` | string | Token symbol.
+|`decimals` | uint8 | Token decimal representation.
+|`mint_per_deployment` | uint256 | Initial amount of tokens to mint to vaults.
 
 ##### Returns:
-
-| Type          | Description             |
-| ------------- | ----------------------- |
-| `SimpleERC20` | Deployed token address. |
-
+| Type | Description |
+| --- | --- |
+|`SimpleERC20` | Deployed token address.
 #### `removeToken`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Remove token from the list and burn it from vaults.
 
-> DEFAULT_ADMIN_ROLE rights required. Token must be present in the list.
+> DEFAULT_ADMIN_ROLE required. Token must be present in the list.
+
 
 ##### Declaration
-
 ```solidity
   function removeToken(
     contract SimpleERC20 token
@@ -232,185 +219,156 @@ Remove token from the list and burn it from vaults.
 ```
 
 ##### Modifiers:
-
 | Modifier |
-| -------- |
+| --- |
 | onlyRole |
 
 ##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`token` | contract SimpleERC20 | SimpleERC20 token to add.
 
-| Arg     | Type                 | Description               |
-| ------- | -------------------- | ------------------------- |
-| `token` | contract SimpleERC20 | SimpleERC20 token to add. |
+#### `_requireFactoryIsMinterBurner`
 
-#### `_requireFactoryIsAdmin`
+📋   &nbsp;&nbsp;
+Check if Factory has Minter and Burner roles for specified token.
 
-📋 &nbsp;&nbsp;
-Checks if Factory is Admin for specified token.
+> Check if Factory has Minter and Burner roles for specified token.
 
-> Checks if Factory is Admin for specified token.
 
 ##### Declaration
-
 ```solidity
-  function _requireFactoryIsAdmin(
+  function _requireFactoryIsMinterBurner(
     contract SimpleERC20 token
   ) internal
 ```
 
+
 ##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`token` | contract SimpleERC20 | SimpleERC20 to check roles of.
 
-| Arg     | Type                 | Description                           |
-| ------- | -------------------- | ------------------------------------- |
-| `token` | contract SimpleERC20 | SimpleERC20 to check admin rights of. |
+#### `_requireVaultIsPresent`
 
-#### `_addTokenAdmin`
+📋   &nbsp;&nbsp;
+Check if vault is present in the list.
 
-📋 &nbsp;&nbsp;
-Grants admin rigths of SimpleERC20 to address specified. Internal method.
+> Check if vault is present in the list.
 
-> Grants admin rigths of SimpleERC20 to address specified. Internal method.
 
 ##### Declaration
-
 ```solidity
-  function _addTokenAdmin(
-    contract SimpleERC20 token,
-    address account
+  function _requireVaultIsPresent(
+    contract SimpleVault vault
   ) internal
 ```
 
-##### Args:
-
-| Arg       | Type                 | Description                        |
-| --------- | -------------------- | ---------------------------------- |
-| `token`   | contract SimpleERC20 | SimpleERC20 which will grant role. |
-| `account` | address              | Account to grant role to.          |
-
-#### `_addTokensAdmin`
-
-📋 &nbsp;&nbsp;
-Grants DEFAULT_ADMIN_ROLE to all tokens in the list. Internal method.
-
-> Grants DEFAULT_ADMIN_ROLE to all tokens in the list. Internal method.
-
-##### Declaration
-
-```solidity
-  function _addTokensAdmin(
-    address account
-  ) internal
-```
 
 ##### Args:
-
-| Arg       | Type    | Description               |
-| --------- | ------- | ------------------------- |
-| `account` | address | Address to grant role to. |
-
-#### `_requireVaultIsNotPresent`
-
-📋 &nbsp;&nbsp;
-Checks if vault is not present in the list.
-
-> Checks if vault is not present in the list.
-
-##### Declaration
-
-```solidity
-  function _requireVaultIsNotPresent(
-    string name,
-    address broker
-  ) internal
-```
-
-##### Args:
-
-| Arg      | Type    | Description                         |
-| -------- | ------- | ----------------------------------- |
-| `name`   | string  | Name of the SimpleVault to check.   |
-| `broker` | address | Broker of the SimpleVault to check. |
+| Arg | Type | Description |
+| --- | --- | --- |
+|`vault` | contract SimpleVault | SimpleVault to check.
 
 #### `_getVaultIndex`
 
-📋 &nbsp;&nbsp;
-Finds the index of the vault in the list. Returns -1 if not found.
+📋   &nbsp;&nbsp;
+Find the index of the vault in the list. Return -1 if not found.
 
-> Finds the index of the vault in the list. Returns -1 if not found.
+> Find the index of the vault in the list. Return -1 if not found.
+
 
 ##### Declaration
-
 ```solidity
   function _getVaultIndex(
-    string name,
-    address broker
+    contract SimpleVault vault
   ) internal returns (int256)
 ```
 
-##### Args:
 
-| Arg      | Type    | Description                        |
-| -------- | ------- | ---------------------------------- |
-| `name`   | string  | Name of the SimpleVault to find.   |
-| `broker` | address | Broker of the SimpleVault to find. |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`vault` | contract SimpleVault | SimpleVault to find.
 
 ##### Returns:
+| Type | Description |
+| --- | --- |
+|`int256` | Index of the SimpleVault in the list or -1 if not present.
+#### `_requireIsVaultAdmin`
 
-| Type     | Description                                                |
-| -------- | ---------------------------------------------------------- |
-| `int256` | Index of the SimpleVault in the list or -1 if not present. |
+📋   &nbsp;&nbsp;
+Check if account has DEFAULT_ADMIN_ROLE in vault.
+
+> Check if account has DEFAULT_ADMIN_ROLE in vault.
+
+
+##### Declaration
+```solidity
+  function _requireIsVaultAdmin(
+    contract SimpleVault vault,
+    address account
+  ) internal
+```
+
+
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`vault` | contract SimpleVault | SimpleVault to check admin role in.
+|`account` | address | Address to check admin role of.
 
 #### `_requireTokenIsNotPresent`
 
-📋 &nbsp;&nbsp;
-Checks if token is not present in the list.
+📋   &nbsp;&nbsp;
+Check if token is not present in the list.
 
-> Checks if token is not present in the list.
+> Check if token is not present in the list.
+
 
 ##### Declaration
-
 ```solidity
   function _requireTokenIsNotPresent(
     contract SimpleERC20 token
   ) internal
 ```
 
-##### Args:
 
-| Arg     | Type                 | Description                          |
-| ------- | -------------------- | ------------------------------------ |
-| `token` | contract SimpleERC20 | Address of the SimpleERC20 to check. |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`token` | contract SimpleERC20 | Address of the SimpleERC20 to check.
 
 #### `_requireTokenIsPresent`
 
-📋 &nbsp;&nbsp;
-Checks if token is present in the list.
+📋   &nbsp;&nbsp;
+Check if token is present in the list.
 
-> Checks if token is present in the list.
+> Check if token is present in the list.
+
 
 ##### Declaration
-
 ```solidity
   function _requireTokenIsPresent(
     contract SimpleERC20 token
   ) internal
 ```
 
-##### Args:
 
-| Arg     | Type                 | Description                          |
-| ------- | -------------------- | ------------------------------------ |
-| `token` | contract SimpleERC20 | Address of the SimpleERC20 to check. |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`token` | contract SimpleERC20 | Address of the SimpleERC20 to check.
 
 #### `_addVault`
 
-📋 &nbsp;&nbsp;
-Adds SimpleVault to the list. Internal method.
+📋   &nbsp;&nbsp;
+Add SimpleVault to the list. Internal method.
 
-> Adds SimpleVault to the list. Internal method.
+> Add SimpleVault to the list. Internal method.
+
 
 ##### Declaration
-
 ```solidity
   function _addVault(
     contract SimpleVault vault,
@@ -418,43 +376,89 @@ Adds SimpleVault to the list. Internal method.
   ) internal
 ```
 
-##### Args:
 
-| Arg      | Type                 | Description                                      |
-| -------- | -------------------- | ------------------------------------------------ |
-| `vault`  | contract SimpleVault | SimpleVault address to add.                      |
-| `broker` | address              | Broker address corresponding to the SimpleVault. |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`vault` | contract SimpleVault | SimpleVault address to add.
+|`broker` | address | Broker address corresponding to the SimpleVault.
+
+#### `_removeVaultAtIndex`
+
+📋   &nbsp;&nbsp;
+Remove vault form the list.
+
+> Swap the last element with element at index and pops the last one.
+
+
+##### Declaration
+```solidity
+  function _removeVaultAtIndex(
+    uint256 index
+  ) internal returns (struct ISimpleVaultFactory.BrokerAndVault brokerAndVault)
+```
+
+
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`index` | uint256 | Index of the element to remove.
+
+##### Returns:
+| Type | Description |
+| --- | --- |
+|`brokerAndVault` | Structure containing removed SimpleVault and broker addresses.
+#### `_burnAllTokensFromVault`
+
+📋   &nbsp;&nbsp;
+Burn all tokens from the vault.
+
+> Burn all tokens from the vault.
+
+
+##### Declaration
+```solidity
+  function _burnAllTokensFromVault(
+    contract SimpleVault vault
+  ) internal
+```
+
+
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`vault` | contract SimpleVault | Vault to burn tokens from.
 
 #### `_mintAllTokensToVault`
 
-📋 &nbsp;&nbsp;
-Mints mint_per_deployment amount of each token to vault specified.
+📋   &nbsp;&nbsp;
+Mint mint_per_deployment amount of each token to vault specified.
 
-> Mints mint_per_deployment amount of each token to vault specified.
+> Mint mint_per_deployment amount of each token to vault specified.
+
 
 ##### Declaration
-
 ```solidity
   function _mintAllTokensToVault(
     contract SimpleVault vault
   ) internal
 ```
 
-##### Args:
 
-| Arg     | Type                 | Description                            |
-| ------- | -------------------- | -------------------------------------- |
-| `vault` | contract SimpleVault | SimpleVault address to mint tokens to. |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`vault` | contract SimpleVault | SimpleVault address to mint tokens to.
 
 #### `_addToken`
 
-📋 &nbsp;&nbsp;
-Adds SimpleERC20 token to the list. Internal method.
+📋   &nbsp;&nbsp;
+Add SimpleERC20 token to the list. Internal method.
 
-> Adds SimpleERC20 token to the list. Internal method.
+> Add SimpleERC20 token to the list. Internal method.
+
 
 ##### Declaration
-
 ```solidity
   function _addToken(
     contract SimpleERC20 token,
@@ -462,22 +466,22 @@ Adds SimpleERC20 token to the list. Internal method.
   ) internal
 ```
 
-##### Args:
 
-| Arg                   | Type                 | Description                                |
-| --------------------- | -------------------- | ------------------------------------------ |
-| `token`               | contract SimpleERC20 | SimpleERC20 token address to add.          |
-| `mint_per_deployment` | uint256              | Initial amount of tokens to mint to vault. |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`token` | contract SimpleERC20 | SimpleERC20 token address to add.
+|`mint_per_deployment` | uint256 | Initial amount of tokens to mint to vault.
 
 #### `_mintTokenForAllVaults`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Mint mint_per_deployment amount of SimpleERC20 token to all vaults from the list.
 
 > Mint mint_per_deployment amount of SimpleERC20 token to all vaults from the list.
 
-##### Declaration
 
+##### Declaration
 ```solidity
   function _mintTokenForAllVaults(
     contract SimpleERC20 token,
@@ -485,91 +489,89 @@ Mint mint_per_deployment amount of SimpleERC20 token to all vaults from the list
   ) internal
 ```
 
-##### Args:
 
-| Arg                   | Type                 | Description                                 |
-| --------------------- | -------------------- | ------------------------------------------- |
-| `token`               | contract SimpleERC20 | SimpleERC20 token address.                  |
-| `mint_per_deployment` | uint256              | Initial amount of tokens to mint to vaults. |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`token` | contract SimpleERC20 | SimpleERC20 token address.
+|`mint_per_deployment` | uint256 | Initial amount of tokens to mint to vaults.
 
 #### `_removeTokenAtIndex`
 
-📋 &nbsp;&nbsp;
-Removes token form the list.
+📋   &nbsp;&nbsp;
+Remove token form the list.
 
-> Swaps the last element with element at index and pops the last one.
+> Swap the last element with element at index and pops the last one.
+
 
 ##### Declaration
-
 ```solidity
   function _removeTokenAtIndex(
     uint256 index
   ) internal
 ```
 
-##### Args:
 
-| Arg     | Type    | Description                     |
-| ------- | ------- | ------------------------------- |
-| `index` | uint256 | Index of the element to remove. |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`index` | uint256 | Index of the element to remove.
 
 #### `_getTokenIndex`
 
-📋 &nbsp;&nbsp;
-Finds the index of the SimpleERC20 token in the list. Returns -1 if not found.
+📋   &nbsp;&nbsp;
+Find the index of the SimpleERC20 token in the list. Return -1 if not found.
 
-> Finds the index of the SimpleERC20 token in the list. Returns -1 if not found.
+> Find the index of the SimpleERC20 token in the list. Return -1 if not found.
+
 
 ##### Declaration
-
 ```solidity
   function _getTokenIndex(
     contract SimpleERC20 token
   ) internal returns (int256)
 ```
 
-##### Args:
 
-| Arg     | Type                 | Description                |
-| ------- | -------------------- | -------------------------- |
-| `token` | contract SimpleERC20 | Address of the token find. |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`token` | contract SimpleERC20 | Address of the token find.
 
 ##### Returns:
-
-| Type     | Description                                          |
-| -------- | ---------------------------------------------------- |
-| `int256` | Index of the token in the list or -1 if not present. |
-
+| Type | Description |
+| --- | --- |
+|`int256` | Index of the token in the list or -1 if not present.
 #### `_burnTokenFromAllVaults`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Burn all SimpleERC20 tokens from all vaults from the list.
 
 > Burn all SimpleERC20 tokens from all vaults from the list.
 
-##### Declaration
 
+##### Declaration
 ```solidity
   function _burnTokenFromAllVaults(
     contract SimpleERC20 token
   ) internal
 ```
 
-##### Args:
 
-| Arg     | Type                 | Description                |
-| ------- | -------------------- | -------------------------- |
-| `token` | contract SimpleERC20 | SimpleERC20 token address. |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`token` | contract SimpleERC20 | SimpleERC20 token address.
 
 #### `_stringsEqual`
 
-📋 &nbsp;&nbsp;
-Checks strings for equality.
+📋   &nbsp;&nbsp;
+Check strings for equality.
 
-> Checks strings for equality.
+> Check strings for equality.
+
 
 ##### Declaration
-
 ```solidity
   function _stringsEqual(
     string s1,
@@ -577,15 +579,16 @@ Checks strings for equality.
   ) internal returns (bool)
 ```
 
-##### Args:
 
-| Arg  | Type   | Description    |
-| ---- | ------ | -------------- |
-| `s1` | string | First string.  |
-| `s2` | string | Second string. |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`s1` | string | First string.
+|`s2` | string | Second string.
 
 ##### Returns:
+| Type | Description |
+| --- | --- |
+|`bool` | If s1 equals s2.
 
-| Type   | Description      |
-| ------ | ---------------- |
-| `bool` | If s1 equals s2. |
+

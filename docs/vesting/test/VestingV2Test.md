@@ -1,12 +1,20 @@
 ## VestingV2Test
 
-### Contents
 
+
+
+
+### Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
 
 ### Globals
 
-| Var                     | Type | Description |
-| ----------------------- | ---- | ----------- |
-| AVAILABLE_AFTER_UPGRADE | bool |             |
+
+| Var | Type | Description |
+| --- | --- | --- |
+| AVAILABLE_AFTER_UPGRADE | bool |  |
+
+
+
+

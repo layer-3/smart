@@ -1,30 +1,33 @@
 ## SimpleVault
 
+
 Custody smart contracts aim to provide a secure trading environment by holding
 the assets on the erc20 chain so that the user and broker can freely trade off-chain.
 
-### Contents
 
+### Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
 
 ### Globals
 
-| Var           | Type    | Description                      |
-| ------------- | ------- | -------------------------------- |
-| BROKER_ROLE   | bytes32 | Broker role identifier value     |
-| DEPOSIT_TYPE  | bytes32 | Deposit type identifier value    |
+
+| Var | Type | Description |
+| --- | --- | --- |
+| BROKER_ROLE | bytes32 | Broker role identifier value |
+| DEPOSIT_TYPE | bytes32 | Deposit type identifier value |
 | WITHDRAW_TYPE | bytes32 | Withdrawal type identifier value |
 
 ### Modifiers
 
 #### `onlyValidSignature`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Modifier to check information required for deposits and withdrawals.
 
-##### Declaration
 
+
+##### Declaration
 ```solidity
   modifier onlyValidSignature(
     address account,
@@ -35,23 +38,23 @@ Modifier to check information required for deposits and withdrawals.
 ```
 
 ##### Args:
-
-| Arg         | Type    | Description                                                                                          |
-| ----------- | ------- | ---------------------------------------------------------------------------------------------------- |
-| `account`   | address | Account address to check                                                                             |
-| `action`    | bytes32 | Action type. One of DEPOSIT_TYPE and WITHDRAW_TYPE                                                   |
-| `payload`   | bytes   | Payload consists of rid (unique identifier id), expire, destination, and the assets list with amount |
-| `signature` | bytes   | Broker signature                                                                                     |
+| Arg | Type | Description |
+| --- | --- | --- |
+|`account` | address | Account address to check
+|`action` | bytes32 | Action type. One of DEPOSIT_TYPE and WITHDRAW_TYPE
+|`payload` | bytes | Payload consists of rid (unique identifier id), expire, destination, and the assets list with amount
+|`signature` | bytes | Broker signature
 
 ### Functions
 
 #### `constructor`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 The constructor function sets the contract name and broker's address.
 
-##### Declaration
 
+
+##### Declaration
 ```solidity
   function constructor(
     string name_,
@@ -59,38 +62,40 @@ The constructor function sets the contract name and broker's address.
   ) public
 ```
 
-##### Args:
 
-| Arg       | Type    | Description   |
-| --------- | ------- | ------------- |
-| `name_`   | string  | Contract name |
-| `broker_` | address | Broker name   |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`name_` | string | Contract name
+|`broker_` | address | Broker name
 
 #### `name`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Get contract name.
 
-##### Declaration
 
+
+##### Declaration
 ```solidity
   function name(
   ) public returns (string)
 ```
 
+
+
 ##### Returns:
-
-| Type     | Description   |
-| -------- | ------------- |
-| `string` | Contract name |
-
+| Type | Description |
+| --- | --- |
+|`string` | Contract name
 #### `changeBroker`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Change broker address who signed the withdrawal signature.
 
-##### Declaration
 
+
+##### Declaration
 ```solidity
   function changeBroker(
     address newBroker
@@ -98,42 +103,42 @@ Change broker address who signed the withdrawal signature.
 ```
 
 ##### Modifiers:
-
 | Modifier |
-| -------- |
+| --- |
 | onlyRole |
 
 ##### Args:
-
-| Arg         | Type    | Description    |
-| ----------- | ------- | -------------- |
-| `newBroker` | address | Broker address |
+| Arg | Type | Description |
+| --- | --- | --- |
+|`newBroker` | address | Broker address
 
 #### `getLastId`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Get last ledger id (deposits and withdrawals id).
 
-##### Declaration
 
+
+##### Declaration
 ```solidity
   function getLastId(
   ) external returns (uint256)
 ```
 
+
+
 ##### Returns:
-
-| Type      | Description |
-| --------- | ----------- |
-| `uint256` | Ledger id.  |
-
+| Type | Description |
+| --- | --- |
+|`uint256` | Ledger id.
 #### `deposit`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Deposit the assets with given payload from the caller
 
-##### Declaration
 
+
+##### Declaration
 ```solidity
   function deposit(
     bytes payload,
@@ -141,26 +146,25 @@ Deposit the assets with given payload from the caller
   ) public returns (bool)
 ```
 
-##### Args:
 
-| Arg         | Type  | Description                                                                                                           |
-| ----------- | ----- | --------------------------------------------------------------------------------------------------------------------- |
-| `payload`   | bytes | Deposit payload consists of rid (unique identifier id), expire, destination, and the list of deposit asset and amount |
-| `signature` | bytes | Broker signature                                                                                                      |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`payload` | bytes | Deposit payload consists of rid (unique identifier id), expire, destination, and the list of deposit asset and amount
+|`signature` | bytes | Broker signature
 
 ##### Returns:
-
-| Type   | Description                  |
-| ------ | ---------------------------- |
-| `bool` | Return 'true' when deposited |
-
+| Type | Description |
+| --- | --- |
+|`bool` | Return 'true' when deposited
 #### `_deposit`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Internal deposit process and increment ledger id
 
-##### Declaration
 
+
+##### Declaration
 ```solidity
   function _deposit(
     address account,
@@ -170,32 +174,29 @@ Internal deposit process and increment ledger id
 ```
 
 ##### Modifiers:
-
-| Modifier           |
-| ------------------ |
+| Modifier |
+| --- |
 | onlyValidSignature |
 
 ##### Args:
-
-| Arg         | Type    | Description                                                                                                           |
-| ----------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| `account`   | address | Account address                                                                                                       |
-| `payload`   | bytes   | Deposit payload consists of rid (unique identifier id), expire, destination, and the list of deposit asset and amount |
-| `signature` | bytes   | Broker signature                                                                                                      |
+| Arg | Type | Description |
+| --- | --- | --- |
+|`account` | address | Account address
+|`payload` | bytes | Deposit payload consists of rid (unique identifier id), expire, destination, and the list of deposit asset and amount
+|`signature` | bytes | Broker signature
 
 ##### Returns:
-
-| Type   | Description                  |
-| ------ | ---------------------------- |
-| `bool` | Return 'true' when deposited |
-
+| Type | Description |
+| --- | --- |
+|`bool` | Return 'true' when deposited
 #### `withdraw`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Withdraw the assets with given payload to the caller
 
-##### Declaration
 
+
+##### Declaration
 ```solidity
   function withdraw(
     bytes payload,
@@ -203,26 +204,25 @@ Withdraw the assets with given payload to the caller
   ) public returns (bool)
 ```
 
-##### Args:
 
-| Arg         | Type  | Description                                                                                                                 |
-| ----------- | ----- | --------------------------------------------------------------------------------------------------------------------------- |
-| `payload`   | bytes | Withdrawal payload consists of rid (unique identifier id), expire, destination, and the list of withdrawal asset and amount |
-| `signature` | bytes | Broker signature                                                                                                            |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`payload` | bytes | Withdrawal payload consists of rid (unique identifier id), expire, destination, and the list of withdrawal asset and amount
+|`signature` | bytes | Broker signature
 
 ##### Returns:
-
-| Type   | Description                  |
-| ------ | ---------------------------- |
-| `bool` | Return 'true' when withdrawn |
-
+| Type | Description |
+| --- | --- |
+|`bool` | Return 'true' when withdrawn
 #### `_withdraw`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Internal withdraw process and increment ledger id
 
-##### Declaration
 
+
+##### Declaration
 ```solidity
   function _withdraw(
     address account,
@@ -232,32 +232,29 @@ Internal withdraw process and increment ledger id
 ```
 
 ##### Modifiers:
-
-| Modifier           |
-| ------------------ |
+| Modifier |
+| --- |
 | onlyValidSignature |
 
 ##### Args:
-
-| Arg         | Type    | Description                                                                                                                 |
-| ----------- | ------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `account`   | address | Account address                                                                                                             |
-| `payload`   | bytes   | Withdrawal payload consists of rid (unique identifier id), expire, destination, and the list of withdrawal asset and amount |
-| `signature` | bytes   | Broker signature                                                                                                            |
+| Arg | Type | Description |
+| --- | --- | --- |
+|`account` | address | Account address
+|`payload` | bytes | Withdrawal payload consists of rid (unique identifier id), expire, destination, and the list of withdrawal asset and amount
+|`signature` | bytes | Broker signature
 
 ##### Returns:
-
-| Type   | Description                  |
-| ------ | ---------------------------- |
-| `bool` | Return 'true' when withdrawn |
-
+| Type | Description |
+| --- | --- |
+|`bool` | Return 'true' when withdrawn
 #### `_extractPayload`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Internal function to extract payload data
 
-##### Declaration
 
+
+##### Declaration
 ```solidity
   function _extractPayload(
     address account,
@@ -266,30 +263,29 @@ Internal function to extract payload data
   ) internal returns (bytes32, uint64, address, struct SimpleVault.Asset[])
 ```
 
-##### Args:
 
-| Arg       | Type    | Description                                                                                          |
-| --------- | ------- | ---------------------------------------------------------------------------------------------------- |
-| `account` | address | Account address                                                                                      |
-| `sigHash` | bytes32 | Broker signature keccak256 hash                                                                      |
-| `payload` | bytes   | Payload consists of rid (unique identifier id), expire, destination, and the assets list with amount |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`account` | address | Account address
+|`sigHash` | bytes32 | Broker signature keccak256 hash
+|`payload` | bytes | Payload consists of rid (unique identifier id), expire, destination, and the assets list with amount
 
 ##### Returns:
-
-| Type      | Description     |
-| --------- | --------------- |
-| `bytes32` | rid             |
-| `uint64`  | expire          |
-| `address` | destination     |
-| `Asset`   | Array of assets |
-
+| Type | Description |
+| --- | --- |
+|`bytes32` | rid
+|`uint64` | expire
+|`address` | destination
+|`Asset` | Array of assets
 #### `_transferAssetFrom`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Transfers the given amount of this AssetHolders's asset type from a supplied ethereum address.
 
-##### Declaration
 
+
+##### Declaration
 ```solidity
   function _transferAssetFrom(
     address asset,
@@ -298,21 +294,22 @@ Transfers the given amount of this AssetHolders's asset type from a supplied eth
   ) internal
 ```
 
-##### Args:
 
-| Arg      | Type    | Description                          |
-| -------- | ------- | ------------------------------------ |
-| `asset`  | address | Asset address to transfer            |
-| `from`   | address | Ethereum address to be credited      |
-| `amount` | uint256 | Quantity of assets to be transferred |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`asset` | address | Asset address to transfer
+|`from` | address | Ethereum address to be credited
+|`amount` | uint256 | Quantity of assets to be transferred
 
 #### `_transferAssetTo`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Transfers the given amount of this AssetHolders's asset type to a supplied ethereum address.
 
-##### Declaration
 
+
+##### Declaration
 ```solidity
   function _transferAssetTo(
     address asset,
@@ -321,10 +318,13 @@ Transfers the given amount of this AssetHolders's asset type to a supplied ether
   ) internal
 ```
 
-##### Args:
 
-| Arg           | Type    | Description                          |
-| ------------- | ------- | ------------------------------------ |
-| `asset`       | address | Asset address to transfer            |
-| `destination` | address | Ethereum address to be credited      |
-| `amount`      | uint256 | Quantity of assets to be transferred |
+##### Args:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`asset` | address | Asset address to transfer
+|`destination` | address | Ethereum address to be credited
+|`amount` | uint256 | Quantity of assets to be transferred
+
+
+
