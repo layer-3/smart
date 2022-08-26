@@ -53,7 +53,7 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
   
   function migrate() internal virtual;
 
-  function upgradeTo() external onlyAdmin onlyProxy {
+  function upgrade() external onlyAdmin onlyProxy {
     address newImplAddress = vaultImplRegistry.nextAddress(__self);
 
     while (newImplAddress != address(0)) {
