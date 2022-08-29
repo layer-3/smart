@@ -3,13 +3,16 @@ pragma solidity 0.8.4;
 
 import '@openzeppelin/contracts/interfaces/draft-IERC1822.sol';
 import '@openzeppelin/contracts/proxy/ERC1967/ERC1967Upgrade.sol';
-import './VaultImplRegistry.sol';
 
 /**
  * @dev Base logic for the Implementation, containing the `upgradeTo` and `upgradeToAndCall` methods.
  */
 abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
-  VaultImplRegistry private immutable vaultImplRegistry;
+  // VaultImplBase specific
+
+  constructor() {
+    ERC1967Upgrade._changeAdmin(msg.sender);
+  }
 
   address private immutable __self = address(this);
 
@@ -19,8 +22,8 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
     * for UUPS and transparent proxies that are using the current contract as their implementation.
     */
   modifier onlyProxy() {
-      require(address(this) != __self, "Function must be called through delegatecall");
-      require(_getImplementation() == __self, "Function must be called through active proxy");
+      require(address(this) != __self, "must be called through delegatecall");
+      require(_getImplementation() == __self, "must be called through active proxy");
       _;
   }
 
@@ -29,7 +32,7 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
     * callable on the implementing contract but not through proxies.
     */
   modifier notDelegated() {
-      require(address(this) == __self, "UUPSUpgradeable: must not be called through delegatecall");
+      require(address(this) == __self, "must not be called through delegatecall");
       _;
   }
 
@@ -38,28 +41,74 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
     _;
   }
 
-  // TODO: may be replaced by hardcoded address and setter
-  constructor(VaultImplRegistry _vaultImplRegistry) {
-    vaultImplRegistry = _vaultImplRegistry;
+  // Implementation context storage
+
+  address private _newerImplementation;
+
+  function getNewerImplementation() external view notDelegated returns (address) {
+    return _newerImplementation;
   }
 
+  function setNewerImplementation(address newerImplementation) external notDelegated onlyAdmin {
+    require(_newerImplementation == address(0), 'newerImplementation is already set');
+    _newerImplementation = newerImplementation;
+  }
+
+  function getAdmin() external view notDelegated returns (address) {
+    return ERC1967Upgrade._getAdmin();
+  }
+
+  function changeAdmin(address newAdmin) external onlyAdmin notDelegated {
+    ERC1967Upgrade._changeAdmin(newAdmin);
+  }
+  
   /**
     * @dev Implementation of the ERC1822 function. This returns the storage slot used by the
     * implementation. It is used to validate the implementation's compatibility when performing an upgrade.
     */
   function proxiableUUID() external view virtual override notDelegated returns (bytes32) {
-      return _IMPLEMENTATION_SLOT;
+      return ERC1967Upgrade._IMPLEMENTATION_SLOT;
   }
-  
-  function migrate() internal virtual;
 
+  // Proxy context storage
+
+  bool private _initialized;
+  bool private _migrated;
+
+  // VaultImpl can override this behavior to be able to initialize
+  function _initialize() internal virtual onlyProxy {}
+
+  function initialize() external onlyProxy {
+    require(_initialized == false, 'already initialized');
+    _migrated = true;
+    _initialize();
+    _initialized = true;
+  }
+
+  // VaultImpl can override this behavior to be able to migrate data
+  function _migrate() internal virtual onlyProxy {}
+
+  function migrate() external onlyProxy {
+    require(_migrated == false, 'already migrated');
+    _migrate();
+    _migrated = true;
+  }
+  // onlyAdmin here points to the Proxy storage, meaning only Proxy admin can call this function
   function upgrade() external onlyAdmin onlyProxy {
-    address newImplAddress = vaultImplRegistry.nextAddress(__self);
+    address newerImplementation = VaultImplBase(_getImplementation()).getNewerImplementation();
 
-    while (newImplAddress != address(0)) {
-      migrate();
-      ERC1967Upgrade._upgradeToAndCallUUPS(newImplAddress, new bytes(0), false);
-      newImplAddress = vaultImplRegistry.nextAddress(newImplAddress);
+    if (newerImplementation == address(0)) {
+      revert('no newer implementation to upgrade to');
+    }
+
+    while(newerImplementation != address(0)) {
+      _migrated = false;
+      _upgradeToAndCallUUPS(
+        newerImplementation,
+        abi.encodeWithSelector(bytes4(keccak256("migrate()"))),
+        true
+      );
+      newerImplementation = VaultImplBase(_getImplementation()).getNewerImplementation();
     }
   }
 }
