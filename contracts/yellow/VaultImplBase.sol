@@ -54,8 +54,11 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
 
   function setNewerImplementation(address newerImplementation) external notDelegated onlyAdmin {
     require(__newerImplementation == address(0), 'newerImplementation is already set');
-    // prevent unnecessary event emitions
-    require(newerImplementation != __newerImplementation, 'proposed and actual newerImplementation are equal');
+    // prevent unnecessary event emitions & broken newerImplementaion chain
+    require(
+      newerImplementation != __newerImplementation && newerImplementation != __self,
+      'invalid newerImplementation supplied'
+    );
     
     __newerImplementation = newerImplementation;
     
