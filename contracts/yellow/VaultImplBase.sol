@@ -43,6 +43,8 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
 
   // Implementation context storage
 
+  event NewerImplementationSet(address newerImplementation);
+
   /** @dev Double underscore enables using the same variable name with a single underscore in a derived contract */
   address private __newerImplementation;
 
@@ -52,7 +54,11 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
 
   function setNewerImplementation(address newerImplementation) external notDelegated onlyAdmin {
     require(__newerImplementation == address(0), 'newerImplementation is already set');
+    require(newerImplementation != address(0), 'proposed newerImplementation is zero address');
+    
     __newerImplementation = newerImplementation;
+    
+    emit NewerImplementationSet(newerImplementation);
   }
 
   function getAdmin() external view notDelegated returns (address) {
