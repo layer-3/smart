@@ -43,7 +43,7 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
 
   // Implementation context storage
 
-  event NewerImplementationSet(address newerImplementation);
+  event NewerImplementationSet(address indexed newerImplementation);
 
   /** @dev Double underscore enables using the same variable name with a single underscore in a derived contract */
   address private __newerImplementation;

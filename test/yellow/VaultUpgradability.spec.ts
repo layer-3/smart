@@ -12,11 +12,12 @@ import {
   ALREADY_MIGRATED,
   MUST_NOT_THROUGH_DELEGATECALL,
   MUST_THROUGH_DELEGATECALL,
-  NEWER_IMPL_SET,
+  NEWER_IMPL_IS_SET,
   NEWER_IMPL_ZERO,
   NOT_ADMIN,
   INVALID_NEWER_IMPL,
 } from './revert-reasons';
+import {ADMIN_CHANGED, NEWER_IMPL_SET, UPGRADED} from './event-names';
 
 const AddressZero = ethers.constants.AddressZero;
 
@@ -96,7 +97,7 @@ describe('Vault Upgradability Contracts', async () => {
       expect(await VaultImpl1.getNewerImplementation()).to.be.equal(newerImplAddress);
       await expect(
         VaultImpl1.connect(implAdmin).setNewerImplementation(newerImplAddress)
-      ).to.be.revertedWith(NEWER_IMPL_SET);
+      ).to.be.revertedWith(NEWER_IMPL_IS_SET);
     });
 
     it('revert on setting newer implementation to zero address', async () => {
@@ -120,7 +121,7 @@ describe('Vault Upgradability Contracts', async () => {
       await VaultImpl1.connect(implAdmin).setNewerImplementation(newerImplAddress);
       await expect(
         VaultImpl1.connect(implAdmin).setNewerImplementation(newerImplAddress)
-      ).to.be.revertedWith(NEWER_IMPL_SET);
+      ).to.be.revertedWith(NEWER_IMPL_IS_SET);
     });
 
     // ======================
@@ -141,12 +142,38 @@ describe('Vault Upgradability Contracts', async () => {
     // ======================
     // Events
     // ======================
-    it.skip('event emitted on admin change', async () => {
-      // TODO
+    it('event emitted on admin change', async () => {
+      const tx = await VaultImpl1.connect(implAdmin).changeAdmin(someone.address);
+
+      const receipt = await tx.wait();
+      const event = receipt.events?.pop();
+
+      expect(event).not.to.be.undefined;
+
+      // workaround ts undefined checks
+      if (event != undefined && event.args != undefined) {
+        expect(event.event).to.be.equal(ADMIN_CHANGED);
+        const {previousAdmin, newAdmin} = event.args;
+        expect(previousAdmin).to.be.equal(implAdmin.address);
+        expect(newAdmin).to.be.equal(someone.address);
+      }
     });
 
-    it.skip('event emitted on newer implementation set', async () => {
-      // TODO
+    it('event emitted on newer implementation set', async () => {
+      const newerImplAddress = Wallet.createRandom().address;
+      const tx = await VaultImpl1.connect(implAdmin).setNewerImplementation(newerImplAddress);
+
+      const receipt = await tx.wait();
+      const event = receipt.events?.pop();
+
+      expect(event).not.to.be.undefined;
+
+      // workaround ts undefined checks
+      if (event != undefined && event.args != undefined) {
+        expect(event.event).to.be.equal(NEWER_IMPL_SET);
+        const {newerImplementation} = event.args;
+        expect(newerImplementation).to.be.equal(newerImplAddress);
+      }
     });
   });
 
@@ -187,8 +214,21 @@ describe('Vault Upgradability Contracts', async () => {
     // ======================
     // Events
     // ======================
-    it.skip('event emitted on admin change', async () => {
-      // TODO
+    it('event emitted on admin change', async () => {
+      const tx = await VaultProxy.connect(proxyAdmin).changeAdmin(someone.address);
+
+      const receipt = await tx.wait();
+      const event = receipt.events?.pop();
+
+      expect(event).not.to.be.undefined;
+
+      // workaround ts undefined checks
+      if (event != undefined && event.args != undefined) {
+        expect(event.event).to.be.equal(ADMIN_CHANGED);
+        const {previousAdmin, newAdmin} = event.args;
+        expect(previousAdmin).to.be.equal(proxyAdmin.address);
+        expect(newAdmin).to.be.equal(someone.address);
+      }
     });
   });
 
@@ -391,6 +431,26 @@ describe('Vault Upgradability Contracts', async () => {
       await expect(VaultImpl2Proxied.connect(implAdmin).applyUpgrade()).to.be.revertedWith(
         ALREADY_MIGRATED
       );
+    });
+
+    // ======================
+    // Events
+    // ======================
+    it('event emitted on upgrade', async () => {
+      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
+      const tx = await VaultImpl1Proxied.connect(proxyAdmin).upgrade();
+
+      const receipt = await tx.wait();
+      const event = receipt.events?.pop();
+
+      expect(event).not.to.be.undefined;
+
+      // workaround ts undefined checks
+      if (event != undefined && event.args != undefined) {
+        expect(event.event).to.be.equal(UPGRADED);
+        const {implementation} = event.args;
+        expect(implementation).to.be.equal(VaultImpl2.address);
+      }
     });
   });
 });
