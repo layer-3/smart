@@ -6,7 +6,7 @@ import {ethers} from 'hardhat';
 import TESTVaultImpl1Artifact from '../../artifacts/contracts/yellow/test/TESTVaultImpl1.sol/TESTVaultImpl1.json';
 import TESTVaultImpl2Artifact from '../../artifacts/contracts/yellow/test/TESTVaultImpl2.sol/TESTVaultImpl2.json';
 
-import {NEWER_IMPL_SET, NEWER_IMPL_ZERO, NOT_ADMIN, PROP_NEWER_IMPL_ZERO} from './revert-reasons';
+import {NEWER_IMPL_SET, NEWER_IMPL_ZERO, NOT_ADMIN, PROP_NEWER_IMPL_SAME} from './revert-reasons';
 
 const AddressZero = ethers.constants.AddressZero;
 
@@ -98,7 +98,7 @@ describe('Vault Upgradability Contracts', async () => {
       const newerImplZero = ethers.constants.AddressZero;
       await expect(
         VaultImpl1.connect(implAdmin).setNewerImplementation(newerImplZero)
-      ).to.be.revertedWith(PROP_NEWER_IMPL_ZERO);
+      ).to.be.revertedWith(PROP_NEWER_IMPL_SAME);
     });
 
     it.skip('event emitted on newer implementation set', async () => {
@@ -213,7 +213,7 @@ describe('Vault Upgradability Contracts', async () => {
       await VaultImpl1Proxied.connect(proxyAdmin).upgrade();
 
       // v2
-      expect(await VaultImpl1Proxied.connect(user).version()).to.be.equal(2);
+      expect(await VaultImpl2Proxied.connect(user).version()).to.be.equal(2);
 
       // NOTE: using VaultImpl2Proxied here as we upgraded to it
       expect(await VaultImpl2Proxied.connect(user).presentV2AbsentV1()).to.be.true;

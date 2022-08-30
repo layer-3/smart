@@ -4,6 +4,7 @@ pragma solidity 0.8.4;
 import '../VaultImplBase.sol';
 
 contract TESTVaultImpl2 is VaultImplBase {
+  // only for testing
   bool public initialized;
   uint256 public currentVersion;
 
@@ -15,6 +16,6 @@ contract TESTVaultImpl2 is VaultImplBase {
   }
 
   function _migrate() override internal {
-    currentVersion += 1;
+    currentVersion = 2;
   }
 }

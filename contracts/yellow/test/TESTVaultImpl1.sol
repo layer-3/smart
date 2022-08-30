@@ -4,6 +4,7 @@ pragma solidity 0.8.4;
 import '../VaultImplBase.sol';
 
 contract TESTVaultImpl1 is VaultImplBase {
+  // only for testing
   bool public initialized;
   uint256 public currentVersion;
 
