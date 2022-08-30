@@ -54,7 +54,8 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
 
   function setNewerImplementation(address newerImplementation) external notDelegated onlyAdmin {
     require(__newerImplementation == address(0), 'newerImplementation is already set');
-    require(newerImplementation != address(0), 'proposed newerImplementation is zero address');
+    // prevent unnecessary event emitions
+    require(newerImplementation != __newerImplementation, 'proposed and actual newerImplementation are equal');
     
     __newerImplementation = newerImplementation;
     
@@ -87,35 +88,38 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
 
   function initialize() external onlyProxy {
     require(__initialized == false, 'already initialized');
+    __initialized = true;
     __migrated = true;
     _initialize();
-    __initialized = true;
   }
 
   // VaultImpl can override this behavior to be able to migrate data
   function _migrate() internal virtual onlyProxy {}
 
-  function migrate() external onlyProxy {
+  function applyUpgrade() external onlyProxy {
     require(__migrated == false, 'already migrated');
-    _migrate();
     __migrated = true;
+    _migrate();
+    
+    if (VaultImplBase(_getImplementation()).getNewerImplementation() != address(0)) {
+      // do recursive upgrade
+      upgrade();
+    }
   }
+
   // onlyAdmin here points to the Proxy storage, meaning only Proxy admin can call this function
-  function upgrade() external onlyAdmin onlyProxy {
+  function upgrade() public onlyAdmin onlyProxy {
     address newerImplementation = VaultImplBase(_getImplementation()).getNewerImplementation();
 
     if (newerImplementation == address(0)) {
       revert('no newer implementation to upgrade to');
     }
 
-    while(newerImplementation != address(0)) {
-      __migrated = false;
-      _upgradeToAndCallUUPS(
-        newerImplementation,
-        abi.encodeWithSelector(bytes4(keccak256("migrate()"))),
-        true
-      );
-      newerImplementation = VaultImplBase(_getImplementation()).getNewerImplementation();
-    }
+    __migrated = false;
+    _upgradeToAndCallUUPS(
+      newerImplementation,
+      abi.encodeWithSelector(bytes4(keccak256("applyUpgrade()"))),
+      true
+    );
   }
 }
