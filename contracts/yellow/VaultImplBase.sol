@@ -43,15 +43,16 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
 
   // Implementation context storage
 
-  address private _newerImplementation;
+  /** @dev Double underscore enables using the same variable name with a single underscore in a derived contract */
+  address private __newerImplementation;
 
   function getNewerImplementation() external view notDelegated returns (address) {
-    return _newerImplementation;
+    return __newerImplementation;
   }
 
   function setNewerImplementation(address newerImplementation) external notDelegated onlyAdmin {
-    require(_newerImplementation == address(0), 'newerImplementation is already set');
-    _newerImplementation = newerImplementation;
+    require(__newerImplementation == address(0), 'newerImplementation is already set');
+    __newerImplementation = newerImplementation;
   }
 
   function getAdmin() external view notDelegated returns (address) {
@@ -72,26 +73,26 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
 
   // Proxy context storage
 
-  bool private _initialized;
-  bool private _migrated;
+  bool private __initialized;
+  bool private __migrated;
 
   // VaultImpl can override this behavior to be able to initialize
   function _initialize() internal virtual onlyProxy {}
 
   function initialize() external onlyProxy {
-    require(_initialized == false, 'already initialized');
-    _migrated = true;
+    require(__initialized == false, 'already initialized');
+    __migrated = true;
     _initialize();
-    _initialized = true;
+    __initialized = true;
   }
 
   // VaultImpl can override this behavior to be able to migrate data
   function _migrate() internal virtual onlyProxy {}
 
   function migrate() external onlyProxy {
-    require(_migrated == false, 'already migrated');
+    require(__migrated == false, 'already migrated');
     _migrate();
-    _migrated = true;
+    __migrated = true;
   }
   // onlyAdmin here points to the Proxy storage, meaning only Proxy admin can call this function
   function upgrade() external onlyAdmin onlyProxy {
@@ -102,7 +103,7 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
     }
 
     while(newerImplementation != address(0)) {
-      _migrated = false;
+      __migrated = false;
       _upgradeToAndCallUUPS(
         newerImplementation,
         abi.encodeWithSelector(bytes4(keccak256("migrate()"))),
