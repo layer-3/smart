@@ -298,6 +298,26 @@ describe('Vault Upgradability Contracts', async () => {
       );
     });
 
+    it('proxy admin can change proxy admin', async () => {
+      await VaultImpl1Proxied.connect(proxyAdmin).changeAdmin(someone.address);
+      expect(await VaultImpl1Proxied.connect(proxyAdmin).getAdmin()).to.be.equal(someone.address);
+    });
+
+    it('revert on impl admin changing proxy admin', async () => {
+      await expect(
+        VaultImpl1Proxied.connect(implAdmin).changeAdmin(someone.address)
+      ).to.be.revertedWith(NOT_ADMIN);
+    });
+
+    it('proxy admin can change proxy admin after impl admin change impl admin', async () => {
+      expect(await VaultImpl1Proxied.connect(implAdmin).getAdmin()).to.be.equal(proxyAdmin.address);
+      await VaultImpl1.connect(implAdmin).changeAdmin(someone.address);
+      expect(await VaultImpl1.getAdmin()).to.be.equal(someone.address);
+      expect(await VaultImpl1Proxied.connect(implAdmin).getAdmin()).to.be.equal(proxyAdmin.address);
+      await VaultImpl1Proxied.connect(proxyAdmin).changeAdmin(someother.address);
+      expect(await VaultImpl1Proxied.connect(proxyAdmin).getAdmin()).to.be.equal(someother.address);
+    });
+
     // ======================
     // Initialize
     // ======================
