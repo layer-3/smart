@@ -44,7 +44,7 @@ abstract contract VaultProxyBase is Proxy, ERC1967Upgrade {
    * @return address Implementation contract address.
    */
   function getImplementation() external view returns (address) {
-    return _implementation;
+    return _implementation();
   }
 
   /**

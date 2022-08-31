@@ -103,7 +103,7 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
    * NewerImplementation points to the newer implementation contract in a chain of contracts to allow upgrading.
    * @dev Must not be a delegated call. Require caller to be Implementation admin. Must not be zero address or self address.
    * Emits `NewerImplementationSet` event.
-   * @param newewImplementation Newer implementation contract address.
+   * @param newerImplementation Newer implementation contract address.
    */
   function setNewerImplementation(address newerImplementation) external notDelegated onlyAdmin {
     require(__newerImplementation == address(0), 'newerImplementation is already set');
