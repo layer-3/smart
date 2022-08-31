@@ -3,6 +3,9 @@ pragma solidity 0.8.4;
 
 import '../VaultImplBase.sol';
 
+/**
+ * @notice Implementation contract V1 for testing.
+ */
 contract TESTVaultImpl1 is VaultImplBase {
   // used for testing
   uint256 public initializedVersion;
