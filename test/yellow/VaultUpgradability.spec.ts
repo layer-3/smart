@@ -182,11 +182,14 @@ describe('Vault Upgradability Contracts', async () => {
 
   describe('Proxy', () => {
     let VaultProxy: Contract;
+    let VaultImplProxied: Contract;
 
     beforeEach(async () => {
       const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
       VaultProxy = await VaultProxyFactory.connect(proxyAdmin).deploy(VaultImpl1.address);
       await VaultProxy.deployed();
+
+      VaultImplProxied = new ethers.Contract(VaultProxy.address, TESTVaultImpl1Artifact.abi);
     });
 
     // ======================
@@ -212,6 +215,22 @@ describe('Vault Upgradability Contracts', async () => {
     // ======================
     it('returns correct implementation address', async () => {
       expect(await VaultProxy.getImplementation()).to.be.equal(VaultImpl1.address);
+    });
+
+    // ======================
+    // Not delegated
+    // ======================
+    it('revert on call `getNewerImplementation` via proxy', async () => {
+      await expect(VaultImplProxied.connect(user).getNewerImplementation()).to.be.revertedWith(
+        MUST_NOT_THROUGH_DELEGATECALL
+      );
+    });
+
+    it('revert on call `setNewerImplementation` via proxy', async () => {
+      const newerImplAddress = Wallet.createRandom().address;
+      await expect(
+        VaultImplProxied.connect(implAdmin).setNewerImplementation(newerImplAddress)
+      ).to.be.revertedWith(MUST_NOT_THROUGH_DELEGATECALL);
     });
 
     // ======================
@@ -271,21 +290,6 @@ describe('Vault Upgradability Contracts', async () => {
       expect(await VaultImpl1Proxied.connect(proxyAdmin).getAdmin()).to.be.equal(
         proxyAdmin.address
       );
-    });
-
-    // ======================
-    // Not delegated
-    // ======================
-    it('revert on call `getNewerImplementation` via proxy', async () => {
-      await expect(VaultImpl1Proxied.connect(user).getNewerImplementation()).to.be.revertedWith(
-        MUST_NOT_THROUGH_DELEGATECALL
-      );
-    });
-
-    it('revert on call `setNewerImplementation` via proxy', async () => {
-      await expect(
-        VaultImpl1Proxied.connect(implAdmin).setNewerImplementation(VaultImpl2.address)
-      ).to.be.revertedWith(MUST_NOT_THROUGH_DELEGATECALL);
     });
 
     // ======================
