@@ -34,17 +34,12 @@ abstract contract VaultProxyBase is Proxy, ERC1967Upgrade { // Admin AccessContr
     );
   }
 
-  modifier onlyAdmin() {
-    require(msg.sender == ERC1967Upgrade._getAdmin(), 'caller not admin');
-    _;
+  // May be needed for block explorers go supply users with the actual implementation contract info
+  function getImplementation() external view returns (address) {
+    return _implementation;
   }
 
   function _implementation() override internal view returns (address) {
-    return ERC1967Upgrade._getImplementation();
-  }
-
-  // May be needed for block explorers go supply users with the actual implementation contract info
-  function getImplementation() external view returns (address) {
     return ERC1967Upgrade._getImplementation();
   }
 }
