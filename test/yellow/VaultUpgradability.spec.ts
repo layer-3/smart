@@ -90,7 +90,19 @@ describe('Vault Upgradability Contracts', async () => {
       ).to.be.revertedWith(NOT_ADMIN);
     });
 
-    it('revert on setting newer implementation twice', async () => {
+    it('revert on setting different newer implementations twice', async () => {
+      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
+      const oneNewerImplAddress = Wallet.createRandom().address;
+      await VaultImpl1.connect(implAdmin).setNewerImplementation(oneNewerImplAddress);
+      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(oneNewerImplAddress);
+
+      const otherNewerImplAddress = Wallet.createRandom().address;
+      await expect(
+        VaultImpl1.connect(implAdmin).setNewerImplementation(otherNewerImplAddress)
+      ).to.be.revertedWith(NEWER_IMPL_IS_SET);
+    });
+
+    it('revert on setting the same newer implementation twice', async () => {
       expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
       const newerImplAddress = Wallet.createRandom().address;
       await VaultImpl1.connect(implAdmin).setNewerImplementation(newerImplAddress);
@@ -113,15 +125,6 @@ describe('Vault Upgradability Contracts', async () => {
       await expect(
         VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl1.address)
       ).to.be.revertedWith(INVALID_NEWER_IMPL);
-    });
-
-    it('revert on setting newer implementation to same address', async () => {
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
-      const newerImplAddress = Wallet.createRandom().address;
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(newerImplAddress);
-      await expect(
-        VaultImpl1.connect(implAdmin).setNewerImplementation(newerImplAddress)
-      ).to.be.revertedWith(NEWER_IMPL_IS_SET);
     });
 
     // ======================
