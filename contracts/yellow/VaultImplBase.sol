@@ -65,11 +65,11 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade {
     emit NewerImplementationSet(newerImplementation);
   }
 
-  function getAdmin() external view notDelegated returns (address) {
+  function getAdmin() external view returns (address) {
     return ERC1967Upgrade._getAdmin();
   }
 
-  function changeAdmin(address newAdmin) external onlyAdmin notDelegated {
+  function changeAdmin(address newAdmin) external onlyAdmin {
     ERC1967Upgrade._changeAdmin(newAdmin);
   }
   

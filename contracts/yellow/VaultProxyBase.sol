@@ -47,12 +47,4 @@ abstract contract VaultProxyBase is Proxy, ERC1967Upgrade { // Admin AccessContr
   function getImplementation() external view returns (address) {
     return ERC1967Upgrade._getImplementation();
   }
-
-  function getAdmin() external view returns (address) {
-    return ERC1967Upgrade._getAdmin();
-  }
-
-  function changeAdmin(address newAdmin) external onlyAdmin {
-    ERC1967Upgrade._changeAdmin(newAdmin);
-  }
 }

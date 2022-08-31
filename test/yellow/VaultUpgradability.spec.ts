@@ -195,19 +195,22 @@ describe('Vault Upgradability Contracts', async () => {
     // ======================
     // ADMIN
     // ======================
+    /**
+     * @dev As Proxy contract is always deployed with a reference to the implementation, Proxy admin logic must be seek using the Proxied interface.
+     */
     it('deployer is admin', async () => {
-      expect(await VaultProxy.getAdmin()).to.be.equal(proxyAdmin.address);
+      expect(await VaultImplProxied.connect(proxyAdmin).getAdmin()).to.be.equal(proxyAdmin.address);
     });
 
     it('admin can change admin', async () => {
-      await VaultProxy.connect(proxyAdmin).changeAdmin(someone.address);
-      expect(await VaultProxy.getAdmin()).to.be.equal(someone.address);
+      await VaultImplProxied.connect(proxyAdmin).changeAdmin(someone.address);
+      expect(await VaultImplProxied.connect(proxyAdmin).getAdmin()).to.be.equal(someone.address);
     });
 
     it('revert on someone changing admin', async () => {
-      await expect(VaultProxy.connect(someone).changeAdmin(someother.address)).to.be.revertedWith(
-        NOT_ADMIN
-      );
+      await expect(
+        VaultImplProxied.connect(someone).changeAdmin(someother.address)
+      ).to.be.revertedWith(NOT_ADMIN);
     });
 
     // ======================
@@ -236,8 +239,11 @@ describe('Vault Upgradability Contracts', async () => {
     // ======================
     // Events
     // ======================
+    /**
+     * @dev As Proxy contract is always deployed with a reference to the implementation, Proxy admin logic must be seek using the Proxied interface.
+     */
     it('event emitted on admin change', async () => {
-      const tx = await VaultProxy.connect(proxyAdmin).changeAdmin(someone.address);
+      const tx = await VaultImplProxied.connect(proxyAdmin).changeAdmin(someone.address);
 
       const receipt = await tx.wait();
       const event = receipt.events?.pop();
