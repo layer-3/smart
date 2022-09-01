@@ -1,5 +1,6 @@
 import {Assertion} from 'chai';
-import {BigNumber, providers} from 'ethers';
+
+import {gasUsed} from './helpers';
 
 const reasonStringGenerators = (gasUsed: number, expectedGasUsed: number) => {
   const formatNum = (x: number) => {
@@ -42,8 +43,3 @@ Assertion.addMethod('equalGas', async function (expectedGasUsed: number) {
 Assertion.addMethod('consumeGas', async function (expectedGasUsed: number) {
   await new Assertion(await gasUsed(this._obj)).to.equalGas(expectedGasUsed);
 });
-
-export const gasUsed = async (response: providers.TransactionResponse) => {
-  const {gasUsed: gasUsedBN} = await response.wait();
-  return (gasUsedBN as BigNumber).toNumber();
-};

@@ -2,7 +2,7 @@
 import {expect} from 'chai';
 import {ethers} from 'hardhat';
 
-import {gasUsed} from './setup';
+import {gasUsed} from './helpers';
 
 describe('benchmark test', () => {
   it('blah', async () => {
