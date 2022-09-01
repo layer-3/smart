@@ -12,7 +12,7 @@ import './VaultImplBase.sol';
 abstract contract VaultProxyBase is Proxy, ERC1967Upgrade {
   /**
    * @notice Set the address of the latest version of implementation contract, provided the first implementation contract in the versions chain. Call `initialize` on that address. Set the deployer to be an admin.
-   * @notice Recursively retrieves `newerImplementation` address starting with `startImplementation` supplied.
+   * @dev Recursively retrieve `newerImplementation` address starting with `startImplementation` supplied.
    */
   constructor(address startImplementation) {
     ERC1967Upgrade._changeAdmin(msg.sender);
