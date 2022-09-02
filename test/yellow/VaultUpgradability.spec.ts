@@ -3,9 +3,9 @@ import {Contract, Wallet} from 'ethers';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
-import TESTVaultImpl1Artifact from '../../artifacts/contracts/yellow/test/TESTVaultImpl1.sol/TESTVaultImpl1.json';
-import TESTVaultImpl2Artifact from '../../artifacts/contracts/yellow/test/TESTVaultImpl2.sol/TESTVaultImpl2.json';
-import TESTVaultImpl3Artifact from '../../artifacts/contracts/yellow/test/TESTVaultImpl3.sol/TESTVaultImpl3.json';
+import TESTVaultUpgradability1Artifact from '../../artifacts/contracts/yellow/test/TESTVaultUpgradability1.sol/TESTVaultUpgradability1.json';
+import TESTVaultUpgradability2Artifact from '../../artifacts/contracts/yellow/test/TESTVaultUpgradability2.sol/TESTVaultUpgradability2.json';
+import TESTVaultUpgradability3Artifact from '../../artifacts/contracts/yellow/test/TESTVaultUpgradability3.sol/TESTVaultUpgradability3.json';
 
 import {
   ALREADY_INITIALIZED,
@@ -31,7 +31,7 @@ describe('Vault Upgradability Contracts', async () => {
   let VaultImpl1: Contract;
 
   beforeEach(async () => {
-    const VaultImpl1Factory = await ethers.getContractFactory('TESTVaultImpl1');
+    const VaultImpl1Factory = await ethers.getContractFactory('TESTVaultUpgradability1');
     VaultImpl1 = await VaultImpl1Factory.connect(implAdmin).deploy();
     await VaultImpl1.deployed();
   });
@@ -189,7 +189,7 @@ describe('Vault Upgradability Contracts', async () => {
       VaultProxy = await VaultProxyFactory.connect(proxyAdmin).deploy(VaultImpl1.address);
       await VaultProxy.deployed();
 
-      VaultImplProxied = new ethers.Contract(VaultProxy.address, TESTVaultImpl1Artifact.abi);
+      VaultImplProxied = new ethers.Contract(VaultProxy.address, TESTVaultUpgradability1Artifact.abi);
     });
 
     // ======================
@@ -269,11 +269,11 @@ describe('Vault Upgradability Contracts', async () => {
     let VaultImpl3Proxied: Contract;
 
     beforeEach(async () => {
-      const VaultImpl2Factory = await ethers.getContractFactory('TESTVaultImpl2');
+      const VaultImpl2Factory = await ethers.getContractFactory('TESTVaultUpgradability2');
       VaultImpl2 = await VaultImpl2Factory.connect(implAdmin).deploy();
       await VaultImpl2.deployed();
 
-      const VaultImpl3Factory = await ethers.getContractFactory('TESTVaultImpl3');
+      const VaultImpl3Factory = await ethers.getContractFactory('TESTVaultUpgradability3');
       VaultImpl3 = await VaultImpl3Factory.connect(implAdmin).deploy();
       await VaultImpl3.deployed();
 
@@ -281,11 +281,11 @@ describe('Vault Upgradability Contracts', async () => {
       VaultProxy = await VaultProxyFactory.connect(proxyAdmin).deploy(VaultImpl1.address);
       await VaultProxy.deployed();
 
-      VaultImpl1Proxied = new ethers.Contract(VaultProxy.address, TESTVaultImpl1Artifact.abi);
+      VaultImpl1Proxied = new ethers.Contract(VaultProxy.address, TESTVaultUpgradability1Artifact.abi);
 
       // Defining early to be accessible further in the code
-      VaultImpl2Proxied = new ethers.Contract(VaultProxy.address, TESTVaultImpl2Artifact.abi);
-      VaultImpl3Proxied = new ethers.Contract(VaultProxy.address, TESTVaultImpl3Artifact.abi);
+      VaultImpl2Proxied = new ethers.Contract(VaultProxy.address, TESTVaultUpgradability2Artifact.abi);
+      VaultImpl3Proxied = new ethers.Contract(VaultProxy.address, TESTVaultUpgradability3Artifact.abi);
     });
 
     // ======================
@@ -340,7 +340,7 @@ describe('Vault Upgradability Contracts', async () => {
       await VaultProxy.deployed();
 
       // overwrite value set in `beforeAll` hook
-      VaultImpl2Proxied = new ethers.Contract(VaultProxy.address, TESTVaultImpl2Artifact.abi);
+      VaultImpl2Proxied = new ethers.Contract(VaultProxy.address, TESTVaultUpgradability2Artifact.abi);
 
       expect(await VaultImpl2Proxied.connect(user).initializedVersion()).to.be.equal(2);
     });
@@ -353,7 +353,7 @@ describe('Vault Upgradability Contracts', async () => {
       VaultProxy = await VaultProxyFactory.connect(proxyAdmin).deploy(VaultImpl1.address);
       await VaultProxy.deployed();
 
-      const VaultImpl3Proxied = new ethers.Contract(VaultProxy.address, TESTVaultImpl3Artifact.abi);
+      const VaultImpl3Proxied = new ethers.Contract(VaultProxy.address, TESTVaultUpgradability3Artifact.abi);
 
       expect(await VaultImpl3Proxied.connect(user).initializedVersion()).to.be.equal(3);
     });
