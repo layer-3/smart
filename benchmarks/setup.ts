@@ -27,7 +27,9 @@ const reasonStringGenerators = (gasUsed: number, expectedGasUsed: number) => {
   return {expectedDifferent, expectedEqual};
 };
 
+// is called upon number
 Assertion.addMethod('equalGas', async function (expectedGasUsed: number) {
+  // an object upon which this assetion is called
   const gasUsed: number = await this._obj;
 
   const {expectedDifferent, expectedEqual} = reasonStringGenerators(gasUsed, expectedGasUsed);
@@ -40,6 +42,7 @@ Assertion.addMethod('equalGas', async function (expectedGasUsed: number) {
   );
 });
 
+// is called upon TransactionResponse object
 Assertion.addMethod('consumeGas', async function (expectedGasUsed: number) {
   await new Assertion(await gasUsed(this._obj)).to.equalGas(expectedGasUsed);
 });
