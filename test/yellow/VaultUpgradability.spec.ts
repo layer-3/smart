@@ -15,11 +15,15 @@ import {
   NEWER_IMPL_IS_SET,
   NEWER_IMPL_ZERO,
   NOT_ADMIN,
+  NOT_MAINTAINER,
   INVALID_NEWER_IMPL,
+  ACCOUNT_MISSING_ROLE,
 } from './revert-reasons';
-import {ADMIN_CHANGED, NEWER_IMPL_SET, UPGRADED} from './event-names';
+import {NEWER_IMPL_SET, ROLE_GRANTED, UPGRADED} from './event-names';
 
 const AddressZero = ethers.constants.AddressZero;
+const ADM_ROLE = ethers.constants.HashZero;
+const MNTR_ROLE = ethers.utils.id('MAINTAINER_ROLE');
 
 describe('Vault Upgradability Contracts', async () => {
   let implAdmin: SignerWithAddress;
@@ -40,23 +44,50 @@ describe('Vault Upgradability Contracts', async () => {
     [implAdmin, proxyAdmin, user, someone, someother] = await ethers.getSigners();
   });
 
+  // =*=*=*=*=*=*=*=*=*=*=*=*=*=*=
+  // Implementation
+  // =*=*=*=*=*=*=*=*=*=*=*=*=*=*=
   describe('Implementation', () => {
     // ======================
-    // ADMIN
+    // Roles
     // ======================
     it('deployer is admin', async () => {
-      expect(await VaultImpl1.getAdmin()).to.be.equal(implAdmin.address);
+      expect(await VaultImpl1.hasRole(ADM_ROLE, implAdmin.address)).to.be.true;
     });
 
-    it('admin can change admin', async () => {
-      await VaultImpl1.connect(implAdmin).changeAdmin(someone.address);
-      expect(await VaultImpl1.getAdmin()).to.be.equal(someone.address);
+    it('deployer is maintainer', async () => {
+      expect(await VaultImpl1.hasRole(MNTR_ROLE, implAdmin.address)).to.be.true;
     });
 
-    it('revert on someone changing admin', async () => {
-      await expect(VaultImpl1.connect(someone).changeAdmin(someother.address)).to.be.revertedWith(
-        NOT_ADMIN
-      );
+    it('admin can grant admin and maintainer', async () => {
+      await VaultImpl1.connect(implAdmin).grantRole(ADM_ROLE, someone.address);
+      expect(await VaultImpl1.hasRole(ADM_ROLE, someone.address)).to.be.true;
+
+      await VaultImpl1.connect(implAdmin).grantRole(MNTR_ROLE, someother.address);
+      expect(await VaultImpl1.hasRole(MNTR_ROLE, someother.address)).to.be.true;
+    });
+
+    it('revert on maintainer granting any role', async () => {
+      await VaultImpl1.connect(implAdmin).grantRole(MNTR_ROLE, someone.address);
+      expect(await VaultImpl1.hasRole(MNTR_ROLE, someone.address)).to.be.true;
+
+      await expect(
+        VaultImpl1.connect(someone).grantRole(MNTR_ROLE, someother.address)
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE));
+
+      await expect(
+        VaultImpl1.connect(someone).grantRole(ADM_ROLE, someother.address)
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE));
+    });
+
+    it('revert on someone granting any role', async () => {
+      await expect(
+        VaultImpl1.connect(someone).grantRole(ADM_ROLE, someother.address)
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE));
+
+      await expect(
+        VaultImpl1.connect(someone).grantRole(MNTR_ROLE, someother.address)
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE));
     });
 
     // ======================
@@ -82,12 +113,23 @@ describe('Vault Upgradability Contracts', async () => {
       expect(await VaultImpl1.getNewerImplementation()).to.be.equal(newerImplAddress);
     });
 
+    it('maintainer can set newer implementation', async () => {
+      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
+
+      await VaultImpl1.connect(implAdmin).grantRole(MNTR_ROLE, someone.address);
+      expect(await VaultImpl1.hasRole(MNTR_ROLE, someone.address)).to.be.true;
+
+      const newerImplAddress = Wallet.createRandom().address;
+      await VaultImpl1.connect(someone).setNewerImplementation(newerImplAddress);
+      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(newerImplAddress);
+    });
+
     it('revert on someone set newer implementation', async () => {
       expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
       const newerImplAddress = Wallet.createRandom().address;
       await expect(
         VaultImpl1.connect(someone).setNewerImplementation(newerImplAddress)
-      ).to.be.revertedWith(NOT_ADMIN);
+      ).to.be.revertedWith(NOT_MAINTAINER);
     });
 
     it('revert on setting different newer implementations twice', async () => {
@@ -112,6 +154,7 @@ describe('Vault Upgradability Contracts', async () => {
       ).to.be.revertedWith(NEWER_IMPL_IS_SET);
     });
 
+    /** @dev This testcase it present to avoid emitting NewerImplementationSet event */
     it('revert on setting newer implementation to zero address', async () => {
       expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
       const newerImplZero = ethers.constants.AddressZero;
@@ -145,8 +188,8 @@ describe('Vault Upgradability Contracts', async () => {
     // ======================
     // Events
     // ======================
-    it('event emitted on admin change', async () => {
-      const tx = await VaultImpl1.connect(implAdmin).changeAdmin(someone.address);
+    it('event emitted on grant role', async () => {
+      const tx = await VaultImpl1.connect(implAdmin).grantRole(ADM_ROLE, someone.address);
 
       const receipt = await tx.wait();
       const event = receipt.events?.pop();
@@ -155,10 +198,11 @@ describe('Vault Upgradability Contracts', async () => {
 
       // workaround ts undefined checks
       if (event != undefined && event.args != undefined) {
-        expect(event.event).to.be.equal(ADMIN_CHANGED);
-        const {previousAdmin, newAdmin} = event.args;
-        expect(previousAdmin).to.be.equal(implAdmin.address);
-        expect(newAdmin).to.be.equal(someone.address);
+        expect(event.event).to.be.equal(ROLE_GRANTED);
+        const {role, account, sender} = event.args;
+        expect(role).to.be.equal(ADM_ROLE);
+        expect(sender).to.be.equal(implAdmin.address);
+        expect(account).to.be.equal(someone.address);
       }
     });
 
@@ -180,6 +224,9 @@ describe('Vault Upgradability Contracts', async () => {
     });
   });
 
+  // =*=*=*=*=*=*=*=*=*=*=*=*=*=*=
+  // Proxy
+  // =*=*=*=*=*=*=*=*=*=*=*=*=*=*=
   describe('Proxy', () => {
     let VaultProxy: Contract;
     let VaultImplProxied: Contract;
@@ -189,34 +236,52 @@ describe('Vault Upgradability Contracts', async () => {
       VaultProxy = await VaultProxyFactory.connect(proxyAdmin).deploy(VaultImpl1.address);
       await VaultProxy.deployed();
 
-      VaultImplProxied = new ethers.Contract(VaultProxy.address, TESTVaultUpgradability1Artifact.abi);
+      VaultImplProxied = new ethers.Contract(
+        VaultProxy.address,
+        TESTVaultUpgradability1Artifact.abi
+      );
     });
 
     // ======================
-    // ADMIN
+    // Roles
     // ======================
     /**
-     * @dev As Proxy contract is always deployed with a reference to the implementation, Proxy admin logic must be seek using the Proxied interface.
+     * @dev As Proxy contract is always deployed with a reference to the implementation, Proxy admin logic must be used with the Proxied interface.
      */
     it('deployer is admin', async () => {
-      expect(await VaultImplProxied.connect(proxyAdmin).getAdmin()).to.be.equal(proxyAdmin.address);
+      expect(await VaultImplProxied.connect(proxyAdmin).hasRole(ADM_ROLE, proxyAdmin.address)).to.be
+        .true;
     });
 
-    it('admin can change admin', async () => {
-      await VaultImplProxied.connect(proxyAdmin).changeAdmin(someone.address);
-      expect(await VaultImplProxied.connect(proxyAdmin).getAdmin()).to.be.equal(someone.address);
+    it('deployer is maintainer', async () => {
+      expect(await VaultImplProxied.connect(proxyAdmin).hasRole(MNTR_ROLE, proxyAdmin.address)).to
+        .be.true;
     });
 
-    it('revert on someone changing admin', async () => {
+    it('admin can grant admin and maintainer', async () => {
+      await VaultImplProxied.connect(proxyAdmin).grantRole(ADM_ROLE, someone.address);
+      expect(await VaultImplProxied.connect(proxyAdmin).hasRole(ADM_ROLE, someone.address)).to.be
+        .true;
+
+      await VaultImplProxied.connect(proxyAdmin).grantRole(MNTR_ROLE, someother.address);
+      expect(await VaultImplProxied.connect(proxyAdmin).hasRole(MNTR_ROLE, someother.address)).to.be
+        .true;
+    });
+
+    it('revert on someone granting roles', async () => {
       await expect(
-        VaultImplProxied.connect(someone).changeAdmin(someother.address)
-      ).to.be.revertedWith(NOT_ADMIN);
+        VaultImplProxied.connect(someone).grantRole(ADM_ROLE, someother.address)
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE));
+
+      await expect(
+        VaultImplProxied.connect(someone).grantRole(MNTR_ROLE, someother.address)
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE));
     });
 
     // ======================
     // Implementation address
     // ======================
-    it('returns correct implementation address', async () => {
+    it('return correct implementation address', async () => {
       expect(await VaultProxy.getImplementation()).to.be.equal(VaultImpl1.address);
     });
 
@@ -242,8 +307,8 @@ describe('Vault Upgradability Contracts', async () => {
     /**
      * @dev As Proxy contract is always deployed with a reference to the implementation, Proxy admin logic must be seek using the Proxied interface.
      */
-    it('event emitted on admin change', async () => {
-      const tx = await VaultImplProxied.connect(proxyAdmin).changeAdmin(someone.address);
+    it('event emitted on grant role', async () => {
+      const tx = await VaultImplProxied.connect(proxyAdmin).grantRole(ADM_ROLE, someone.address);
 
       const receipt = await tx.wait();
       const event = receipt.events?.pop();
@@ -252,14 +317,18 @@ describe('Vault Upgradability Contracts', async () => {
 
       // workaround ts undefined checks
       if (event != undefined && event.args != undefined) {
-        expect(event.event).to.be.equal(ADMIN_CHANGED);
-        const {previousAdmin, newAdmin} = event.args;
-        expect(previousAdmin).to.be.equal(proxyAdmin.address);
-        expect(newAdmin).to.be.equal(someone.address);
+        expect(event.event).to.be.equal(ROLE_GRANTED);
+        const {role, account, sender} = event.args;
+        expect(role).to.be.equal(ADM_ROLE);
+        expect(account).to.be.equal(someone.address);
+        expect(sender).to.be.equal(proxyAdmin.address);
       }
     });
   });
 
+  // =*=*=*=*=*=*=*=*=*=*=*=*=*=*=
+  // Vault upgradability
+  // =*=*=*=*=*=*=*=*=*=*=*=*=*=*=
   describe('Vault upgradability', () => {
     let VaultImpl2: Contract;
     let VaultImpl3: Contract;
@@ -281,41 +350,72 @@ describe('Vault Upgradability Contracts', async () => {
       VaultProxy = await VaultProxyFactory.connect(proxyAdmin).deploy(VaultImpl1.address);
       await VaultProxy.deployed();
 
-      VaultImpl1Proxied = new ethers.Contract(VaultProxy.address, TESTVaultUpgradability1Artifact.abi);
+      VaultImpl1Proxied = new ethers.Contract(
+        VaultProxy.address,
+        TESTVaultUpgradability1Artifact.abi
+      );
 
       // Defining early to be accessible further in the code
-      VaultImpl2Proxied = new ethers.Contract(VaultProxy.address, TESTVaultUpgradability2Artifact.abi);
-      VaultImpl3Proxied = new ethers.Contract(VaultProxy.address, TESTVaultUpgradability3Artifact.abi);
-    });
-
-    // ======================
-    // ADMIN
-    // ======================
-    it('admin is proxy deployer', async () => {
-      expect(await VaultImpl1Proxied.connect(implAdmin).getAdmin()).to.be.equal(proxyAdmin.address);
-      expect(await VaultImpl1Proxied.connect(proxyAdmin).getAdmin()).to.be.equal(
-        proxyAdmin.address
+      VaultImpl2Proxied = new ethers.Contract(
+        VaultProxy.address,
+        TESTVaultUpgradability2Artifact.abi
+      );
+      VaultImpl3Proxied = new ethers.Contract(
+        VaultProxy.address,
+        TESTVaultUpgradability3Artifact.abi
       );
     });
 
-    it('proxy admin can change proxy admin', async () => {
-      await VaultImpl1Proxied.connect(proxyAdmin).changeAdmin(someone.address);
-      expect(await VaultImpl1Proxied.connect(proxyAdmin).getAdmin()).to.be.equal(someone.address);
+    // ======================
+    // Roles
+    // ======================
+    it('proxy deployer is admin and maintainer', async () => {
+      expect(await VaultImpl1Proxied.connect(implAdmin).hasRole(ADM_ROLE, proxyAdmin.address)).to.be
+        .true;
+      expect(await VaultImpl1Proxied.connect(implAdmin).hasRole(MNTR_ROLE, proxyAdmin.address)).to
+        .be.true;
+
+      expect(await VaultImpl1Proxied.connect(proxyAdmin).hasRole(ADM_ROLE, proxyAdmin.address)).to
+        .be.true;
+      expect(await VaultImpl1Proxied.connect(proxyAdmin).hasRole(MNTR_ROLE, proxyAdmin.address)).to
+        .be.true;
     });
 
-    it('revert on impl admin changing proxy admin', async () => {
+    it('proxy admin can grant proxy roles', async () => {
+      await VaultImpl1Proxied.connect(proxyAdmin).grantRole(ADM_ROLE, someone.address);
+      expect(await VaultImpl1Proxied.connect(proxyAdmin).hasRole(ADM_ROLE, someone.address)).to.be
+        .true;
+
+      await VaultImpl1Proxied.connect(proxyAdmin).grantRole(MNTR_ROLE, someother.address);
+      expect(await VaultImpl1Proxied.connect(proxyAdmin).hasRole(MNTR_ROLE, someother.address)).to
+        .be.true;
+    });
+
+    it('revert on impl admin granting roles', async () => {
       await expect(
-        VaultImpl1Proxied.connect(implAdmin).changeAdmin(someone.address)
-      ).to.be.revertedWith(NOT_ADMIN);
+        VaultImpl1Proxied.connect(implAdmin).grantRole(ADM_ROLE, someone.address)
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(implAdmin.address, ADM_ROLE));
+
+      await expect(
+        VaultImpl1Proxied.connect(implAdmin).grantRole(MNTR_ROLE, someone.address)
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(implAdmin.address, ADM_ROLE));
     });
 
-    it('proxy admin can change proxy admin after impl admin change impl admin', async () => {
-      expect(await VaultImpl1Proxied.connect(implAdmin).getAdmin()).to.be.equal(proxyAdmin.address);
-      await VaultImpl1.connect(implAdmin).changeAdmin(someone.address);
-      expect(await VaultImpl1.getAdmin()).to.be.equal(someone.address);
-      expect(await VaultImpl1Proxied.connect(implAdmin).getAdmin()).to.be.equal(proxyAdmin.address);
-      await VaultImpl1Proxied.connect(proxyAdmin).changeAdmin(someother.address);
-      expect(await VaultImpl1Proxied.connect(proxyAdmin).getAdmin()).to.be.equal(someother.address);
+    it('proxy roles does not overlap impl roles', async () => {
+      expect(await VaultImpl1Proxied.connect(implAdmin).hasRole(ADM_ROLE, proxyAdmin.address)).to.be
+        .true;
+      await VaultImpl1.connect(implAdmin).grantRole(ADM_ROLE, someone.address);
+
+      expect(await VaultImpl1.hasRole(ADM_ROLE, someone.address)).to.be.true;
+      expect(await VaultImpl1Proxied.connect(implAdmin).hasRole(ADM_ROLE, someone.address)).to.be
+        .false;
+      expect(await VaultImpl1Proxied.connect(implAdmin).hasRole(ADM_ROLE, proxyAdmin.address)).to.be
+        .true;
+
+      await VaultImpl1Proxied.connect(proxyAdmin).grantRole(ADM_ROLE, someother.address);
+      expect(await VaultImpl1.hasRole(ADM_ROLE, someother.address)).to.be.false;
+      expect(await VaultImpl1Proxied.connect(proxyAdmin).hasRole(ADM_ROLE, someother.address)).to.be
+        .true;
     });
 
     // ======================
@@ -340,7 +440,10 @@ describe('Vault Upgradability Contracts', async () => {
       await VaultProxy.deployed();
 
       // overwrite value set in `beforeAll` hook
-      VaultImpl2Proxied = new ethers.Contract(VaultProxy.address, TESTVaultUpgradability2Artifact.abi);
+      VaultImpl2Proxied = new ethers.Contract(
+        VaultProxy.address,
+        TESTVaultUpgradability2Artifact.abi
+      );
 
       expect(await VaultImpl2Proxied.connect(user).initializedVersion()).to.be.equal(2);
     });
@@ -353,7 +456,10 @@ describe('Vault Upgradability Contracts', async () => {
       VaultProxy = await VaultProxyFactory.connect(proxyAdmin).deploy(VaultImpl1.address);
       await VaultProxy.deployed();
 
-      const VaultImpl3Proxied = new ethers.Contract(VaultProxy.address, TESTVaultUpgradability3Artifact.abi);
+      const VaultImpl3Proxied = new ethers.Contract(
+        VaultProxy.address,
+        TESTVaultUpgradability3Artifact.abi
+      );
 
       expect(await VaultImpl3Proxied.connect(user).initializedVersion()).to.be.equal(3);
     });
@@ -361,6 +467,20 @@ describe('Vault Upgradability Contracts', async () => {
     // ======================
     // Upgrade
     // ======================
+    it('admin can upgrade', async () => {
+      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
+      await VaultImpl1Proxied.connect(proxyAdmin).upgrade();
+    });
+
+    it('maintainer can upgrade', async () => {
+      await VaultImpl1Proxied.connect(proxyAdmin).grantRole(MNTR_ROLE, someone.address);
+      expect(await VaultImpl1Proxied.connect(proxyAdmin).hasRole(MNTR_ROLE, someone.address)).to.be
+        .true;
+
+      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
+      await VaultImpl1Proxied.connect(someone).upgrade();
+    });
+
     it('upgrade when 1 newer contract available', async () => {
       // v1
       // Note: connecting user (3rd party address) to avoid any address collisions
