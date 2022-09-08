@@ -93,7 +93,7 @@ contract VaultImpl is VaultImplBase, IVault {
         bytes calldata brokerSignature,
         bytes calldata otpSignature
     ) external payable returns (bool) {
-        _requireValidInput(msg.sender, DEPOSIT_TYPE, payload, brokerSignature, otpSignature);
+        _requireValidInput(DEPOSIT_TYPE, payload, brokerSignature, otpSignature);
         return _deposit_interactions(msg.sender, payload, brokerSignature);
     }
 
@@ -137,7 +137,7 @@ contract VaultImpl is VaultImplBase, IVault {
         bytes calldata brokerSignature,
         bytes calldata otpSignature
     ) external payable returns (bool) {
-        _requireValidInput(msg.sender, WITHDRAW_TYPE, payload, brokerSignature, otpSignature);
+        _requireValidInput(WITHDRAW_TYPE, payload, brokerSignature, otpSignature);
         return _withdraw_interactions(msg.sender, payload, brokerSignature);
     }
 
@@ -169,20 +169,17 @@ contract VaultImpl is VaultImplBase, IVault {
 
     /**
      * @notice Check supplied signatures to be indeed signed by Broker and OTP service.
-     * @param account Account address to check.
      * @param action Action type. One of DEPOSIT_TYPE and WITHDRAW_TYPE.
      * @param payload Encoded payload, which consists of rid (unique identifier id), expire timestamp, destination address and an array of allocations.
      * @param brokerSignature Broker signature.
      * @param otpSignature OTP signature.
      */
     function _requireValidInput(
-        address account,
         bytes32 action,
         bytes memory payload,
         bytes memory brokerSignature,
         bytes memory otpSignature
     ) internal view {
-        require(account != address(0), 'Vault: account is zero address');
         require(action != 0, 'Vault: action is required');
 
         bytes32 digest = ECDSA.toEthSignedMessageHash(
