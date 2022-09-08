@@ -205,16 +205,7 @@ contract VaultImpl is VaultImplBase, IVault {
         address account,
         bytes32 sigHash,
         bytes memory payload
-    )
-        internal
-        view
-        returns (
-            bytes32,
-            uint64,
-            address,
-            Allocation[] memory
-        )
-    {
+    ) internal view returns (bytes32, uint64, address, Allocation[] memory) {
         (bytes32 rid, uint64 expire, address destination, Allocation[] memory assets) = abi.decode(
             payload,
             (bytes32, uint64, address, Allocation[])
