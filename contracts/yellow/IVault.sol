@@ -17,7 +17,6 @@ interface IVault {
         address account;
         bytes payload;
         bytes brokerSignature;
-        bytes otpSignature;
     }
 
     // ======================

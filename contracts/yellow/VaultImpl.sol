@@ -34,35 +34,6 @@ contract VaultImpl is VaultImplBase, IVault {
     mapping(address => mapping(bytes32 => bool)) private _sigUsage;
 
     /**
-     * @notice Check supplied signatures to be indeed signed by Broker and OTP service.
-     * @param account Account address to check.
-     * @param action Action type. One of DEPOSIT_TYPE and WITHDRAW_TYPE.
-     * @param payload Encoded payload, which consists of rid (unique identifier id), expire timestamp, destination address and an array of allocations.
-     * @param brokerSignature Broker signature.
-     * @param otpSignature OTP signature.
-     */
-    modifier onlyValidSignatures(
-        address account,
-        bytes32 action,
-        bytes memory payload,
-        bytes memory brokerSignature,
-        bytes memory otpSignature
-    ) {
-        require(account != address(0), 'Vault: account is zero address');
-        require(action != 0, 'Vault: action is required');
-
-        bytes32 digest = ECDSA.toEthSignedMessageHash(
-            keccak256(abi.encodePacked(action, payload))
-        );
-        address recoveredBrokerAddress = ECDSA.recover(digest, brokerSignature);
-        require(recoveredBrokerAddress == _brokerKeyDerivedAddress, 'Vault: invalid broker signature');
-        address recoveredOTPAddress = ECDSA.recover(digest, otpSignature);
-        require(recoveredOTPAddress == _otpKeyDerivedAddress, 'Vault: invalid OTP signature');
-
-        _;
-    }
-
-    /**
      * The constructor function sets the contract name and broker's address.
      * @param brokerKeyDerivedAddress_ Address derived from Broker public key.
      * @param otpKeyDerivedAddress_ Address derived from OTP public key.
@@ -122,7 +93,8 @@ contract VaultImpl is VaultImplBase, IVault {
         bytes calldata brokerSignature,
         bytes calldata otpSignature
     ) external payable returns (bool) {
-        return _deposit(AssetOperationArgs(msg.sender, payload, brokerSignature, otpSignature));
+        _requireValidInput(msg.sender, DEPOSIT_TYPE, payload, brokerSignature, otpSignature);
+        return _deposit_interactions(AssetOperationArgs(msg.sender, payload, brokerSignature));
     }
 
     /**
@@ -130,10 +102,10 @@ contract VaultImpl is VaultImplBase, IVault {
      * @param args Deposit args object.
      * @return bool Return 'true' if deposited successfully.
      */
-    function _deposit(
+    function _deposit_interactions(
         // to avoid 'Stack too deep' error
         AssetOperationArgs memory args
-    ) internal onlyValidSignatures(args.account, DEPOSIT_TYPE, args.payload, args.brokerSignature, args.otpSignature) returns (bool) {
+    ) internal returns (bool) {
         bytes32 sigHash = keccak256(args.brokerSignature);
         (bytes32 rid, , address from, Allocation[] memory assets) = _extractPayload(args.account, sigHash, args.payload);
 
@@ -162,7 +134,8 @@ contract VaultImpl is VaultImplBase, IVault {
         bytes calldata brokerSignature,
         bytes calldata otpSignature
     ) external payable returns (bool) {
-        return _withdraw(AssetOperationArgs(msg.sender, payload, brokerSignature, otpSignature));
+        _requireValidInput(msg.sender, WITHDRAW_TYPE, payload, brokerSignature, otpSignature);
+        return _withdraw_interactions(AssetOperationArgs(msg.sender, payload, brokerSignature));
     }
 
     /**
@@ -170,10 +143,10 @@ contract VaultImpl is VaultImplBase, IVault {
      * @param args Withdraw args object.
      * @return bool Return 'true' if withdrawn successfully.
      */
-    function _withdraw(
+    function _withdraw_interactions(
         // to avoid 'Stack too deep' error
         AssetOperationArgs memory args
-    ) internal onlyValidSignatures(args.account, WITHDRAW_TYPE, args.payload, args.brokerSignature, args.otpSignature) returns (bool) {
+    ) internal returns (bool) {
         bytes32 sigHash = keccak256(args.brokerSignature);
         (bytes32 rid, , address destination, Allocation[] memory assets) = _extractPayload(args.account, sigHash, args.payload);
 
@@ -186,6 +159,33 @@ contract VaultImpl is VaultImplBase, IVault {
         }
 
         return true;
+    }
+
+    /**
+     * @notice Check supplied signatures to be indeed signed by Broker and OTP service.
+     * @param account Account address to check.
+     * @param action Action type. One of DEPOSIT_TYPE and WITHDRAW_TYPE.
+     * @param payload Encoded payload, which consists of rid (unique identifier id), expire timestamp, destination address and an array of allocations.
+     * @param brokerSignature Broker signature.
+     * @param otpSignature OTP signature.
+     */
+    function _requireValidInput(
+        address account,
+        bytes32 action,
+        bytes memory payload,
+        bytes memory brokerSignature,
+        bytes memory otpSignature
+    ) internal view {
+        require(account != address(0), 'Vault: account is zero address');
+        require(action != 0, 'Vault: action is required');
+
+        bytes32 digest = ECDSA.toEthSignedMessageHash(
+            keccak256(abi.encodePacked(action, payload))
+        );
+        address recoveredBrokerAddress = ECDSA.recover(digest, brokerSignature);
+        require(recoveredBrokerAddress == _brokerKeyDerivedAddress, 'Vault: invalid broker signature');
+        address recoveredOTPAddress = ECDSA.recover(digest, otpSignature);
+        require(recoveredOTPAddress == _otpKeyDerivedAddress, 'Vault: invalid OTP signature');
     }
 
     /**
