@@ -94,29 +94,32 @@ contract VaultImpl is VaultImplBase, IVault {
         bytes calldata otpSignature
     ) external payable returns (bool) {
         _requireValidInput(msg.sender, DEPOSIT_TYPE, payload, brokerSignature, otpSignature);
-        return _deposit_interactions(AssetOperationArgs(msg.sender, payload, brokerSignature));
+        return _deposit_interactions(msg.sender, payload, brokerSignature);
     }
 
     /**
-     * @notice Internal deposit process.
-     * @param args Deposit args object.
+     * @notice Deposit interactions. Internal function.
+     * @param account User issuer address.
+     * @param payload Encoded payload, which consists of rid (unique identifier id), expire timestamp, destination address and an array of allocations.
+     * @param brokerSignature Payload signed by the Broker.
      * @return bool Return 'true' if deposited successfully.
      */
     function _deposit_interactions(
-        // to avoid 'Stack too deep' error
-        AssetOperationArgs memory args
+        address account,
+        bytes memory payload,
+        bytes memory brokerSignature
     ) internal returns (bool) {
-        bytes32 sigHash = keccak256(args.brokerSignature);
-        (bytes32 rid, , address from, Allocation[] memory assets) = _extractPayload(args.account, sigHash, args.payload);
+        bytes32 sigHash = keccak256(brokerSignature);
+        (bytes32 rid, , address from, Allocation[] memory assets) = _extractPayload(account, sigHash, payload);
 
-        require(from == args.account, 'Vault: invalid destination');
+        require(from == account, 'Vault: invalid destination');
 
-        _sigUsage[args.account][sigHash] = true;
+        _sigUsage[account][sigHash] = true;
 
         for (uint256 i = 0; i < assets.length; i++) {
-            _transferAssetFrom(assets[i].asset, args.account, assets[i].amount);
+            _transferAssetFrom(assets[i].asset, account, assets[i].amount);
             _ledgerId.increment();
-            emit Deposited(_ledgerId.current(), args.account, assets[i].asset, assets[i].amount, rid);
+            emit Deposited(_ledgerId.current(), account, assets[i].asset, assets[i].amount, rid);
         }
 
         return true;
@@ -135,22 +138,25 @@ contract VaultImpl is VaultImplBase, IVault {
         bytes calldata otpSignature
     ) external payable returns (bool) {
         _requireValidInput(msg.sender, WITHDRAW_TYPE, payload, brokerSignature, otpSignature);
-        return _withdraw_interactions(AssetOperationArgs(msg.sender, payload, brokerSignature));
+        return _withdraw_interactions(msg.sender, payload, brokerSignature);
     }
 
     /**
-     * Internal withdraw process.
-     * @param args Withdraw args object.
+     * Withdraw interactions. Internal method.
+     * @param account User issuer address.
+     * @param payload Encoded payload, which consists of rid (unique identifier id), expire timestamp, destination address and an array of allocations.
+     * @param brokerSignature Payload signed by the Broker.
      * @return bool Return 'true' if withdrawn successfully.
      */
     function _withdraw_interactions(
-        // to avoid 'Stack too deep' error
-        AssetOperationArgs memory args
+        address account,
+        bytes memory payload,
+        bytes memory brokerSignature
     ) internal returns (bool) {
-        bytes32 sigHash = keccak256(args.brokerSignature);
-        (bytes32 rid, , address destination, Allocation[] memory assets) = _extractPayload(args.account, sigHash, args.payload);
+        bytes32 sigHash = keccak256(brokerSignature);
+        (bytes32 rid, , address destination, Allocation[] memory assets) = _extractPayload(account, sigHash, payload);
 
-        _sigUsage[args.account][sigHash] = true;
+        _sigUsage[account][sigHash] = true;
 
         for (uint256 i = 0; i < assets.length; i++) {
             _transferAssetTo(assets[i].asset, destination, assets[i].amount);

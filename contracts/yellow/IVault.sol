@@ -13,12 +13,6 @@ interface IVault {
         uint256 amount;
     }
 
-    struct AssetOperationArgs {
-        address account;
-        bytes payload;
-        bytes brokerSignature;
-    }
-
     // ======================
     // Functions
     // ======================
