@@ -212,6 +212,7 @@ contract VaultImpl is VaultImplBase, IVault {
         );
 
         require(expire > block.timestamp, 'Vault: request is expired'); //solhint-disable-line not-rely-on-time
+        require(destination != address(0), 'Vault: destination is zero address');
         require(!_sigUsage[account][sigHash], 'Vault: signature has been used');
 
         for (uint256 i = 0; i < assets.length; i++) {
