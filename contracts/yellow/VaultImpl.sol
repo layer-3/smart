@@ -23,7 +23,6 @@ contract VaultImpl is VaultImplBase, IVault {
      */
     bytes32 public constant WITHDRAW_TYPE = keccak256('CUSTODY_WITHDRAW_TYPE');
 
-    string private _name;
     // Not a real address, only public key exists.
     address private _brokerKeyDerivedAddress;
     // Not a real address, only public key exists.
@@ -65,22 +64,12 @@ contract VaultImpl is VaultImplBase, IVault {
 
     /**
      * The constructor function sets the contract name and broker's address.
-     * @param name_ Contract name.
      * @param brokerKeyDerivedAddress_ Address derived from Broker public key.
      * @param otpKeyDerivedAddress_ Address derived from OTP public key.
      */
-    constructor(string memory name_, address brokerKeyDerivedAddress_, address otpKeyDerivedAddress_) {
-        _name = name_;
+    constructor(address brokerKeyDerivedAddress_, address otpKeyDerivedAddress_) {
         _brokerKeyDerivedAddress = brokerKeyDerivedAddress_;
         _otpKeyDerivedAddress = otpKeyDerivedAddress_;
-    }
-
-    /**
-     * @notice Get contract name.
-     * @return string Contract name.
-     */
-    function name() public view virtual returns (string memory) {
-        return _name;
     }
 
     /**
@@ -103,7 +92,7 @@ contract VaultImpl is VaultImplBase, IVault {
       require(recoveredBrokerDerivedKey == _brokerKeyDerivedAddress, 'Vault: signer is not broker');
       _brokerKeyDerivedAddress = recoveredBrokerDerivedKey;
 
-      emit BrokerKeyDerivedAddressSet();
+      emit BrokerKeyDerivedAddressSet(recoveredBrokerDerivedKey);
     }
 
     /**
@@ -118,7 +107,7 @@ contract VaultImpl is VaultImplBase, IVault {
       require(recoveredOTPDerivedKey == _otpKeyDerivedAddress, 'Vault: signer is not otp');
       _otpKeyDerivedAddress = recoveredOTPDerivedKey;
 
-      emit OTPKeyDerivedAddressSet();
+      emit OTPKeyDerivedAddressSet(recoveredOTPDerivedKey);
     }
 
     /**
@@ -130,9 +119,9 @@ contract VaultImpl is VaultImplBase, IVault {
      */
     function deposit(
         bytes calldata payload,
-        bytes memory brokerSignature,
-        bytes memory otpSignature
-    ) public payable returns (bool) {
+        bytes calldata brokerSignature,
+        bytes calldata otpSignature
+    ) external payable returns (bool) {
         return _deposit(AssetOperationArgs(msg.sender, payload, brokerSignature, otpSignature));
     }
 
@@ -170,9 +159,9 @@ contract VaultImpl is VaultImplBase, IVault {
      */
     function withdraw(
         bytes calldata payload,
-        bytes memory brokerSignature,
-        bytes memory otpSignature
-    ) public payable returns (bool) {
+        bytes calldata brokerSignature,
+        bytes calldata otpSignature
+    ) external payable returns (bool) {
         return _withdraw(AssetOperationArgs(msg.sender, payload, brokerSignature, otpSignature));
     }
 

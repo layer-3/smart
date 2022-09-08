@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity 0.8.4;
+pragma solidity 0.8.16;
 
 /**
  * @notice IVault is the interface to implement custody.
@@ -23,12 +23,6 @@ interface IVault {
     // ======================
     // Functions
     // ======================
-    /**
-     * Get contract name.
-     * @return string Contract name.
-     */
-    function name() public view returns (string memory);
-
     /**
      * @notice Get last ledger id (deposits and withdrawals id).
      * @return uint256 Ledger id.
@@ -62,7 +56,7 @@ interface IVault {
         bytes calldata payload,
         bytes memory brokerSignature,
         bytes memory otpSignature
-    ) public payable returns (bool);
+    ) external payable returns (bool);
 
     /**
      * @notice Withdraw assets with given payload to the destination specified in the payload. Emits `Withdrawn` event.
@@ -75,7 +69,7 @@ interface IVault {
         bytes calldata payload,
         bytes memory brokerSignature,
         bytes memory otpSignature
-    ) public payable returns (bool);
+    ) external payable returns (bool);
 
     // ======================
     // Events
@@ -99,7 +93,7 @@ interface IVault {
     /**
      * @notice Withdrawn event.
      * @param id Ledger id.
-     * @param destionation Destination address.
+     * @param destination Destination address.
      * @param asset Asset address withdrawn.
      * @param amount Quantity of assets withdrawn.
      * @param rid Request id from broker.
@@ -114,11 +108,13 @@ interface IVault {
 
     /**
      * @notice Address derived from broker's new public key is set.
+     * @param newBrokerKeyDerivedAddress Updated address derived from Broker's public key.
      */
-    event BrokerKeyDerivedAddressSet();
+    event BrokerKeyDerivedAddressSet(address indexed newBrokerKeyDerivedAddress);
 
     /**
      * @notice Address derived from OTP's new public key is set.
+     * @param newOTPKeyDerivedAddress Updated address derived from OTP's public key.
      */
-    event OTPKeyDerivedAddressSet();
+    event OTPKeyDerivedAddressSet(address indexed newOTPKeyDerivedAddress);
 }
