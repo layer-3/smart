@@ -31,18 +31,18 @@ interface IVault {
     function setBrokerVirtualAddress(bytes memory encodedAddress, bytes calldata signature) external;
 
     /**
-     * @notice Set the address derived from the OTP's new public key. Emits `OTPVirtualAddressSet` event.
-     * @dev Supplied payload must be signed by OTP's current public key.
-     * @param encodedAddress Encoded new virtual OTP address.
-     * @param signature New virtual address signed by OTP's current public key.
+     * @notice Set the address derived from the coSigner's new public key. Emits `CoSignerVirtualAddressSet` event.
+     * @dev Supplied payload must be signed by coSigner's current public key.
+     * @param encodedAddress Encoded new virtual coSigner address.
+     * @param signature New virtual address signed by coSigner's current public key.
      */
-    function setOTPVirtualAddress(bytes memory encodedAddress, bytes calldata signature) external;
+    function setCoSignerVirtualAddress(bytes memory encodedAddress, bytes calldata signature) external;
 
     /**
      * @notice Deposit assets with given payload from the caller. Emits `Deposited` event.
      * @param payload Encoded payload, which consists of rid (unique identifier id), expire timestamp, deposit address and an array of allocations.
      * @param brokerSignature Payload signed by the Broker.
-     * @param otpSignature Payload signed by the OTP service.
+     * @param otpSignature Payload signed by the CoSigner service.
      * @return bool Return 'true' if deposited successfully.
      */
     function deposit(
@@ -55,7 +55,7 @@ interface IVault {
      * @notice Withdraw assets with given payload to the destination specified in the payload. Emits `Withdrawn` event.
      * @param payload Encoded payload, which consists of rid (unique identifier id), expire timestamp, destination address and an array of allocations.
      * @param brokerSignature Payload signed by the Broker.
-     * @param otpSignature Payload signed by the OTP service.
+     * @param otpSignature Payload signed by the CoSigner service.
      * @return bool Return 'true' if withdrawn successfully.
      */
     function withdraw(
@@ -106,8 +106,8 @@ interface IVault {
     event BrokerVirtualAddressSet(address indexed newBrokerVirtualAddress);
 
     /**
-     * @notice Address derived from OTP's new public key is set.
-     * @param newOTPVirtualAddress Updated virtual OTP address.
+     * @notice Address derived from CoSigner's new public key is set.
+     * @param newCoSignerVirtualAddress Updated virtual CoSigner address.
      */
-    event OTPVirtualAddressSet(address indexed newOTPVirtualAddress);
+    event CoSignerVirtualAddressSet(address indexed newCoSignerVirtualAddress);
 }

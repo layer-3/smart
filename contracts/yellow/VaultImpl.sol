@@ -26,7 +26,7 @@ contract VaultImpl is VaultImplBase, IVault {
     // Not a real address, only public key exists.
     address private _brokerVirtualAddress;
     // Not a real address, only public key exists.
-    address private _otpVirtualAddress;
+    address private _coSignerVirtualAddress;
 
     Counters.Counter private _ledgerId;
 
@@ -36,11 +36,11 @@ contract VaultImpl is VaultImplBase, IVault {
     /**
      * The constructor function sets the contract name and broker's address.
      * @param brokerVirtualAddress_ Address derived from Broker public key.
-     * @param otpVirtualAddress_ Address derived from OTP public key.
+     * @param coSignerVirtualAddress_ Address derived from coSigner public key.
      */
-    constructor(address brokerVirtualAddress_, address otpVirtualAddress_) {
+    constructor(address brokerVirtualAddress_, address coSignerVirtualAddress_) {
         _brokerVirtualAddress = brokerVirtualAddress_;
-        _otpVirtualAddress = otpVirtualAddress_;
+        _coSignerVirtualAddress = coSignerVirtualAddress_;
     }
 
     /**
@@ -68,34 +68,34 @@ contract VaultImpl is VaultImplBase, IVault {
     }
 
     /**
-     * @notice Set the address derived from the OTP's new public key. Emits `OTPVirtualAddressSet` event.
-     * @dev Supplied payload must be signed by OTP's current public key.
-     * @param encodedAddress Encoded new virtual OTP address.
-     * @param signature New virtual address signed by OTP's current public key.
+     * @notice Set the address derived from the soSigner's new public key. Emits `CoSignerVirtualAddressSet` event.
+     * @dev Supplied payload must be signed by soSigner's current public key.
+     * @param encodedAddress Encoded new virtual soSigner address.
+     * @param signature New virtual address signed by soSigner's current public key.
      */
-    function setOTPVirtualAddress(bytes memory encodedAddress, bytes calldata signature) external {
+    function setCoSignerVirtualAddress(bytes memory encodedAddress, bytes calldata signature) external {
       bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedAddress));
       address recoveredSigner = ECDSA.recover(digest, signature);
-      require(recoveredSigner == _otpVirtualAddress, 'Vault: signer is not otp');
+      require(recoveredSigner == _coSignerVirtualAddress, 'Vault: signer is not coSigner');
 
-      address newOTPVirtualAddress = abi.decode(encodedAddress, (address));
-      _otpVirtualAddress = newOTPVirtualAddress;
-      emit OTPVirtualAddressSet(newOTPVirtualAddress);
+      address newCoSignerVirtualAddress = abi.decode(encodedAddress, (address));
+      _coSignerVirtualAddress = newCoSignerVirtualAddress;
+      emit CoSignerVirtualAddressSet(newCoSignerVirtualAddress);
     }
 
     /**
      * @notice Deposit assets with given payload from the caller. Emits `Deposited` event.
      * @param payload Encoded payload, which consists of rid (unique identifier id), expire timestamp, deposit address and an array of allocations.
      * @param brokerSignature Payload signed by the Broker.
-     * @param otpSignature Payload signed by the OTP service.
+     * @param coSignerSignature Payload signed by the coSigner.
      * @return bool Return 'true' if deposited successfully.
      */
     function deposit(
         bytes calldata payload,
         bytes calldata brokerSignature,
-        bytes calldata otpSignature
+        bytes calldata coSignerSignature
     ) external payable returns (bool) {
-        _requireValidInput(DEPOSIT_TYPE, payload, brokerSignature, otpSignature);
+        _requireValidInput(DEPOSIT_TYPE, payload, brokerSignature, coSignerSignature);
         return _deposit_interactions(msg.sender, payload, brokerSignature);
     }
 
@@ -131,15 +131,15 @@ contract VaultImpl is VaultImplBase, IVault {
      * @notice Withdraw assets with given payload to the destination specified in the payload. Emits `Withdrawn` event.
      * @param payload Encoded payload, which consists of rid (unique identifier id), expire timestamp, destination address and an array of allocations.
      * @param brokerSignature Payload signed by the Broker.
-     * @param otpSignature Payload signed by the OTP service.
+     * @param coSignerSignature Payload signed by the coSigner.
      * @return bool Return 'true' if withdrawn successfully.
      */
     function withdraw(
         bytes calldata payload,
         bytes calldata brokerSignature,
-        bytes calldata otpSignature
+        bytes calldata coSignerSignature
     ) external payable returns (bool) {
-        _requireValidInput(WITHDRAW_TYPE, payload, brokerSignature, otpSignature);
+        _requireValidInput(WITHDRAW_TYPE, payload, brokerSignature, coSignerSignature);
         return _withdraw_interactions(msg.sender, payload, brokerSignature);
     }
 
@@ -170,17 +170,17 @@ contract VaultImpl is VaultImplBase, IVault {
     }
 
     /**
-     * @notice Check supplied signatures to be indeed signed by Broker and OTP service.
+     * @notice Check supplied signatures to be indeed signed by Broker and CoSigner service.
      * @param action Action type. One of DEPOSIT_TYPE and WITHDRAW_TYPE.
      * @param payload Encoded payload, which consists of rid (unique identifier id), expire timestamp, destination address and an array of allocations.
      * @param brokerSignature Broker signature.
-     * @param otpSignature OTP signature.
+     * @param coSignerSignature CoSigner signature.
      */
     function _requireValidInput(
         bytes32 action,
         bytes memory payload,
         bytes memory brokerSignature,
-        bytes memory otpSignature
+        bytes memory coSignerSignature
     ) internal view {
         require(action != 0, 'Vault: action is required');
 
@@ -189,8 +189,8 @@ contract VaultImpl is VaultImplBase, IVault {
         );
         address recoveredBrokerAddress = ECDSA.recover(digest, brokerSignature);
         require(recoveredBrokerAddress == _brokerVirtualAddress, 'Vault: invalid broker signature');
-        address recoveredOTPAddress = ECDSA.recover(digest, otpSignature);
-        require(recoveredOTPAddress == _otpVirtualAddress, 'Vault: invalid OTP signature');
+        address recoveredCoSignerAddress = ECDSA.recover(digest, coSignerSignature);
+        require(recoveredCoSignerAddress == _coSignerVirtualAddress, 'Vault: invalid coSigner signature');
     }
 
     /**
