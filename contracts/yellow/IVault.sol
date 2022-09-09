@@ -23,20 +23,20 @@ interface IVault {
     function getLastId() external view returns (uint256);
 
     /**
-     * @notice Set the address derived from the broker's new public key. Emits `BrokerKeyDerivedAddressSet` event.
+     * @notice Set the address derived from the broker's new public key. Emits `BrokerVirtualAddressSet` event.
      * @dev Supplied payload must be signed by broker's current public key.
-     * @param encodedAddress Encoded address to set.
-     * @param signature Encoded address signed by broker's current public key.
+     * @param encodedAddress Encoded new virtual broker address.
+     * @param signature New virtual address signed by broker's current public key.
      */
-    function setBrokerKeyDerivedAddress(bytes calldata encodedAddress, bytes calldata signature) external;
+    function setBrokerVirtualAddress(bytes memory encodedAddress, bytes calldata signature) external;
 
     /**
-     * @notice Set the address derived from the OTP's new public key. Emits `OTPKeyDerivedAddressSet` event.
+     * @notice Set the address derived from the OTP's new public key. Emits `OTPVirtualAddressSet` event.
      * @dev Supplied payload must be signed by OTP's current public key.
-     * @param encodedAddress Encoded address to set.
-     * @param signature Encoded address signed by OTP's current public key.
+     * @param encodedAddress Encoded new virtual OTP address.
+     * @param signature New virtual address signed by OTP's current public key.
      */
-    function setOTPKeyDerivedAddress(bytes calldata encodedAddress, bytes calldata signature) external;
+    function setOTPVirtualAddress(bytes memory encodedAddress, bytes calldata signature) external;
 
     /**
      * @notice Deposit assets with given payload from the caller. Emits `Deposited` event.
@@ -101,13 +101,13 @@ interface IVault {
 
     /**
      * @notice Address derived from broker's new public key is set.
-     * @param newBrokerKeyDerivedAddress Updated address derived from Broker's public key.
+     * @param newBrokerVirtualAddress Updated virtual Broker address.
      */
-    event BrokerKeyDerivedAddressSet(address indexed newBrokerKeyDerivedAddress);
+    event BrokerVirtualAddressSet(address indexed newBrokerVirtualAddress);
 
     /**
      * @notice Address derived from OTP's new public key is set.
-     * @param newOTPKeyDerivedAddress Updated address derived from OTP's public key.
+     * @param newOTPVirtualAddress Updated virtual OTP address.
      */
-    event OTPKeyDerivedAddressSet(address indexed newOTPKeyDerivedAddress);
+    event OTPVirtualAddressSet(address indexed newOTPVirtualAddress);
 }

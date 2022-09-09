@@ -24,9 +24,9 @@ contract VaultImpl is VaultImplBase, IVault {
     bytes32 public constant WITHDRAW_TYPE = keccak256('CUSTODY_WITHDRAW_TYPE');
 
     // Not a real address, only public key exists.
-    address private _brokerKeyDerivedAddress;
+    address private _brokerVirtualAddress;
     // Not a real address, only public key exists.
-    address private _otpKeyDerivedAddress;
+    address private _otpVirtualAddress;
 
     Counters.Counter private _ledgerId;
 
@@ -35,12 +35,12 @@ contract VaultImpl is VaultImplBase, IVault {
 
     /**
      * The constructor function sets the contract name and broker's address.
-     * @param brokerKeyDerivedAddress_ Address derived from Broker public key.
-     * @param otpKeyDerivedAddress_ Address derived from OTP public key.
+     * @param brokerVirtualAddress_ Address derived from Broker public key.
+     * @param otpVirtualAddress_ Address derived from OTP public key.
      */
-    constructor(address brokerKeyDerivedAddress_, address otpKeyDerivedAddress_) {
-        _brokerKeyDerivedAddress = brokerKeyDerivedAddress_;
-        _otpKeyDerivedAddress = otpKeyDerivedAddress_;
+    constructor(address brokerVirtualAddress_, address otpVirtualAddress_) {
+        _brokerVirtualAddress = brokerVirtualAddress_;
+        _otpVirtualAddress = otpVirtualAddress_;
     }
 
     /**
@@ -52,33 +52,35 @@ contract VaultImpl is VaultImplBase, IVault {
     }
 
     /**
-     * @notice Set the address derived from the broker's new public key. Emits `BrokerKeyDerivedAddressSet` event.
+     * @notice Set the address derived from the broker's new public key. Emits `BrokerVirtualAddressSet` event.
      * @dev Supplied payload must be signed by broker's current public key.
-     * @param encodedAddress Encoded address to set.
-     * @param signature Encoded address signed by broker's current public key.
+     * @param encodedAddress Encoded new virtual broker address.
+     * @param signature New virtual address signed by broker's current public key.
      */
-    function setBrokerKeyDerivedAddress(bytes calldata encodedAddress, bytes calldata signature) external {
+    function setBrokerVirtualAddress(bytes memory encodedAddress, bytes calldata signature) external {
       bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedAddress));
-      address recoveredBrokerDerivedKey = ECDSA.recover(digest, signature);
-      require(recoveredBrokerDerivedKey == _brokerKeyDerivedAddress, 'Vault: signer is not broker');
-      _brokerKeyDerivedAddress = recoveredBrokerDerivedKey;
+      address recoveredSigner = ECDSA.recover(digest, signature);
+      require(recoveredSigner == _brokerVirtualAddress, 'Vault: signer is not broker');
 
-      emit BrokerKeyDerivedAddressSet(recoveredBrokerDerivedKey);
+      address newBrokerVirtualAddress = abi.decode(encodedAddress, (address));
+      _brokerVirtualAddress = newBrokerVirtualAddress;
+      emit BrokerVirtualAddressSet(newBrokerVirtualAddress);
     }
 
     /**
-     * @notice Set the address derived from the OTP's new public key. Emits `OTPKeyDerivedAddressSet` event.
+     * @notice Set the address derived from the OTP's new public key. Emits `OTPVirtualAddressSet` event.
      * @dev Supplied payload must be signed by OTP's current public key.
-     * @param encodedAddress Encoded address to set.
-     * @param signature Encoded address signed by OTP's current public key.
+     * @param encodedAddress Encoded new virtual OTP address.
+     * @param signature New virtual address signed by OTP's current public key.
      */
-    function setOTPKeyDerivedAddress(bytes calldata encodedAddress, bytes calldata signature) external {
+    function setOTPVirtualAddress(bytes memory encodedAddress, bytes calldata signature) external {
       bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedAddress));
-      address recoveredOTPDerivedKey = ECDSA.recover(digest, signature);
-      require(recoveredOTPDerivedKey == _otpKeyDerivedAddress, 'Vault: signer is not otp');
-      _otpKeyDerivedAddress = recoveredOTPDerivedKey;
+      address recoveredSigner = ECDSA.recover(digest, signature);
+      require(recoveredSigner == _otpVirtualAddress, 'Vault: signer is not otp');
 
-      emit OTPKeyDerivedAddressSet(recoveredOTPDerivedKey);
+      address newOTPVirtualAddress = abi.decode(encodedAddress, (address));
+      _otpVirtualAddress = newOTPVirtualAddress;
+      emit OTPVirtualAddressSet(newOTPVirtualAddress);
     }
 
     /**
@@ -186,9 +188,9 @@ contract VaultImpl is VaultImplBase, IVault {
             keccak256(abi.encodePacked(action, payload))
         );
         address recoveredBrokerAddress = ECDSA.recover(digest, brokerSignature);
-        require(recoveredBrokerAddress == _brokerKeyDerivedAddress, 'Vault: invalid broker signature');
+        require(recoveredBrokerAddress == _brokerVirtualAddress, 'Vault: invalid broker signature');
         address recoveredOTPAddress = ECDSA.recover(digest, otpSignature);
-        require(recoveredOTPAddress == _otpKeyDerivedAddress, 'Vault: invalid OTP signature');
+        require(recoveredOTPAddress == _otpVirtualAddress, 'Vault: invalid OTP signature');
     }
 
     /**
