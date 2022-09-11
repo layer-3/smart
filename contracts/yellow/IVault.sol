@@ -13,6 +13,16 @@ interface IVault {
         uint256 amount;
     }
 
+    struct Payload {
+      bytes32 action;
+      bytes32 rid;
+      uint48 expire;
+      address destination;
+      Allocation[] allocations;
+      address implAddress;
+      uint256 chainId;
+    }
+
     // ======================
     // Functions
     // ======================
@@ -23,7 +33,7 @@ interface IVault {
     function getLastId() external view returns (uint256);
 
     /**
-     * @notice Set the address derived from the broker's new public key. Emits `BrokerVirtualAddressSet` event.
+     * @notice Set broker virtual (only public key it is derived from exists) key for this vault. Emits `BrokerVirtualAddressSet` event.
      * @dev Supplied payload must be signed by broker's current public key.
      * @param encodedAddress Encoded new virtual broker address.
      * @param signature New virtual address signed by broker's current public key.
@@ -31,7 +41,7 @@ interface IVault {
     function setBrokerVirtualAddress(bytes memory encodedAddress, bytes calldata signature) external;
 
     /**
-     * @notice Set the address derived from the coSigner's new public key. Emits `CoSignerVirtualAddressSet` event.
+     * @notice Set coSigner virtual (only public key it is derived from exists) key for this vault. Emits `CoSignerVirtualAddressSet` event.
      * @dev Supplied payload must be signed by coSigner's current public key.
      * @param encodedAddress Encoded new virtual coSigner address.
      * @param signature New virtual address signed by coSigner's current public key.
@@ -39,27 +49,41 @@ interface IVault {
     function setCoSignerVirtualAddress(bytes memory encodedAddress, bytes calldata signature) external;
 
     /**
+     * @notice Get broker virtual (only public key it is derived from exists) key for this vault.
+     * @dev Get broker virtual (only public key it is derived from exists) key for this vault.
+     * @return address Broker virtual key for this vault.
+     */
+    function getBrokerVirtualAddress() external view returns (address);
+
+    /**
+     * @notice Get coSigner virtual (only public key it is derived from exists) key for this vault.
+     * @dev Get coSigner virtual (only public key it is derived from exists) key for this vault.
+     * @return address CoSigner virtual key for this vault.
+     */
+    function getCoSignerVirtualAddress() external view returns (address);
+
+    /**
      * @notice Deposit assets with given payload from the caller. Emits `Deposited` event.
-     * @param payload Encoded payload, which consists of rid (unique identifier id), expire timestamp, deposit address and an array of allocations.
+     * @param encodedPayload Encoded payload, which denotes action to be performed.
      * @param brokerSignature Payload signed by the Broker.
      * @param otpSignature Payload signed by the CoSigner service.
      * @return bool Return 'true' if deposited successfully.
      */
     function deposit(
-        bytes calldata payload,
+        bytes calldata encodedPayload,
         bytes memory brokerSignature,
         bytes memory otpSignature
     ) external payable returns (bool);
 
     /**
      * @notice Withdraw assets with given payload to the destination specified in the payload. Emits `Withdrawn` event.
-     * @param payload Encoded payload, which consists of rid (unique identifier id), expire timestamp, destination address and an array of allocations.
+     * @param encodedPayload Encoded payload, which denotes action to be performed.
      * @param brokerSignature Payload signed by the Broker.
      * @param otpSignature Payload signed by the CoSigner service.
      * @return bool Return 'true' if withdrawn successfully.
      */
     function withdraw(
-        bytes calldata payload,
+        bytes calldata encodedPayload,
         bytes memory brokerSignature,
         bytes memory otpSignature
     ) external payable returns (bool);
