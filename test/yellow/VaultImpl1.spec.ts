@@ -15,20 +15,24 @@ describe('Vault implementation', () => {
   let someother: SignerWithAddress;
   let broker1: SignerWithAddress;
   let broker2: SignerWithAddress;
-  let otp1: SignerWithAddress;
-  let otp2: SignerWithAddress;
+  let coSigner1: SignerWithAddress;
+  let coSigner2: SignerWithAddress;
 
   let VaultProxy1: Contract & TESTVaultProxy;
   let VaultImpl: Contract & VaultImplT;
 
   beforeEach(async () => {
     const VaultImplFactory = await ethers.getContractFactory('VaultImpl');
-    const VaultImplDirect = await VaultImplFactory.connect(implAdmin).deploy();
+    const VaultImplDirect = await VaultImplFactory.connect(implAdmin).deploy(
+      broker1.address,
+      coSigner1.address
+    );
     await VaultImplDirect.deployed();
 
     const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
-    VaultProxy1 = (await VaultProxyFactory.connect(proxyAdmin).deploy()) as Contract &
-      TESTVaultProxy;
+    VaultProxy1 = (await VaultProxyFactory.connect(proxyAdmin).deploy(
+      VaultImplDirect.address
+    )) as Contract & TESTVaultProxy;
     await VaultProxy1.deployed();
 
     // proxied implementation
@@ -37,7 +41,7 @@ describe('Vault implementation', () => {
   });
 
   before(async () => {
-    [implAdmin, proxyAdmin, someone, someother, broker1, broker2, otp1, otp2] =
+    [implAdmin, proxyAdmin, someone, someother, broker1, broker2, coSigner1, coSigner2] =
       await ethers.getSigners();
   });
 
@@ -45,20 +49,45 @@ describe('Vault implementation', () => {
     // ======================
     // derived addresses
     // ======================
-    describe('derived addresses', () => {
-      it('broker can set broker derived address', async () => {
+    describe.only('derived addresses', () => {
+      it.only('broker virtual address is set after initialization', async () => {
+        expect(await VaultImpl.connect(someone).getBrokerVirtualAddress()).to.equal(
+          broker1.address
+        );
+      });
+
+      it.only('coSigner virtual address is set after initialization', async () => {
         //todo
       });
 
-      it('otp can set otp derived address', async () => {
+      it.only('can set broker virtual address with broker sig', async () => {
+        const msg = ethers.utils.defaultAbiCoder.encode(['address'], [broker2.address]);
+        const msgHash = ethers.utils.keccak256(msg);
+        const msgHashBytes = ethers.utils.arrayify(msgHash);
+        const sig = await broker1.signMessage(msgHashBytes);
+
+        console.log('broker1', broker1.address);
+        console.log('msg', msg);
+        console.log('msgHash', msgHash);
+        console.log('sig', sig);
+
+        // should not revert
+        await VaultImpl.connect(someone).setBrokerKeyDerivedAddress(msg, sig);
+      });
+
+      it('can set coSigner virtual address with coSigner sig', async () => {
+        const encodedAddress = ethers.utils.defaultAbiCoder.encode(['address'], [coSigner2.address]);
+        const sig = await coSigner1.signMessage(encodedAddress);
+
+        // should not revert
+        await VaultImpl.connect(someone).setBrokerKeyDerivedAddress(encodedAddress, sig);
+      });
+
+      it('revert on set broker virtual address with not broker sig', async () => {
         //todo
       });
 
-      it('revert on not broker set broker derived address', async () => {
-        //todo
-      });
-
-      it('revert on not otp set otp derived address', async () => {
+      it('revert on set coSigner virtual address with not coSigner sig', async () => {
         //todo
       });
     });
@@ -153,6 +182,10 @@ describe('Vault implementation', () => {
       });
 
       it('revert when broker and otp signatures are swapped', async () => {
+        //todo
+      });
+
+      it('revert when withdrowing with anothers signature', async () => {
         //todo
       });
     });
