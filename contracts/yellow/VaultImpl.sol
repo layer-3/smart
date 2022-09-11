@@ -57,14 +57,16 @@ contract VaultImpl is VaultImplBase, IVault {
      * @param encodedAddress Encoded new virtual broker address.
      * @param signature New virtual address signed by broker's current public key.
      */
-    function setBrokerVirtualAddress(bytes memory encodedAddress, bytes calldata signature) external {
-      bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedAddress));
-      address recoveredSigner = ECDSA.recover(digest, signature);
-      require(recoveredSigner == _brokerVirtualAddress, 'Vault: signer is not broker');
+    function setBrokerVirtualAddress(bytes memory encodedAddress, bytes calldata signature)
+        external
+    {
+        bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedAddress));
+        address recoveredSigner = ECDSA.recover(digest, signature);
+        require(recoveredSigner == _brokerVirtualAddress, 'Vault: signer is not broker');
 
-      address newBrokerVirtualAddress = abi.decode(encodedAddress, (address));
-      _brokerVirtualAddress = newBrokerVirtualAddress;
-      emit BrokerVirtualAddressSet(newBrokerVirtualAddress);
+        address newBrokerVirtualAddress = abi.decode(encodedAddress, (address));
+        _brokerVirtualAddress = newBrokerVirtualAddress;
+        emit BrokerVirtualAddressSet(newBrokerVirtualAddress);
     }
 
     /**
@@ -73,14 +75,16 @@ contract VaultImpl is VaultImplBase, IVault {
      * @param encodedAddress Encoded new virtual soSigner address.
      * @param signature New virtual address signed by soSigner's current public key.
      */
-    function setCoSignerVirtualAddress(bytes memory encodedAddress, bytes calldata signature) external {
-      bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedAddress));
-      address recoveredSigner = ECDSA.recover(digest, signature);
-      require(recoveredSigner == _coSignerVirtualAddress, 'Vault: signer is not coSigner');
+    function setCoSignerVirtualAddress(bytes memory encodedAddress, bytes calldata signature)
+        external
+    {
+        bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedAddress));
+        address recoveredSigner = ECDSA.recover(digest, signature);
+        require(recoveredSigner == _coSignerVirtualAddress, 'Vault: signer is not coSigner');
 
-      address newCoSignerVirtualAddress = abi.decode(encodedAddress, (address));
-      _coSignerVirtualAddress = newCoSignerVirtualAddress;
-      emit CoSignerVirtualAddressSet(newCoSignerVirtualAddress);
+        address newCoSignerVirtualAddress = abi.decode(encodedAddress, (address));
+        _coSignerVirtualAddress = newCoSignerVirtualAddress;
+        emit CoSignerVirtualAddressSet(newCoSignerVirtualAddress);
     }
 
     /**
@@ -89,7 +93,7 @@ contract VaultImpl is VaultImplBase, IVault {
      * @return address Broker virtual (only public key it is derived from exists) key.
      */
     function getBrokerVirtualAddress() external view returns (address) {
-      return _brokerVirtualAddress;
+        return _brokerVirtualAddress;
     }
 
     /**
@@ -98,7 +102,7 @@ contract VaultImpl is VaultImplBase, IVault {
      * @return address CoSigner virtual (only public key it is derived from exists) key.
      */
     function getCoSignerVirtualAddress() external view returns (address) {
-      return _coSignerVirtualAddress;
+        return _coSignerVirtualAddress;
     }
 
     /**
@@ -114,8 +118,20 @@ contract VaultImpl is VaultImplBase, IVault {
         bytes calldata coSignerSignature
     ) external payable returns (bool) {
         address issuer = msg.sender;
-        (bytes32 rid, address destination, Allocation[] memory allocations) = _deposit_checks(encodedPayload, issuer, brokerSignature, coSignerSignature);
-        return _deposit_effects_and_interactions(issuer, rid, destination, allocations, brokerSignature);
+        (bytes32 rid, address destination, Allocation[] memory allocations) = _deposit_checks(
+            encodedPayload,
+            issuer,
+            brokerSignature,
+            coSignerSignature
+        );
+        return
+            _deposit_effects_and_interactions(
+                issuer,
+                rid,
+                destination,
+                allocations,
+                brokerSignature
+            );
     }
 
     /**
@@ -130,19 +146,32 @@ contract VaultImpl is VaultImplBase, IVault {
      * @return Asset Array of allocations.
      */
     function _deposit_checks(
-      bytes memory encodedPayload,
-      address issuer,
-      bytes memory brokerSignature,
-      bytes memory coSignerSignature
-    ) internal view returns(bytes32, address, Allocation[] memory) {
-      _requireSigNotUsed(issuer, brokerSignature);
-      _requireValidSignatures(encodedPayload, brokerSignature, coSignerSignature);
+        bytes memory encodedPayload,
+        address issuer,
+        bytes memory brokerSignature,
+        bytes memory coSignerSignature
+    )
+        internal
+        view
+        returns (
+            bytes32,
+            address,
+            Allocation[] memory
+        )
+    {
+        _requireSigNotUsed(issuer, brokerSignature);
+        _requireValidSignatures(encodedPayload, brokerSignature, coSignerSignature);
 
-      (bytes32 action, bytes32 rid, address destination, Allocation[] memory allocations) = _payload_decode_and_checks(encodedPayload);
-      require(action == DEPOSIT_ACTION, 'Vault: invalid action');
-      require(destination == issuer, 'Vault: invalid destination');
+        (
+            bytes32 action,
+            bytes32 rid,
+            address destination,
+            Allocation[] memory allocations
+        ) = _payload_decode_and_checks(encodedPayload);
+        require(action == DEPOSIT_ACTION, 'Vault: invalid action');
+        require(destination == issuer, 'Vault: invalid destination');
 
-      return (rid, destination, allocations);
+        return (rid, destination, allocations);
     }
 
     /**
@@ -170,7 +199,13 @@ contract VaultImpl is VaultImplBase, IVault {
         for (uint256 i = 0; i < allocations.length; i++) {
             _transferAssetFrom(allocations[i].asset, destination, allocations[i].amount);
             _ledgerId.increment();
-            emit Deposited(_ledgerId.current(), destination, allocations[i].asset, allocations[i].amount, rid);
+            emit Deposited(
+                _ledgerId.current(),
+                destination,
+                allocations[i].asset,
+                allocations[i].amount,
+                rid
+            );
         }
 
         return true;
@@ -189,8 +224,20 @@ contract VaultImpl is VaultImplBase, IVault {
         bytes calldata coSignerSignature
     ) external payable returns (bool) {
         address issuer = msg.sender;
-        (bytes32 rid, address destination, Allocation[] memory allocations) = _withdraw_checks(encodedPayload, issuer, brokerSignature, coSignerSignature);
-        return _withdraw_effects_and_interactions(issuer, rid, destination, allocations, brokerSignature);
+        (bytes32 rid, address destination, Allocation[] memory allocations) = _withdraw_checks(
+            encodedPayload,
+            issuer,
+            brokerSignature,
+            coSignerSignature
+        );
+        return
+            _withdraw_effects_and_interactions(
+                issuer,
+                rid,
+                destination,
+                allocations,
+                brokerSignature
+            );
     }
 
     /**
@@ -205,18 +252,31 @@ contract VaultImpl is VaultImplBase, IVault {
      * @return Asset Array of allocations.
      */
     function _withdraw_checks(
-      bytes memory encodedPayload,
-      address issuer,
-      bytes memory brokerSignature,
-      bytes memory coSignerSignature
-    ) internal view returns(bytes32, address, Allocation[] memory) {
-      _requireSigNotUsed(issuer, brokerSignature);
-      _requireValidSignatures(encodedPayload, brokerSignature, coSignerSignature);
+        bytes memory encodedPayload,
+        address issuer,
+        bytes memory brokerSignature,
+        bytes memory coSignerSignature
+    )
+        internal
+        view
+        returns (
+            bytes32,
+            address,
+            Allocation[] memory
+        )
+    {
+        _requireSigNotUsed(issuer, brokerSignature);
+        _requireValidSignatures(encodedPayload, brokerSignature, coSignerSignature);
 
-      (bytes32 action, bytes32 rid, address destination, Allocation[] memory allocations) = _payload_decode_and_checks(encodedPayload);
-      require(action == WITHDRAW_ACTION, 'Vault: invalid action');
+        (
+            bytes32 action,
+            bytes32 rid,
+            address destination,
+            Allocation[] memory allocations
+        ) = _payload_decode_and_checks(encodedPayload);
+        require(action == WITHDRAW_ACTION, 'Vault: invalid action');
 
-      return (rid, destination, allocations);
+        return (rid, destination, allocations);
     }
 
     /**
@@ -244,7 +304,13 @@ contract VaultImpl is VaultImplBase, IVault {
         for (uint256 i = 0; i < allocations.length; i++) {
             _transferAssetTo(allocations[i].asset, destination, allocations[i].amount);
             _ledgerId.increment();
-            emit Withdrawn(_ledgerId.current(), destination, allocations[i].asset, allocations[i].amount, rid);
+            emit Withdrawn(
+                _ledgerId.current(),
+                destination,
+                allocations[i].asset,
+                allocations[i].amount,
+                rid
+            );
         }
 
         return true;
@@ -257,7 +323,7 @@ contract VaultImpl is VaultImplBase, IVault {
      * @param signature Signature used as identifier for action requested from vault.
      */
     function _requireSigNotUsed(address issuer, bytes memory signature) internal view {
-      require(!_sigUsage[issuer][keccak256(signature)], 'Vault: sig already used');
+        require(!_sigUsage[issuer][keccak256(signature)], 'Vault: sig already used');
     }
 
     /**
@@ -276,7 +342,10 @@ contract VaultImpl is VaultImplBase, IVault {
         address recoveredBrokerAddress = ECDSA.recover(digest, brokerSignature);
         require(recoveredBrokerAddress == _brokerVirtualAddress, 'Vault: invalid broker signature');
         address recoveredCoSignerAddress = ECDSA.recover(digest, coSignerSignature);
-        require(recoveredCoSignerAddress == _coSignerVirtualAddress, 'Vault: invalid coSigner signature');
+        require(
+            recoveredCoSignerAddress == _coSignerVirtualAddress,
+            'Vault: invalid coSigner signature'
+        );
     }
 
     /**
@@ -288,13 +357,17 @@ contract VaultImpl is VaultImplBase, IVault {
      * @return address Destination address.
      * @return Asset Array of allocations.
      */
-    function _payload_decode_and_checks(
-        bytes memory encodedPayload
-    ) internal view returns (bytes32, bytes32, address, Allocation[] memory) {
-        Payload memory payload = abi.decode(
-            encodedPayload,
-            (Payload)
-        );
+    function _payload_decode_and_checks(bytes memory encodedPayload)
+        internal
+        view
+        returns (
+            bytes32,
+            bytes32,
+            address,
+            Allocation[] memory
+        )
+    {
+        Payload memory payload = abi.decode(encodedPayload, (Payload));
 
         require(payload.expire > block.timestamp, 'Vault: request is expired'); //solhint-disable-line not-rely-on-time
         require(payload.destination != address(0), 'Vault: destination is zero address');
