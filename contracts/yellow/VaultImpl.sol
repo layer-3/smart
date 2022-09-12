@@ -13,6 +13,8 @@ import './IVault.sol';
 contract VaultImpl is VaultImplBase, IVault {
     using Counters for Counters.Counter;
 
+    bool private isSetup = false;
+
     /**
      * Deposit type identifier value.
      */
@@ -34,17 +36,22 @@ contract VaultImpl is VaultImplBase, IVault {
     mapping(address => mapping(bytes32 => bool)) private _sigUsage;
 
     /**
-     * The constructor function sets the contract name and broker's address.
-     * @param brokerVirtualAddress_ Address derived from Broker public key.
-     * @param coSignerVirtualAddress_ Address derived from coSigner public key.
+     * The setup function sets virtual addresses of the broker and coSigner.
+     * @param brokerVirtualAddress Address derived from broker public key.
+     * @param coSignerVirtualAddress Address derived from coSigner public key.
      */
-    constructor(address brokerVirtualAddress_, address coSignerVirtualAddress_) {
-        _brokerVirtualAddress = brokerVirtualAddress_;
-        _coSignerVirtualAddress = coSignerVirtualAddress_;
+    function setup(address brokerVirtualAddress, address coSignerVirtualAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+      require(!isSetup, 'Vault: vault is already setup');
+
+      isSetup = true;
+
+      _brokerVirtualAddress = brokerVirtualAddress;
+      _coSignerVirtualAddress = coSignerVirtualAddress;
     }
 
     /**
      * @notice Get last ledger id (deposits and withdrawals id).
+     * @dev Get last ledger id (deposits and withdrawals id).
      * @return uint256 Ledger id.
      */
     function getLastId() external view override returns (uint256) {
