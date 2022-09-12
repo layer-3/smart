@@ -41,7 +41,7 @@ contract VaultImpl is VaultImplBase, IVault {
      * @param coSignerVirtualAddress Address derived from coSigner public key.
      */
     function setup(address brokerVirtualAddress, address coSignerVirtualAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
-      require(!isSetup, 'Vault: vault is already setup');
+      require(!isSetup, 'Vault is already setup');
 
       isSetup = true;
 
@@ -69,7 +69,7 @@ contract VaultImpl is VaultImplBase, IVault {
     {
         bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedAddress));
         address recoveredSigner = ECDSA.recover(digest, signature);
-        require(recoveredSigner == _brokerVirtualAddress, 'Vault: signer is not broker');
+        require(recoveredSigner == _brokerVirtualAddress, 'Signer is not broker');
 
         address newBrokerVirtualAddress = abi.decode(encodedAddress, (address));
         _brokerVirtualAddress = newBrokerVirtualAddress;
@@ -87,7 +87,7 @@ contract VaultImpl is VaultImplBase, IVault {
     {
         bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedAddress));
         address recoveredSigner = ECDSA.recover(digest, signature);
-        require(recoveredSigner == _coSignerVirtualAddress, 'Vault: signer is not coSigner');
+        require(recoveredSigner == _coSignerVirtualAddress, 'Signer is not coSigner');
 
         address newCoSignerVirtualAddress = abi.decode(encodedAddress, (address));
         _coSignerVirtualAddress = newCoSignerVirtualAddress;
@@ -139,8 +139,8 @@ contract VaultImpl is VaultImplBase, IVault {
         // check payload
         _checkPayload(payload);
 
-        require(payload.action == DEPOSIT_ACTION, 'Vault: invalid action');
-        require(payload.destination == issuer, 'Vault: invalid destination');
+        require(payload.action == DEPOSIT_ACTION, 'Invalid action');
+        require(payload.destination == issuer, 'Invalid destination');
 
         // use signatures
         _useSignature(issuer, brokerSignature);
@@ -193,7 +193,7 @@ contract VaultImpl is VaultImplBase, IVault {
         // check payload
         _checkPayload(payload);
 
-        require(payload.action == WITHDRAW_ACTION, 'Vault: invalid action');
+        require(payload.action == WITHDRAW_ACTION, 'Invalid action');
 
         // use signatures
         _useSignature(issuer, brokerSignature);
@@ -226,7 +226,7 @@ contract VaultImpl is VaultImplBase, IVault {
      * @param signature Signature used as identifier for action requested from vault.
      */
     function _requireSigNotUsed(address issuer, bytes memory signature) internal view {
-        require(!_sigUsage[issuer][keccak256(signature)], 'Vault: sig already used');
+        require(!_sigUsage[issuer][keccak256(signature)], 'Sig already used');
     }
 
     /**
@@ -244,7 +244,7 @@ contract VaultImpl is VaultImplBase, IVault {
         bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedPayload));
 
         address recoveredSigner = ECDSA.recover(digest, signature);
-        require(recoveredSigner == signer, 'Vault: invalid signature');
+        require(recoveredSigner == signer, 'invalid signature');
     }
 
     /**
@@ -253,15 +253,15 @@ contract VaultImpl is VaultImplBase, IVault {
      * @param payload Payload structure, which denotes action to be performed.
      */
     function _checkPayload(Payload memory payload) internal view {
-        require(payload.expire > block.timestamp, 'Vault: request is expired'); //solhint-disable-line not-rely-on-time
-        require(payload.destination != address(0), 'Vault: destination is zero address');
+        require(payload.expire > block.timestamp, 'Request is expired'); //solhint-disable-line not-rely-on-time
+        require(payload.destination != address(0), 'Destination is zero address');
 
         for (uint256 i = 0; i < payload.allocations.length; i++) {
-            require(payload.allocations[i].amount > 0, 'Vault: amount is zero');
+            require(payload.allocations[i].amount > 0, 'Amount is zero');
         }
 
-        require(payload.implAddress == address(this), 'Vault: invalid vault address');
-        require(payload.chainId == getChainId(), 'Vault: incorrect chain id');
+        require(payload.implAddress == address(this), 'Invalid vault address');
+        require(payload.chainId == getChainId(), 'Incorrect chain id');
     }
 
     /**
@@ -287,14 +287,14 @@ contract VaultImpl is VaultImplBase, IVault {
         address from,
         uint256 amount
     ) internal {
-        require(from != address(0), 'Vault: transfer is zero address');
+        require(from != address(0), 'Transfer is zero address');
         if (asset == address(0)) {
-            require(msg.value == amount, 'Vault: incorrect msg.value');
+            require(msg.value == amount, 'Incorrect msg.value');
         } else {
             // require successful deposit before updating holdings (protect against reentrancy)
             require(
                 IERC20(asset).transferFrom(from, address(this), amount),
-                'Vault: Could not deposit ERC20'
+                'Could not deposit ERC20'
             );
         }
     }
@@ -311,10 +311,10 @@ contract VaultImpl is VaultImplBase, IVault {
         address destination,
         uint256 amount
     ) internal {
-        require(destination != address(0), 'Vault: transfer is zero address');
+        require(destination != address(0), 'Transfer is zero address');
         if (asset == address(0)) {
             (bool success, ) = destination.call{value: amount}(''); //solhint-disable-line avoid-low-level-calls
-            require(success, 'Vault: could not transfer ETH');
+            require(success, 'Could not transfer ETH');
         } else {
             IERC20(asset).transfer(destination, amount);
         }
