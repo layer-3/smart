@@ -21,7 +21,7 @@ contract VaultImpl is VaultImplBase, IVault {
     /**
      * Withdrawal type identifier value.
      */
-    bytes32 public constant WITHDRAW_ACTION = keccak256('YELLOW_VAULT_DEPOSIT_ACTION');
+    bytes32 public constant WITHDRAW_ACTION = keccak256('YELLOW_VAULT_WITHDRAW_ACTION');
 
     // Not a real address, only public key exists.
     address private _brokerVirtualAddress;
