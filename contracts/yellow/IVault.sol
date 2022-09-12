@@ -67,26 +67,24 @@ interface IVault {
      * @param encodedPayload Encoded payload, which denotes action to be performed.
      * @param brokerSignature Payload signed by the Broker.
      * @param otpSignature Payload signed by the CoSigner service.
-     * @return bool Return 'true' if deposited successfully.
      */
     function deposit(
         bytes calldata encodedPayload,
         bytes memory brokerSignature,
         bytes memory otpSignature
-    ) external payable returns (bool);
+    ) external payable;
 
     /**
      * @notice Withdraw assets with given payload to the destination specified in the payload. Emits `Withdrawn` event.
      * @param encodedPayload Encoded payload, which denotes action to be performed.
      * @param brokerSignature Payload signed by the Broker.
      * @param otpSignature Payload signed by the CoSigner service.
-     * @return bool Return 'true' if withdrawn successfully.
      */
     function withdraw(
         bytes calldata encodedPayload,
         bytes memory brokerSignature,
         bytes memory otpSignature
-    ) external payable returns (bool);
+    ) external payable;
 
     // ======================
     // Events

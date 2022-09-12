@@ -107,213 +107,109 @@ contract VaultImpl is VaultImplBase, IVault {
 
     /**
      * @notice Deposit assets with given payload from the caller. Emits `Deposited` event.
+     * @dev Deposit assets with given payload from the caller. Emits `Deposited` event.
      * @param encodedPayload Encoded payload, which denotes action to be performed.
      * @param brokerSignature Payload signed by the broker.
      * @param coSignerSignature Payload signed by the coSigner.
-     * @return bool Return 'true' if deposited successfully.
      */
     function deposit(
         bytes calldata encodedPayload,
         bytes calldata brokerSignature,
         bytes calldata coSignerSignature
-    ) external payable returns (bool) {
+    ) external payable {
         address issuer = msg.sender;
-        (bytes32 rid, address destination, Allocation[] memory allocations) = _deposit_checks(
-            encodedPayload,
-            issuer,
-            brokerSignature,
-            coSignerSignature
-        );
-        return
-            _deposit_effects_and_interactions(
-                issuer,
-                rid,
-                destination,
-                allocations,
-                brokerSignature
-            );
-    }
 
-    /**
-     * @notice Conduct payload decoding, checks and deposit checks, namely whether action specified is deposit action and destination specified is issuer.
-     * @dev Conduct payload decoding, checks and deposit checks, namely whether action specified is deposit action and destination specified is issuer.
-     * @param encodedPayload Encoded payload, which denotes action to be performed.
-     * @param issuer Account invoking the action in the vault.
-     * @param brokerSignature Payload signed by the broker.
-     * @param coSignerSignature Payload signed by the coSigner.
-     * @return bytes32 rid (unique identifier id).
-     * @return address Destination address.
-     * @return Asset Array of allocations.
-     */
-    function _deposit_checks(
-        bytes memory encodedPayload,
-        address issuer,
-        bytes memory brokerSignature,
-        bytes memory coSignerSignature
-    )
-        internal
-        view
-        returns (
-            bytes32,
-            address,
-            Allocation[] memory
-        )
-    {
+        // check signatures
         _requireSigNotUsed(issuer, brokerSignature);
-        _requireValidSignatures(encodedPayload, brokerSignature, coSignerSignature);
+        _requireSigNotUsed(issuer, coSignerSignature);
 
-        (
-            bytes32 action,
-            bytes32 rid,
-            address destination,
-            Allocation[] memory allocations
-        ) = _payload_decode_and_checks(encodedPayload);
-        require(action == DEPOSIT_ACTION, 'Vault: invalid action');
-        require(destination == issuer, 'Vault: invalid destination');
+        _requireValidSignature(encodedPayload, _brokerVirtualAddress, brokerSignature);
+        _requireValidSignature(encodedPayload, _coSignerVirtualAddress, coSignerSignature);
 
-        return (rid, destination, allocations);
-    }
+        // extract payload
+        Payload memory payload = abi.decode(encodedPayload, (Payload));
 
-    /**
-     * @notice Mark the signature as used and transfer assets from destination to the vault.
-     * @dev Mark the signature as used and transfer assets from destination to the vault.
-     * @param issuer User issuer address.
-     * @param rid rid (unique identifier id).
-     * @param destination Destination address.
-     * @param allocations Array of allocations.
-     * @param signature Signature used as identifier for action requested from vault.
-     * @return bool Return 'true' if deposited successfully.
-     */
-    function _deposit_effects_and_interactions(
-        address issuer,
-        bytes32 rid,
-        address destination,
-        Allocation[] memory allocations,
-        bytes memory signature
-    ) internal returns (bool) {
-        // effects
-        bytes32 sigHash = keccak256(signature);
-        _sigUsage[issuer][sigHash] = true;
+        // check payload
+        _checkPayload(payload);
 
-        // interactions
-        for (uint256 i = 0; i < allocations.length; i++) {
-            _transferAssetFrom(allocations[i].asset, destination, allocations[i].amount);
+        require(payload.action == DEPOSIT_ACTION, 'Vault: invalid action');
+        require(payload.destination == issuer, 'Vault: invalid destination');
+
+        // use signatures
+        _useSignature(issuer, brokerSignature);
+        _useSignature(issuer, coSignerSignature);
+
+        // deposit allocations
+        for (uint256 i = 0; i < payload.allocations.length; i++) {
+            _transferAssetFrom(
+                payload.allocations[i].asset,
+                payload.destination,
+                payload.allocations[i].amount
+            );
+
             _ledgerId.increment();
+
             emit Deposited(
                 _ledgerId.current(),
-                destination,
-                allocations[i].asset,
-                allocations[i].amount,
-                rid
+                payload.destination,
+                payload.allocations[i].asset,
+                payload.allocations[i].amount,
+                payload.rid
             );
         }
-
-        return true;
     }
 
     /**
      * @notice Withdraw assets with given payload to the destination specified in the payload. Emits `Withdrawn` event.
+     * @dev Withdraw assets with given payload to the destination specified in the payload. Emits `Withdrawn` event.
      * @param encodedPayload Encoded payload, which denotes action to be performed.
      * @param brokerSignature Payload signed by the Broker.
      * @param coSignerSignature Payload signed by the coSigner.
-     * @return bool Return 'true' if withdrawn successfully.
      */
     function withdraw(
         bytes calldata encodedPayload,
         bytes calldata brokerSignature,
         bytes calldata coSignerSignature
-    ) external payable returns (bool) {
+    ) external payable {
         address issuer = msg.sender;
-        (bytes32 rid, address destination, Allocation[] memory allocations) = _withdraw_checks(
-            encodedPayload,
-            issuer,
-            brokerSignature,
-            coSignerSignature
-        );
-        return
-            _withdraw_effects_and_interactions(
-                issuer,
-                rid,
-                destination,
-                allocations,
-                brokerSignature
-            );
-    }
 
-    /**
-     * @notice Conduct payload decoding, checks and withdraw checks, namely whether action specified is deposit action.
-     * @dev Conduct payload decoding, checks and withdraw checks, namely whether action specified is deposit action.
-     * @param encodedPayload Encoded payload, which denotes action to be performed.
-     * @param issuer Account invoking the action in the vault.
-     * @param brokerSignature Payload signed by the broker.
-     * @param coSignerSignature Payload signed by the coSigner.
-     * @return bytes32 rid (unique identifier id).
-     * @return address Destination address.
-     * @return Asset Array of allocations.
-     */
-    function _withdraw_checks(
-        bytes memory encodedPayload,
-        address issuer,
-        bytes memory brokerSignature,
-        bytes memory coSignerSignature
-    )
-        internal
-        view
-        returns (
-            bytes32,
-            address,
-            Allocation[] memory
-        )
-    {
+        // check signatures
         _requireSigNotUsed(issuer, brokerSignature);
-        _requireValidSignatures(encodedPayload, brokerSignature, coSignerSignature);
+        _requireSigNotUsed(issuer, coSignerSignature);
 
-        (
-            bytes32 action,
-            bytes32 rid,
-            address destination,
-            Allocation[] memory allocations
-        ) = _payload_decode_and_checks(encodedPayload);
-        require(action == WITHDRAW_ACTION, 'Vault: invalid action');
+        _requireValidSignature(encodedPayload, _brokerVirtualAddress, brokerSignature);
+        _requireValidSignature(encodedPayload, _coSignerVirtualAddress, coSignerSignature);
 
-        return (rid, destination, allocations);
-    }
+        // extract payload
+        Payload memory payload = abi.decode(encodedPayload, (Payload));
 
-    /**
-     * @notice Mark the signature as used and transfer assets from the vault to the destination.
-     * @dev Mark the signature as used and transfer assets from the vault to the destination.
-     * @param issuer User issuer address.
-     * @param rid rid (unique identifier id).
-     * @param destination Destination address.
-     * @param allocations Array of allocations.
-     * @param signature Signature used as identifier for action requested from vault.
-     * @return bool Return 'true' if deposited successfully.
-     */
-    function _withdraw_effects_and_interactions(
-        address issuer,
-        bytes32 rid,
-        address destination,
-        Allocation[] memory allocations,
-        bytes memory signature
-    ) internal returns (bool) {
-        // effects
-        bytes32 sigHash = keccak256(signature);
-        _sigUsage[issuer][sigHash] = true;
+        // check payload
+        _checkPayload(payload);
 
-        // interactions
-        for (uint256 i = 0; i < allocations.length; i++) {
-            _transferAssetTo(allocations[i].asset, destination, allocations[i].amount);
+        require(payload.action == WITHDRAW_ACTION, 'Vault: invalid action');
+
+        // use signatures
+        _useSignature(issuer, brokerSignature);
+        _useSignature(issuer, coSignerSignature);
+
+        // withdraw allocations
+        for (uint256 i = 0; i < payload.allocations.length; i++) {
+            _transferAssetTo(
+                payload.allocations[i].asset,
+                payload.destination,
+                payload.allocations[i].amount
+            );
+
             _ledgerId.increment();
+
             emit Withdrawn(
                 _ledgerId.current(),
-                destination,
-                allocations[i].asset,
-                allocations[i].amount,
-                rid
+                payload.destination,
+                payload.allocations[i].asset,
+                payload.allocations[i].amount,
+                payload.rid
             );
         }
-
-        return true;
     }
 
     /**
@@ -327,48 +223,29 @@ contract VaultImpl is VaultImplBase, IVault {
     }
 
     /**
-     * @notice Check supplied signatures to be indeed signed by Broker and CoSigner service.
+     * @notice Check supplied signature to be indeed signed by claimed signer.
+     * @dev Check supplied signature to be indeed signed by claimed signer.
      * @param encodedPayload Encoded payload, which denotes action to be performed.
-     * @param brokerSignature Broker signature.
-     * @param coSignerSignature CoSigner signature.
+     * @param signer Signer claimed to have signed the payload.
+     * @param signature Payload signed by claimed signer.
      */
-    function _requireValidSignatures(
+    function _requireValidSignature(
         bytes memory encodedPayload,
-        bytes memory brokerSignature,
-        bytes memory coSignerSignature
-    ) internal view {
+        address signer,
+        bytes memory signature
+    ) internal pure {
         bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedPayload));
 
-        address recoveredBrokerAddress = ECDSA.recover(digest, brokerSignature);
-        require(recoveredBrokerAddress == _brokerVirtualAddress, 'Vault: invalid broker signature');
-        address recoveredCoSignerAddress = ECDSA.recover(digest, coSignerSignature);
-        require(
-            recoveredCoSignerAddress == _coSignerVirtualAddress,
-            'Vault: invalid coSigner signature'
-        );
+        address recoveredSigner = ECDSA.recover(digest, signature);
+        require(recoveredSigner == signer, 'Vault: invalid signature');
     }
 
     /**
-     * @notice Internal function to extract payload data.
-     * @dev Internal function to extract payload data.
-     * @param encodedPayload Encoded payload, which denotes action to be performed.
-     * @return action Payload action (Deposit or Withdraw).
-     * @return bytes32 rid (unique identifier id).
-     * @return address Destination address.
-     * @return Asset Array of allocations.
+     * @notice Check that payload data is correct: expire timestamp is due, destination is not zero address, there is no zero allocation amount, implementation address specified is this contract and chain id is indeed this chain's id.
+     * @dev Check that payload data is correct: expire timestamp is due, destination is not zero address, there is no zero allocation amount, implementation address specified is this contract and chain id is indeed this chain's id.
+     * @param payload Payload structure, which denotes action to be performed.
      */
-    function _payload_decode_and_checks(bytes memory encodedPayload)
-        internal
-        view
-        returns (
-            bytes32,
-            bytes32,
-            address,
-            Allocation[] memory
-        )
-    {
-        Payload memory payload = abi.decode(encodedPayload, (Payload));
-
+    function _checkPayload(Payload memory payload) internal view {
         require(payload.expire > block.timestamp, 'Vault: request is expired'); //solhint-disable-line not-rely-on-time
         require(payload.destination != address(0), 'Vault: destination is zero address');
 
@@ -376,14 +253,24 @@ contract VaultImpl is VaultImplBase, IVault {
             require(payload.allocations[i].amount > 0, 'Vault: amount is zero');
         }
 
-        require(payload.implAddress == address(this), 'Vault: invalid Vault address');
+        require(payload.implAddress == address(this), 'Vault: invalid vault address');
         require(payload.chainId == getChainId(), 'Vault: incorrect chain id');
-
-        return (payload.action, payload.rid, payload.destination, payload.allocations);
     }
 
     /**
-     * @notice Transfer given amount of this AssetHolders's asset type from a supplied ethereum address.
+     * @notice Mark the signature as used by the issuer.
+     * @dev Mark the signature as used by the issuer.
+     * @param issuer User issuer address.
+     * @param signature Signature used as identifier for action requested from vault.
+     */
+    function _useSignature(address issuer, bytes memory signature) internal {
+        bytes32 sigHash = keccak256(signature);
+        _sigUsage[issuer][sigHash] = true;
+    }
+
+    /**
+     * @notice Transfer given amount of the asset from a supplied address.
+     * @dev Succeed if supplied account has allowed the vault to operate `amount` of their funds.
      * @param asset Asset address to transfer.
      * @param from Ethereum address to be credited.
      * @param amount Quantity of assets to be transferred.
@@ -406,7 +293,8 @@ contract VaultImpl is VaultImplBase, IVault {
     }
 
     /**
-     * @notice Transfer the given amount of this AssetHolders's asset type to a supplied ethereum address.
+     * @notice Transfer the given amount of the asset to a supplied address.
+     * @dev Transfer the given amount of the asset to a supplied address.
      * @param asset Asset address to transfer.
      * @param destination Ethereum address to be credited.
      * @param amount Quantity of assets to be transferred.
