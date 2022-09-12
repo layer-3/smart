@@ -42,6 +42,10 @@ contract VaultImpl is VaultImplBase, IVault {
      * @param coSignerVirtualAddress Address derived from coSigner public key.
      */
     function setup(address brokerVirtualAddress, address coSignerVirtualAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+      require(
+        brokerVirtualAddress != address(0) && coSignerVirtualAddress != address(0),
+        'Invalid virtual address'
+      );
       require(!isSetup, 'Vault is already setup');
 
       isSetup = true;
