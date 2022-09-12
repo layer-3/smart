@@ -36,7 +36,8 @@ contract VaultImpl is VaultImplBase, IVault {
     mapping(address => mapping(bytes32 => bool)) private _sigUsage;
 
     /**
-     * The setup function sets virtual addresses of the broker and coSigner.
+     * @notice The setup function sets virtual addresses of the broker and coSigner.
+     * @dev Require DEFAULT_ADMIN_ROLE to invoke. NOTE: once virtual addresses are set, there is no way to change them if their private key is lost. In such case, vault implementation contract becomes useless and requires an upgrade.
      * @param brokerVirtualAddress Address derived from broker public key.
      * @param coSignerVirtualAddress Address derived from coSigner public key.
      */
