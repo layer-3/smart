@@ -18,8 +18,8 @@ import {
   NOT_MAINTAINER,
   INVALID_NEWER_IMPL,
   ACCOUNT_MISSING_ROLE,
-} from './revert-reasons';
-import {NEWER_IMPL_SET, ROLE_GRANTED, UPGRADED} from './event-names';
+} from './src/revert-reasons';
+import {NEWER_IMPL_SET, ROLE_GRANTED, UPGRADED} from './src/event-names';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
