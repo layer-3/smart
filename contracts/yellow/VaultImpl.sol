@@ -77,6 +77,7 @@ contract VaultImpl is VaultImplBase, IVault {
         require(recoveredSigner == _brokerVirtualAddress, 'Signer is not broker');
 
         address newBrokerVirtualAddress = abi.decode(encodedAddress, (address));
+        require(newBrokerVirtualAddress != address(0),'Invalid virtual address');
         _brokerVirtualAddress = newBrokerVirtualAddress;
         emit BrokerVirtualAddressSet(newBrokerVirtualAddress);
     }
@@ -95,6 +96,7 @@ contract VaultImpl is VaultImplBase, IVault {
         require(recoveredSigner == _coSignerVirtualAddress, 'Signer is not coSigner');
 
         address newCoSignerVirtualAddress = abi.decode(encodedAddress, (address));
+        require(newCoSignerVirtualAddress != address(0),'Invalid virtual address');
         _coSignerVirtualAddress = newCoSignerVirtualAddress;
         emit CoSignerVirtualAddressSet(newCoSignerVirtualAddress);
     }

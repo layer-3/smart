@@ -14,6 +14,7 @@ import {
   VAULT_ALREADY_SETUP,
 } from './src/revert-reasons';
 import {encodeAndSign} from './src/signatures';
+import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET} from './src/event-names';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
@@ -52,52 +53,52 @@ describe('Vault implementation', () => {
       await ethers.getSigners();
   });
 
-  describe('Proxied Vault logic', function () {
+  describe('Proxied Vault logic', () => {
     // ======================
     // virtual addresses
     // ======================
-    describe.only('virtual addresses before setup', function () {
+    describe('virtual addresses before setup', () => {
+      async function setup(
+        caller: SignerWithAddress,
+        brokerVirtualAddress: string,
+        coSignerVirtualAddress: string,
+        reason: string | undefined
+      ) {
+        if (reason) {
+          await expect(
+            VaultImpl.connect(caller).setup(brokerVirtualAddress, coSignerVirtualAddress)
+          ).to.be.revertedWith(reason);
+        } else {
+          // must not revert
+          await VaultImpl.connect(caller).setup(brokerVirtualAddress, coSignerVirtualAddress);
+        }
+      }
+
       it('virtual addresses are not setup', async () => {
         expect(await VaultImpl.connect(someone).getBrokerVirtualAddress()).to.equal(AddressZero);
         expect(await VaultImpl.connect(someone).getCoSignerVirtualAddress()).to.equal(AddressZero);
       });
 
-      const accept1 = 'accept when proxy admin setup';
+      it('accept when proxy admin setup', async () =>
+        await setup(proxyAdmin, broker1.address, coSigner1.address, undefined));
 
-      const revert1 = 'revert on setup broker to zero address';
-      const revert2 = 'revert on setup coSigner to zero address';
-      const revert3 = 'revert on not admin setup';
+      it('revert on setup broker to zero address', async () =>
+        await setup(proxyAdmin, AddressZero, coSigner1.address, INVALID_VIRTUAL_ADDRESS));
 
-      // description, caller, brokerVirtualAddress, coSignerVirtualAddress, reason
-      type SetupTestT = [string, SignerWithAddress, string, string, string | undefined];
+      it('revert on setup coSigner to zero address', async () =>
+        await setup(proxyAdmin, broker1.address, AddressZero, INVALID_VIRTUAL_ADDRESS));
 
-      const setupTests: SetupTestT[] = [
-        [accept1, proxyAdmin, broker1.address, coSigner1.address, undefined],
-        [revert1, proxyAdmin, AddressZero, coSigner1.address, INVALID_VIRTUAL_ADDRESS],
-        [revert2, proxyAdmin, broker1.address, AddressZero, INVALID_VIRTUAL_ADDRESS],
-        [revert3, someone, broker1.address, coSigner1.address, ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE)]
-      ];
-
-      setupTests.forEach((test) => {
-        const [description, caller, brokerVirtualAddress, coSignerVirtualAddress, reason] = test;
-        console.log(description);
-        it(description, async function () {
-          if (reason) {
-            await expect(
-              VaultImpl.connect(caller).setup(brokerVirtualAddress, coSignerVirtualAddress)
-            ).to.be.revertedWith(reason);
-          } else {
-            // must not revert
-            await VaultImpl.connect(caller).setup(brokerVirtualAddress, coSignerVirtualAddress);
-          }
-        });
-      });
+      it('revert on not admin setup', async () =>
+        await setup(
+          someone,
+          broker1.address,
+          coSigner1.address,
+          ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE)
+        ));
 
       it('revert on second setup', async () => {
         await VaultImpl.connect(proxyAdmin).setup(broker1.address, coSigner1.address);
-        await expect(
-          VaultImpl.connect(proxyAdmin).setup(broker1.address, coSigner1.address)
-        ).to.be.revertedWith(VAULT_ALREADY_SETUP);
+        await setup(proxyAdmin, broker1.address, coSigner1.address, VAULT_ALREADY_SETUP);
       });
     });
 
@@ -146,6 +147,59 @@ describe('Vault implementation', () => {
             ...(await encodeAndSign(coSigner2.address, someone))
           )
         ).to.be.revertedWith(SIGNER_NOT_COSIGNER);
+      });
+
+      it('revert on set broker virtual address to zero address', async () => {
+        await expect(
+          VaultImpl.connect(someone).setBrokerVirtualAddress(
+            ...(await encodeAndSign(AddressZero, broker1))
+          )
+        ).to.be.revertedWith(INVALID_VIRTUAL_ADDRESS);
+      });
+
+      it('revert on set coSigner virtual address to zero address', async () => {
+        await expect(
+          VaultImpl.connect(someone).setCoSignerVirtualAddress(
+            ...(await encodeAndSign(AddressZero, coSigner1))
+          )
+        ).to.be.revertedWith(INVALID_VIRTUAL_ADDRESS);
+      });
+
+      // virtual address events
+      it('emit event on successful set broker address', async () => {
+        const tx = await VaultImpl.connect(someone).setBrokerVirtualAddress(
+          ...(await encodeAndSign(broker2.address, broker1))
+        );
+
+        const receipt = await tx.wait();
+        const event = receipt.events?.pop();
+
+        expect(event).not.to.be.undefined;
+
+        // workaround ts undefined checks
+        if (event != undefined && event.args != undefined) {
+          expect(event.event).to.be.equal(BROKER_ADDRESS_SET);
+          const {newBrokerVirtualAddress} = event.args;
+          expect(newBrokerVirtualAddress).to.be.equal(broker2.address);
+        }
+      });
+
+      it('emit event on successful set broker address', async () => {
+        const tx = await VaultImpl.connect(someone).setCoSignerVirtualAddress(
+          ...(await encodeAndSign(coSigner2.address, coSigner1))
+        );
+
+        const receipt = await tx.wait();
+        const event = receipt.events?.pop();
+
+        expect(event).not.to.be.undefined;
+
+        // workaround ts undefined checks
+        if (event != undefined && event.args != undefined) {
+          expect(event.event).to.be.equal(COSIGNER_ADDRESS_SET);
+          const {newCoSignerVirtualAddress} = event.args;
+          expect(newCoSignerVirtualAddress).to.be.equal(coSigner2.address);
+        }
       });
     });
 
