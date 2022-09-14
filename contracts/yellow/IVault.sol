@@ -16,7 +16,7 @@ interface IVault {
     struct Payload {
       bytes32 action;
       bytes32 rid;
-      uint48 expire;
+      uint64 expire;
       address destination;
       Allocation[] allocations;
       address implAddress;
