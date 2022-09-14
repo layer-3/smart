@@ -251,7 +251,7 @@ contract VaultImpl is VaultImplBase, IVault {
         bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedPayload));
 
         address recoveredSigner = ECDSA.recover(digest, signature);
-        require(recoveredSigner == signer, 'invalid signature');
+        require(recoveredSigner == signer, 'Invalid signature');
     }
 
     /**
