@@ -303,11 +303,11 @@ describe('Vault implementation', () => {
         //todo
       });
 
-      it('revert on wrong otp signature', async () => {
+      it('revert on wrong coSigner signature', async () => {
         //todo
       });
 
-      it('revert when broker and otp signatures are swapped', async () => {
+      it('revert when broker and coSigner signatures are swapped', async () => {
         //todo
       });
     });
@@ -364,11 +364,11 @@ describe('Vault implementation', () => {
         //todo
       });
 
-      it('revert on wrong otp signature', async () => {
+      it('revert on wrong coSigner signature', async () => {
         //todo
       });
 
-      it('revert when broker and otp signatures are swapped', async () => {
+      it('revert when broker and coSigner signatures are swapped', async () => {
         //todo
       });
 
