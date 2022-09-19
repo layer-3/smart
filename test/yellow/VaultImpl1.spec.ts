@@ -339,18 +339,21 @@ describe('Vault implementation', () => {
       it('revert when signature has been used', async () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
-        const tx = await VaultImpl.connect(someone).deposit(
-          ...(await depositParams(payload, broker1, coSigner1)),
-          {value: AMOUNT}
-        );
+        const usedParams = await depositParams(payload, broker1, coSigner1);
 
-        await tx.wait();
+        await VaultImpl.connect(someone).deposit(...usedParams, {value: AMOUNT});
+
+        let otherPayload = await generalPayload(someone.address, VaultImpl.address);
+        otherPayload = addAllocation(otherPayload, AddressZero, AMOUNT.toNumber());
+
+        const newParams = await depositParams(otherPayload, broker1, coSigner1);
 
         await expect(
-          VaultImpl.connect(someone).deposit(
-            ...(await depositParams(payload, broker1, coSigner1)),
-            {value: AMOUNT}
-          )
+          VaultImpl.connect(someone).deposit(newParams[0], usedParams[1], newParams[2])
+        ).to.be.revertedWith(SIGNATURE_ALREAD_USED);
+
+        await expect(
+          VaultImpl.connect(someone).deposit(usedParams[0], newParams[1], usedParams[2])
         ).to.be.revertedWith(SIGNATURE_ALREAD_USED);
       });
 
@@ -428,73 +431,162 @@ describe('Vault implementation', () => {
     // Withdraw
     // ======================
     describe('withdraw', () => {
-      it('can partial withdraw ETH', async () => {
-        //todo
+      const AMOUNT = utils.parseUnits('1000', 'gwei');
+
+      let payload: PartialPayload;
+
+      beforeEach(async () => {
+        payload = await generalPayload(someone.address, VaultImpl.address);
+
+        await VaultImpl.connect(proxyAdmin).setup(broker1.address, coSigner1.address);
+
+        let depositPayload = await generalPayload(someone.address, VaultImpl.address);
+        depositPayload = addAllocation(depositPayload, AddressZero, AMOUNT.toNumber());
+
+        await VaultImpl.connect(someone).deposit(
+          ...(await depositParams(depositPayload, broker1, coSigner1)),
+          {value: AMOUNT}
+        );
       });
 
-      it('can partial withdraw ERC20', async () => {
-        //todo
+      it('can withdraw ETH', async () => {
+        const balanceBefore = await someone.getBalance();
+
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        const tx = await VaultImpl.connect(someone).withdraw(
+          ...(await withdrawParams(payload, broker1, coSigner1))
+        );
+
+        const receipt = await tx.wait();
+
+        expect(await someone.getBalance()).to.equal(
+          balanceBefore.add(AMOUNT).sub(receipt.gasUsed.mul(tx.gasPrice))
+        );
       });
 
-      it('can fully withdraw ETH', async () => {
-        //todo
-      });
+      it('can withdraw ERC20', async () => {
+        await ERC20.connect(tokenAdmin).setUserBalance(VaultImpl.address, AMOUNT);
 
-      it('can fully withdraw ERC20', async () => {
-        //todo
+        const balanceBefore = await ERC20.balanceOf(someone.address);
+
+        payload = addAllocation(payload, ERC20.address, AMOUNT.toNumber());
+
+        await VaultImpl.connect(someone).withdraw(
+          ...(await withdrawParams(payload, broker1, coSigner1))
+        );
+
+        expect(await ERC20.balanceOf(someone.address)).to.equal(balanceBefore.add(AMOUNT));
       });
 
       it('revert on withdraw to zero address', async () => {
-        //todo
+        payload.destination = AddressZero;
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        await expect(
+          VaultImpl.connect(someone).withdraw(
+            ...(await withdrawParams(payload, broker1, coSigner1))
+          )
+        ).to.be.revertedWith(DESTINATION_ZERO_ADDRESS);
       });
 
       it('revert on action not withdraw', async () => {
-        //todo
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        await expect(
+          VaultImpl.connect(someone).withdraw(...(await depositParams(payload, broker1, coSigner1)))
+        ).to.be.revertedWith(INVALID_ACTION);
       });
 
       it('revert after request has expired', async () => {
-        //todo
+        payload.expire = 0;
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        await expect(
+          VaultImpl.connect(someone).withdraw(
+            ...(await withdrawParams(payload, broker1, coSigner1))
+          )
+        ).to.be.revertedWith(REQUEST_EXPIRED);
       });
 
       it('revert when signature has been used', async () => {
-        //todo
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        const usedParams = await withdrawParams(payload, broker1, coSigner1);
+
+        await VaultImpl.connect(someone).withdraw(...usedParams);
+
+        let otherPayload = await generalPayload(someone.address, VaultImpl.address);
+        otherPayload = addAllocation(otherPayload, AddressZero, AMOUNT.toNumber());
+
+        const newParams = await withdrawParams(otherPayload, broker1, coSigner1);
+
+        await expect(
+          VaultImpl.connect(someone).withdraw(newParams[0], usedParams[1], newParams[2])
+        ).to.be.revertedWith(SIGNATURE_ALREAD_USED);
+
+        await expect(
+          VaultImpl.connect(someone).withdraw(usedParams[0], newParams[1], usedParams[2])
+        ).to.be.revertedWith(SIGNATURE_ALREAD_USED);
       });
 
       it('revert when specified amount is zero', async () => {
-        //todo
+        payload = addAllocation(payload, AddressZero, 0);
+
+        await expect(
+          VaultImpl.connect(someone).withdraw(
+            ...(await withdrawParams(payload, broker1, coSigner1))
+          )
+        ).to.be.revertedWith(AMOUNT_ZERO);
       });
 
       it('revert on wrong impl address', async () => {
-        //todo
+        payload.implAddress = broker1.address;
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        await expect(
+          VaultImpl.connect(someone).withdraw(
+            ...(await withdrawParams(payload, broker1, coSigner1))
+          )
+        ).to.be.revertedWith(INVALID_IMPL_ADDRESS);
       });
 
       it('revert on wrong chain id', async () => {
-        //todo
+        payload.chainId = 42;
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        await expect(
+          VaultImpl.connect(someone).withdraw(
+            ...(await withdrawParams(payload, broker1, coSigner1))
+          )
+        ).to.be.revertedWith(INVALID_CHAIN_ID);
       });
 
       it('revert on wrong broker signature', async () => {
-        //todo
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        await expect(
+          VaultImpl.connect(someone).withdraw(...(await depositParams(payload, someone, coSigner1)))
+        ).to.be.revertedWith(INVALID_SIGNATURE);
       });
 
       it('revert on wrong coSigner signature', async () => {
-        //todo
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        await expect(
+          VaultImpl.connect(someone).withdraw(...(await depositParams(payload, broker1, someone)))
+        ).to.be.revertedWith(INVALID_SIGNATURE);
       });
 
       it('revert when broker and coSigner signatures are swapped', async () => {
-        //todo
-      });
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
-      it('revert when withdrawing with anothers signature', async () => {
-        //todo
+        await expect(
+          VaultImpl.connect(someone).withdraw(
+            ...(await withdrawParams(payload, coSigner1, broker1))
+          )
+        ).to.be.revertedWith(INVALID_SIGNATURE);
       });
     });
-  });
-
-  describe('Multiple proxies interaction', () => {
-    it('revert on supply signature from wrong broker', async () => {
-      //todo
-    });
-
-    // other tests?
   });
 });
