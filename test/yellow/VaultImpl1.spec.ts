@@ -13,8 +13,9 @@ import {
   VAULT_ALREADY_SETUP,
   INVALID_ETH_AMOUNT,
   DESTINATION_ZERO_ADDRESS,
+  INVALID_ACTION,
 } from './src/revert-reasons';
-import {depositParams, setVirtualAddressParams} from './src/transactions';
+import {depositParams, setVirtualAddressParams, withdrawParams} from './src/transactions';
 import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET} from './src/event-names';
 import {addAllocation, generalPayload, PartialPayload} from './src/payload';
 
@@ -325,7 +326,16 @@ describe('Vault implementation', () => {
       });
 
       it('revert on action not deposit', async () => {
-        //todo
+        await expect(
+          VaultImpl.connect(someone).deposit(
+            ...(await withdrawParams(
+              addAllocation(payload, AddressZero, AMOUNT.toNumber()),
+              broker1,
+              coSigner1
+            )),
+            {value: AMOUNT}
+          )
+        ).to.be.revertedWith(INVALID_ACTION);
       });
 
       it('revert after request has expired', async () => {

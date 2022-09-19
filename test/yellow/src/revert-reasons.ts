@@ -19,6 +19,7 @@ export const INVALID_SIGNATURE = 'Invalid signature';
 export const INVALID_VIRTUAL_ADDRESS = 'Invalid virtual address';
 export const INVALID_ETH_AMOUNT = 'Incorrect msg.value';
 export const DESTINATION_ZERO_ADDRESS = 'Destination is zero address';
+export const INVALID_ACTION = 'Invalid action';
 
 export function ACCOUNT_MISSING_ROLE(account: string, role: string): string {
   return `AccessControl: account ${hexify(account)} is missing role ${role}`;
