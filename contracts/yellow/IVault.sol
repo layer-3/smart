@@ -19,7 +19,6 @@ interface IVault {
         uint64 expire;
         address destination;
         Allocation[] allocations;
-        // Used to distinguish same broker with multiple vaults
         address implAddress;
         uint256 chainId;
     }
