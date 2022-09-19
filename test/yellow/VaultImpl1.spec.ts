@@ -12,6 +12,7 @@ import {
   INVALID_SIGNATURE,
   VAULT_ALREADY_SETUP,
   INVALID_ETH_AMOUNT,
+  DESTINATION_ZERO_ADDRESS,
 } from './src/revert-reasons';
 import {depositParams, setVirtualAddressParams} from './src/transactions';
 import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET} from './src/event-names';
@@ -307,7 +308,20 @@ describe('Vault implementation', () => {
       });
 
       it('revert on deposit from zero address', async () => {
-        //todo
+        await expect(
+          VaultImpl.connect(someone).deposit(
+            ...(await depositParams(
+              addAllocation(
+                await generalPayload(AddressZero, VaultImpl.address),
+                AddressZero,
+                AMOUNT.toNumber()
+              ),
+              broker1,
+              coSigner1
+            )),
+            {value: AMOUNT}
+          )
+        ).to.be.revertedWith(DESTINATION_ZERO_ADDRESS);
       });
 
       it('revert on action not deposit', async () => {
