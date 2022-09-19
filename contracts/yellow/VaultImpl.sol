@@ -46,7 +46,7 @@ contract VaultImpl is VaultImplBase, IVault {
      * @param signature Signature used as identifier for action requested from vault.
      */
     function _requireSigNotUsed(address issuer, bytes memory signature) internal view {
-        require(!_sigUsage[issuer][keccak256(signature)], 'Signature has been already used');
+        require(!_sigUsage[issuer][keccak256(signature)], 'Signature already used');
     }
 
     /**

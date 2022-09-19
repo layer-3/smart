@@ -21,6 +21,7 @@ export const INVALID_ETH_AMOUNT = 'Incorrect msg.value';
 export const DESTINATION_ZERO_ADDRESS = 'Destination is zero address';
 export const INVALID_ACTION = 'Invalid action';
 export const REQUEST_EXPIRED = 'Request expired';
+export const SIGNATURE_ALREAD_USED = 'Signature already used';
 
 export function ACCOUNT_MISSING_ROLE(account: string, role: string): string {
   return `AccessControl: account ${hexify(account)} is missing role ${role}`;

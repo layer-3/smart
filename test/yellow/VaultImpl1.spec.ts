@@ -15,6 +15,7 @@ import {
   DESTINATION_ZERO_ADDRESS,
   INVALID_ACTION,
   REQUEST_EXPIRED,
+  SIGNATURE_ALREAD_USED,
 } from './src/revert-reasons';
 import {depositParams, setVirtualAddressParams, withdrawParams} from './src/transactions';
 import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET} from './src/event-names';
@@ -355,7 +356,21 @@ describe('Vault implementation', () => {
       });
 
       it('revert when signature has been used', async () => {
-        //todo
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        const tx = await VaultImpl.connect(someone).deposit(
+          ...(await depositParams(payload, broker1, coSigner1)),
+          {value: AMOUNT}
+        );
+
+        await tx.wait();
+
+        await expect(
+          VaultImpl.connect(someone).deposit(
+            ...(await depositParams(payload, broker1, coSigner1)),
+            {value: AMOUNT}
+          )
+        ).to.be.revertedWith(SIGNATURE_ALREAD_USED);
       });
 
       it('revert when specified amount is zero', async () => {
