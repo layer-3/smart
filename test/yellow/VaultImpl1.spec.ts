@@ -265,7 +265,7 @@ describe('Vault implementation', () => {
       });
 
       it('can deposit ERC20', async () => {
-        await ERC20.connect(someone).setBalance(AMOUNT);
+        await ERC20.connect(tokenAdmin).setUserBalance(someone.address, AMOUNT);
 
         const balanceBefore = await ERC20.balanceOf(someone.address);
 
