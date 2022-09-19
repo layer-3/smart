@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {Contract, providers, utils} from 'ethers';
+import {BigNumber, Contract, providers, utils} from 'ethers';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
@@ -308,6 +308,35 @@ describe('Vault implementation', () => {
         ).to.be.revertedWith(INVALID_ACTION);
       });
 
+      it('revert on request id already used', async () => {
+        payload = addAllocation(payload, AddressZero, AMOUNT.div(2).toNumber());
+
+        await VaultImpl.connect(someone).deposit(
+          ...(await depositParams(payload, broker1, coSigner1)),
+          {value: AMOUNT.div(2)}
+        );
+
+        await expect(
+          VaultImpl.connect(someone).deposit(
+            ...(await depositParams(payload, broker1, coSigner1)),
+            {value: AMOUNT.div(2)}
+          )
+        ).to.be.revertedWith(SIGNATURE_ALREAD_USED);
+
+        payload.rid = utils.formatBytes32String(Date.now().toString());
+
+        await expect(
+          await VaultImpl.connect(someone).deposit(
+            ...(await depositParams(payload, broker1, coSigner1)),
+            {value: AMOUNT.div(2)}
+          )
+          // TODO: Update all tests to use ethers chai specific methods
+        ).to.changeEtherBalances(
+          [VaultImpl.connect(someone), someone],
+          [AMOUNT.div(2), AMOUNT.div(2).mul(-1)]
+        );
+      });
+
       it('revert after request has expired', async () => {
         payload.expire = 0;
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
@@ -497,6 +526,31 @@ describe('Vault implementation', () => {
         await expect(
           VaultImpl.connect(someone).withdraw(...(await depositParams(payload, broker1, coSigner1)))
         ).to.be.revertedWith(INVALID_ACTION);
+      });
+
+      it('revert on request id already used', async () => {
+        payload = addAllocation(payload, AddressZero, AMOUNT.div(2).toNumber());
+
+        await VaultImpl.connect(someone).withdraw(
+          ...(await withdrawParams(payload, broker1, coSigner1))
+        );
+
+        await expect(
+          VaultImpl.connect(someone).withdraw(
+            ...(await withdrawParams(payload, broker1, coSigner1))
+          )
+        ).to.be.revertedWith(SIGNATURE_ALREAD_USED);
+
+        payload.rid = utils.formatBytes32String(Date.now().toString());
+
+        await expect(
+          await VaultImpl.connect(someone).withdraw(
+            ...(await withdrawParams(payload, broker1, coSigner1))
+          )
+        ).to.changeEtherBalances(
+          [VaultImpl.connect(someone), someone],
+          [AMOUNT.div(2).mul(-1), AMOUNT.div(2)]
+        );
       });
 
       it('revert after request has expired', async () => {
