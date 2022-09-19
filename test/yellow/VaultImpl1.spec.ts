@@ -390,15 +390,37 @@ describe('Vault implementation', () => {
       });
 
       it('revert on wrong broker signature', async () => {
-        //todo
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        await expect(
+          VaultImpl.connect(someone).deposit(
+            ...(await depositParams(payload, someone, coSigner1)),
+            {value: AMOUNT}
+          )
+        ).to.be.revertedWith(INVALID_SIGNATURE);
       });
 
       it('revert on wrong coSigner signature', async () => {
-        //todo
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        await expect(
+          VaultImpl.connect(someone).deposit(...(await depositParams(payload, broker1, someone)), {
+            value: AMOUNT,
+          })
+        ).to.be.revertedWith(INVALID_SIGNATURE);
       });
 
       it('revert when broker and coSigner signatures are swapped', async () => {
-        //todo
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        await expect(
+          VaultImpl.connect(someone).deposit(
+            ...(await depositParams(payload, coSigner1, broker1)),
+            {
+              value: AMOUNT,
+            }
+          )
+        ).to.be.revertedWith(INVALID_SIGNATURE);
       });
     });
 
