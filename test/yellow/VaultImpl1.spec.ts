@@ -251,12 +251,10 @@ describe('Vault implementation', () => {
       it('can deposit ETH', async () => {
         const balanceBefore = await someone.getBalance();
 
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
         const tx = await VaultImpl.connect(someone).deposit(
-          ...(await depositParams(
-            addAllocation(payload, AddressZero, AMOUNT.toNumber()),
-            broker1,
-            coSigner1
-          )),
+          ...(await depositParams(payload, broker1, coSigner1)),
           {value: AMOUNT}
         );
 
@@ -275,12 +273,10 @@ describe('Vault implementation', () => {
 
         await ERC20.connect(someone).approve(VaultImpl.address, AMOUNT);
 
+        payload = addAllocation(payload, ERC20.address, AMOUNT.toNumber());
+
         await VaultImpl.connect(someone).deposit(
-          ...(await depositParams(
-            addAllocation(payload, ERC20.address, AMOUNT.toNumber()),
-            broker1,
-            coSigner1
-          ))
+          ...(await depositParams(payload, broker1, coSigner1))
         );
 
         expect(await ERC20.balanceOf(VaultImpl.address)).to.equal(AMOUNT);
@@ -288,53 +284,38 @@ describe('Vault implementation', () => {
       });
 
       it('revert when supplied and specified ETH differ', async () => {
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
         await expect(
           VaultImpl.connect(someone).deposit(
-            ...(await depositParams(
-              addAllocation(payload, AddressZero, AMOUNT.toNumber()),
-              broker1,
-              coSigner1
-            )),
+            ...(await depositParams(payload, broker1, coSigner1)),
             {value: AMOUNT.add(1)}
           )
         ).to.be.revertedWith(INVALID_ETH_AMOUNT);
 
         await expect(
-          VaultImpl.connect(someone).deposit(
-            ...(await depositParams(
-              addAllocation(payload, AddressZero, AMOUNT.toNumber()),
-              broker1,
-              coSigner1
-            ))
-          )
+          VaultImpl.connect(someone).deposit(...(await depositParams(payload, broker1, coSigner1)))
         ).to.be.revertedWith(INVALID_ETH_AMOUNT);
       });
 
       it('revert on deposit from zero address', async () => {
+        payload.destination = AddressZero;
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
         await expect(
           VaultImpl.connect(someone).deposit(
-            ...(await depositParams(
-              addAllocation(
-                await generalPayload(AddressZero, VaultImpl.address),
-                AddressZero,
-                AMOUNT.toNumber()
-              ),
-              broker1,
-              coSigner1
-            )),
+            ...(await depositParams(payload, broker1, coSigner1)),
             {value: AMOUNT}
           )
         ).to.be.revertedWith(DESTINATION_ZERO_ADDRESS);
       });
 
       it('revert on action not deposit', async () => {
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
         await expect(
           VaultImpl.connect(someone).deposit(
-            ...(await withdrawParams(
-              addAllocation(payload, AddressZero, AMOUNT.toNumber()),
-              broker1,
-              coSigner1
-            )),
+            ...(await withdrawParams(payload, broker1, coSigner1)),
             {value: AMOUNT}
           )
         ).to.be.revertedWith(INVALID_ACTION);
@@ -342,14 +323,11 @@ describe('Vault implementation', () => {
 
       it('revert after request has expired', async () => {
         payload.expire = 0;
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
           VaultImpl.connect(someone).deposit(
-            ...(await depositParams(
-              addAllocation(payload, AddressZero, AMOUNT.toNumber()),
-              broker1,
-              coSigner1
-            )),
+            ...(await depositParams(payload, broker1, coSigner1)),
             {value: AMOUNT}
           )
         ).to.be.revertedWith(REQUEST_EXPIRED);
