@@ -15,7 +15,6 @@ import {
 import {depositParams, setVirtualAddressParams} from './src/transactions';
 import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET} from './src/event-names';
 import {addAllocation, generalPayload, PartialPayload} from './src/payload';
-import {encodeAndSign} from './src/signatures';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
@@ -149,24 +148,21 @@ describe('Vault implementation', () => {
       it('can set broker virtual address with broker sig', async () => {
         // must not revert
         await VaultImpl.connect(someone).setBrokerVirtualAddress(
-          broker2.address,
-          await encodeAndSign(broker1, ['address'], [broker2.address])
+          ...(await setVirtualAddressParams(broker1, broker2.address))
         );
       });
 
       it('can set coSigner virtual address with coSigner sig', async () => {
         // must not revert
         await VaultImpl.connect(someone).setCoSignerVirtualAddress(
-          coSigner2.address,
-          await encodeAndSign(coSigner1, ['address'], [coSigner2.address])
+          ...(await setVirtualAddressParams(coSigner1, coSigner2.address))
         );
       });
 
       it('revert on set broker virtual address with not broker sig', async () => {
         await expect(
           VaultImpl.connect(someone).setBrokerVirtualAddress(
-            broker2.address,
-            await encodeAndSign(someone, ['address'], [broker2.address])
+            ...(await setVirtualAddressParams(someone, broker2.address))
           )
         ).to.be.revertedWith(INVALID_SIGNATURE);
       });
@@ -174,8 +170,7 @@ describe('Vault implementation', () => {
       it('revert on set coSigner virtual address with not coSigner sig', async () => {
         await expect(
           VaultImpl.connect(someone).setCoSignerVirtualAddress(
-            coSigner2.address,
-            await encodeAndSign(someone, ['address'], [coSigner2.address])
+            ...(await setVirtualAddressParams(someone, coSigner2.address))
           )
         ).to.be.revertedWith(INVALID_SIGNATURE);
       });
@@ -183,8 +178,7 @@ describe('Vault implementation', () => {
       it('revert on set broker virtual address to zero address', async () => {
         await expect(
           VaultImpl.connect(someone).setBrokerVirtualAddress(
-            AddressZero,
-            await encodeAndSign(broker1, ['address'], [AddressZero])
+            ...(await setVirtualAddressParams(broker1, AddressZero))
           )
         ).to.be.revertedWith(INVALID_VIRTUAL_ADDRESS);
       });
@@ -192,8 +186,7 @@ describe('Vault implementation', () => {
       it('revert on set coSigner virtual address to zero address', async () => {
         await expect(
           VaultImpl.connect(someone).setCoSignerVirtualAddress(
-            AddressZero,
-            await encodeAndSign(coSigner1, ['address'], [AddressZero])
+            ...(await setVirtualAddressParams(coSigner1, AddressZero))
           )
         ).to.be.revertedWith(INVALID_VIRTUAL_ADDRESS);
       });
@@ -201,8 +194,7 @@ describe('Vault implementation', () => {
       // virtual address events
       it('emit event on successful set broker address', async () => {
         const tx = await VaultImpl.connect(someone).setBrokerVirtualAddress(
-          broker2.address,
-          await encodeAndSign(broker1, ['address'], [broker2.address])
+          ...(await setVirtualAddressParams(broker1, broker2.address))
         );
 
         const receipt = await tx.wait();
@@ -220,8 +212,7 @@ describe('Vault implementation', () => {
 
       it('emit event on successful set broker address', async () => {
         const tx = await VaultImpl.connect(someone).setCoSignerVirtualAddress(
-          coSigner2.address,
-          await encodeAndSign(coSigner1, ['address'], [coSigner2.address])
+          ...(await setVirtualAddressParams(coSigner1, coSigner2.address))
         );
 
         const receipt = await tx.wait();
@@ -242,26 +233,34 @@ describe('Vault implementation', () => {
     // Deposit
     // ======================
     describe('deposit', () => {
+      const AMOUNT = utils.parseUnits('1000', 'gwei');
+
       let payload: PartialPayload;
-      const amount = utils.parseUnits('1000', 'gwei');
 
       beforeEach(async () => {
         payload = await generalPayload(someone.address, VaultImpl.address);
+
         await VaultImpl.connect(proxyAdmin).setup(broker1.address, coSigner1.address);
       });
 
-      it.only('can deposit ETH', async () => {
+      it('can deposit ETH', async () => {
         const balanceBefore = await someone.getBalance();
-        await VaultImpl.connect(someone).deposit(
+
+        const tx = await VaultImpl.connect(someone).deposit(
           ...(await depositParams(
-            addAllocation(payload, AddressZero, amount.toNumber()),
+            addAllocation(payload, AddressZero, AMOUNT.toNumber()),
             broker1,
             coSigner1
           )),
-          {value: amount}
+          {value: AMOUNT}
         );
-        expect(await provider.getBalance(VaultImpl.address)).to.equal(amount);
-        expect(await someone.getBalance()).to.equal(balanceBefore.sub(amount));
+
+        const receipt = await tx.wait();
+
+        expect(await provider.getBalance(VaultImpl.address)).to.equal(AMOUNT);
+        expect(await someone.getBalance()).to.equal(
+          balanceBefore.sub(AMOUNT).sub(receipt.gasUsed.mul(receipt.effectiveGasPrice))
+        );
       });
 
       it('can deposit ERC20', async () => {

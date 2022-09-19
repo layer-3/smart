@@ -11,24 +11,43 @@ import {
   WITHDRAW_ACTION,
 } from './payload';
 
+function signEncoded(signer: Signer, encodedData: string): Promise<string> {
+  return signer.signMessage(utils.arrayify(utils.keccak256(encodedData)));
+}
+
 export async function setVirtualAddressParams(
-  message: string,
-  signer: Signer
+  signer: Signer,
+  virtualAddress: string
 ): Promise<[string, string]> {
-  const encodedMsg = utils.defaultAbiCoder.encode(['address'], [message]);
-  const encodedMsgHash = utils.keccak256(encodedMsg);
-  const encodedMsgHashBytes = utils.arrayify(encodedMsgHash);
-  const signature = await signer.signMessage(encodedMsgHashBytes);
-  return [encodedMsg, signature];
+  return [
+    virtualAddress,
+    await signEncoded(signer, utils.defaultAbiCoder.encode(['address'], [virtualAddress])),
+  ];
+}
+
+async function encodeAndSignPayload(
+  payload: Payload,
+  broker: SignerWithAddress,
+  coSigner: SignerWithAddress
+): Promise<[Payload, string, string]> {
+  const encodedPayload = encodePayload(payload);
+
+  const signatures = await Promise.all([
+    signEncoded(broker, encodedPayload),
+    signEncoded(coSigner, encodedPayload),
+  ]);
+
+  return [payload, signatures[0], signatures[1]];
 }
 
 export async function depositParams(
   pp: PartialPayload,
   broker: SignerWithAddress,
   coSigner: SignerWithAddress
-): Promise<[string, string, string]> {
+): Promise<[Payload, string, string]> {
   pp.action = DEPOSIT_ACTION;
-  return await encodeAndSignPayload(
+
+  return encodeAndSignPayload(
     await supplementPayload(pp as PartialPayloadWithAction),
     broker,
     coSigner
@@ -39,24 +58,12 @@ export async function withdrawParams(
   pp: PartialPayload,
   broker: SignerWithAddress,
   coSigner: SignerWithAddress
-): Promise<[string, string, string]> {
+): Promise<[Payload, string, string]> {
   pp.action = WITHDRAW_ACTION;
-  return await encodeAndSignPayload(
+
+  return encodeAndSignPayload(
     await supplementPayload(pp as PartialPayloadWithAction),
     broker,
     coSigner
   );
-}
-
-async function encodeAndSignPayload(
-  payload: Payload,
-  broker: SignerWithAddress,
-  coSigner: SignerWithAddress
-): Promise<[string, string, string]> {
-  const encodedMsg = encodePayload(payload);
-  const encodedMsgHash = utils.keccak256(encodedMsg);
-  const encodedMsgHashBytes = utils.arrayify(encodedMsgHash);
-  const brokerSig = await broker.signMessage(encodedMsgHashBytes);
-  const coSignerSig = await coSigner.signMessage(encodedMsgHashBytes);
-  return [encodedMsg, brokerSig, coSignerSig];
 }
