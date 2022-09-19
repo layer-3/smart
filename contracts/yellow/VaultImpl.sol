@@ -77,7 +77,7 @@ contract VaultImpl is VaultImplBase, IVault {
      * @param payload Payload structure, which denotes action to be performed.
      */
     function _checkPayload(Payload memory payload) internal view {
-        require(payload.expire > block.timestamp, 'Request is expired'); //solhint-disable-line not-rely-on-time
+        require(payload.expire > block.timestamp, 'Request expired'); //solhint-disable-line not-rely-on-time
         require(payload.destination != address(0), 'Destination is zero address');
 
         for (uint256 i = 0; i < payload.allocations.length; i++) {

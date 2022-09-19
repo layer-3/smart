@@ -14,6 +14,7 @@ import {
   INVALID_ETH_AMOUNT,
   DESTINATION_ZERO_ADDRESS,
   INVALID_ACTION,
+  REQUEST_EXPIRED,
 } from './src/revert-reasons';
 import {depositParams, setVirtualAddressParams, withdrawParams} from './src/transactions';
 import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET} from './src/event-names';
@@ -339,7 +340,18 @@ describe('Vault implementation', () => {
       });
 
       it('revert after request has expired', async () => {
-        //todo
+        payload.expire = 0;
+
+        await expect(
+          VaultImpl.connect(someone).deposit(
+            ...(await depositParams(
+              addAllocation(payload, AddressZero, AMOUNT.toNumber()),
+              broker1,
+              coSigner1
+            )),
+            {value: AMOUNT}
+          )
+        ).to.be.revertedWith(REQUEST_EXPIRED);
       });
 
       it('revert when signature has been used', async () => {
