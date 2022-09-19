@@ -12,6 +12,7 @@ import './IVault.sol';
  * @dev Implementation for the Proxy. Version 1.0.
  */
 contract VaultImpl is VaultImplBase, IVault {
+    using ECDSA for bytes32;
     using Counters for Counters.Counter;
 
     /**
@@ -43,25 +44,29 @@ contract VaultImpl is VaultImplBase, IVault {
      * @param signature Signature used as identifier for action requested from vault.
      */
     function _requireSigNotUsed(address issuer, bytes memory signature) internal view {
-        require(!_sigUsage[issuer][keccak256(signature)], 'Sig already used');
+        require(!_sigUsage[issuer][keccak256(signature)], 'Signature has been already used');
     }
 
     /**
      * @notice Check supplied signature to be indeed signed by claimed signer.
      * @dev Check supplied signature to be indeed signed by claimed signer.
-     * @param encodedPayload Encoded payload, which denotes action to be performed.
      * @param signer Signer claimed to have signed the payload.
+     * @param encodedData Encoded data, which denotes action to be performed.
      * @param signature Payload signed by claimed signer.
      */
     function _requireValidSignature(
-        bytes memory encodedPayload,
         address signer,
+        bytes memory encodedData,
         bytes memory signature
     ) internal pure {
-        bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedPayload));
+        require(
+            keccak256(encodedData).toEthSignedMessageHash().recover(signature) == signer,
+            'Invalid signature'
+        );
+    }
 
-        address recoveredSigner = ECDSA.recover(digest, signature);
-        require(recoveredSigner == signer, 'Invalid signature');
+    function _requireValidVirtualAddress(address virtualAddress) internal pure {
+        require(virtualAddress != address(0), 'Invalid virtual address');
     }
 
     /**
@@ -88,8 +93,7 @@ contract VaultImpl is VaultImplBase, IVault {
      * @param signature Signature used as identifier for action requested from vault.
      */
     function _useSignature(address issuer, bytes memory signature) internal {
-        bytes32 sigHash = keccak256(signature);
-        _sigUsage[issuer][sigHash] = true;
+        _sigUsage[issuer][keccak256(signature)] = true;
     }
 
     /**
@@ -162,11 +166,10 @@ contract VaultImpl is VaultImplBase, IVault {
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        require(
-            brokerVirtualAddress != address(0) && coSignerVirtualAddress != address(0),
-            'Invalid virtual address'
-        );
         require(!_isSetup, 'Vault is already setup');
+
+        _requireValidVirtualAddress(brokerVirtualAddress);
+        _requireValidVirtualAddress(coSignerVirtualAddress);
 
         _isSetup = true;
 
@@ -195,20 +198,16 @@ contract VaultImpl is VaultImplBase, IVault {
     /**
      * @notice Set the address derived from the broker's new public key. Emits `BrokerVirtualAddressSet` event.
      * @dev Supplied payload must be signed by broker's current public key.
-     * @param encodedAddress Encoded new virtual broker address.
+     * @param virtualAddress New virtual broker address.
      * @param signature New virtual address signed by broker's current public key.
      */
-    function setBrokerVirtualAddress(bytes memory encodedAddress, bytes calldata signature)
-        external
-    {
-        bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedAddress));
-        address recoveredSigner = ECDSA.recover(digest, signature);
-        require(recoveredSigner == _brokerVirtualAddress, 'Signer is not broker');
+    function setBrokerVirtualAddress(address virtualAddress, bytes calldata signature) external {
+        _requireValidSignature(_brokerVirtualAddress, abi.encode(virtualAddress), signature);
+        _requireValidVirtualAddress(virtualAddress);
 
-        address newBrokerVirtualAddress = abi.decode(encodedAddress, (address));
-        require(newBrokerVirtualAddress != address(0), 'Invalid virtual address');
-        _brokerVirtualAddress = newBrokerVirtualAddress;
-        emit BrokerVirtualAddressSet(newBrokerVirtualAddress);
+        _brokerVirtualAddress = virtualAddress;
+
+        emit BrokerVirtualAddressSet(virtualAddress);
     }
 
     /**
@@ -221,33 +220,29 @@ contract VaultImpl is VaultImplBase, IVault {
     }
 
     /**
-     * @notice Set the address derived from the soSigner's new public key. Emits `CoSignerVirtualAddressSet` event.
-     * @dev Supplied payload must be signed by soSigner's current public key.
-     * @param encodedAddress Encoded new virtual soSigner address.
-     * @param signature New virtual address signed by soSigner's current public key.
+     * @notice Set the address derived from the coSigner's new public key. Emits `CoSignerVirtualAddressSet` event.
+     * @dev Supplied payload must be signed by coSigner's current public key.
+     * @param virtualAddress New virtual coSigner address.
+     * @param signature New virtual address signed by coSigner's current public key.
      */
-    function setCoSignerVirtualAddress(bytes memory encodedAddress, bytes calldata signature)
-        external
-    {
-        bytes32 digest = ECDSA.toEthSignedMessageHash(keccak256(encodedAddress));
-        address recoveredSigner = ECDSA.recover(digest, signature);
-        require(recoveredSigner == _coSignerVirtualAddress, 'Signer is not coSigner');
+    function setCoSignerVirtualAddress(address virtualAddress, bytes calldata signature) external {
+        _requireValidSignature(_coSignerVirtualAddress, abi.encode(virtualAddress), signature);
+        _requireValidVirtualAddress(virtualAddress);
 
-        address newCoSignerVirtualAddress = abi.decode(encodedAddress, (address));
-        require(newCoSignerVirtualAddress != address(0), 'Invalid virtual address');
-        _coSignerVirtualAddress = newCoSignerVirtualAddress;
-        emit CoSignerVirtualAddressSet(newCoSignerVirtualAddress);
+        _coSignerVirtualAddress = virtualAddress;
+
+        emit CoSignerVirtualAddressSet(virtualAddress);
     }
 
     /**
      * @notice Deposit assets with given payload from the caller. Emits `Deposited` event.
      * @dev Deposit assets with given payload from the caller. Emits `Deposited` event.
-     * @param encodedPayload Encoded payload, which denotes action to be performed.
+     * @param payload Deposit payload.
      * @param brokerSignature Payload signed by the broker.
      * @param coSignerSignature Payload signed by the coSigner.
      */
     function deposit(
-        bytes calldata encodedPayload,
+        Payload calldata payload,
         bytes calldata brokerSignature,
         bytes calldata coSignerSignature
     ) external payable {
@@ -257,11 +252,9 @@ contract VaultImpl is VaultImplBase, IVault {
         _requireSigNotUsed(issuer, brokerSignature);
         _requireSigNotUsed(issuer, coSignerSignature);
 
-        _requireValidSignature(encodedPayload, _brokerVirtualAddress, brokerSignature);
-        _requireValidSignature(encodedPayload, _coSignerVirtualAddress, coSignerSignature);
-
-        // extract payload
-        Payload memory payload = abi.decode(encodedPayload, (Payload));
+        bytes memory encodedPayload = abi.encode(payload);
+        _requireValidSignature(_brokerVirtualAddress, encodedPayload, brokerSignature);
+        _requireValidSignature(_coSignerVirtualAddress, encodedPayload, coSignerSignature);
 
         // check payload
         _checkPayload(payload);
@@ -296,12 +289,12 @@ contract VaultImpl is VaultImplBase, IVault {
     /**
      * @notice Withdraw assets with given payload to the destination specified in the payload. Emits `Withdrawn` event.
      * @dev Withdraw assets with given payload to the destination specified in the payload. Emits `Withdrawn` event.
-     * @param encodedPayload Encoded payload, which denotes action to be performed.
+     * @param payload Withdraw payload.
      * @param brokerSignature Payload signed by the Broker.
      * @param coSignerSignature Payload signed by the coSigner.
      */
     function withdraw(
-        bytes calldata encodedPayload,
+        Payload calldata payload,
         bytes calldata brokerSignature,
         bytes calldata coSignerSignature
     ) external payable {
@@ -311,11 +304,9 @@ contract VaultImpl is VaultImplBase, IVault {
         _requireSigNotUsed(issuer, brokerSignature);
         _requireSigNotUsed(issuer, coSignerSignature);
 
-        _requireValidSignature(encodedPayload, _brokerVirtualAddress, brokerSignature);
-        _requireValidSignature(encodedPayload, _coSignerVirtualAddress, coSignerSignature);
-
-        // extract payload
-        Payload memory payload = abi.decode(encodedPayload, (Payload));
+        bytes memory encodedPayload = abi.encode(payload);
+        _requireValidSignature(_brokerVirtualAddress, encodedPayload, brokerSignature);
+        _requireValidSignature(_coSignerVirtualAddress, encodedPayload, coSignerSignature);
 
         // check payload
         _checkPayload(payload);

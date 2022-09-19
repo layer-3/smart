@@ -9,13 +9,13 @@ import {VaultImpl as VaultImplT, TESTVaultProxy, TestERC20} from '../../typechai
 import {
   ACCOUNT_MISSING_ROLE,
   INVALID_VIRTUAL_ADDRESS,
-  SIGNER_NOT_BROKER,
-  SIGNER_NOT_COSIGNER,
+  INVALID_SIGNATURE,
   VAULT_ALREADY_SETUP,
 } from './src/revert-reasons';
 import {depositParams, setVirtualAddressParams} from './src/transactions';
 import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET} from './src/event-names';
 import {addAllocation, generalPayload, PartialPayload} from './src/payload';
+import {encodeAndSign} from './src/signatures';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
@@ -149,37 +149,42 @@ describe('Vault implementation', () => {
       it('can set broker virtual address with broker sig', async () => {
         // must not revert
         await VaultImpl.connect(someone).setBrokerVirtualAddress(
-          ...(await setVirtualAddressParams(broker2.address, broker1))
+          broker2.address,
+          await encodeAndSign(broker1, ['address'], [broker2.address])
         );
       });
 
       it('can set coSigner virtual address with coSigner sig', async () => {
         // must not revert
         await VaultImpl.connect(someone).setCoSignerVirtualAddress(
-          ...(await setVirtualAddressParams(coSigner2.address, coSigner1))
+          coSigner2.address,
+          await encodeAndSign(coSigner1, ['address'], [coSigner2.address])
         );
       });
 
       it('revert on set broker virtual address with not broker sig', async () => {
         await expect(
           VaultImpl.connect(someone).setBrokerVirtualAddress(
-            ...(await setVirtualAddressParams(broker2.address, someone))
+            broker2.address,
+            await encodeAndSign(someone, ['address'], [broker2.address])
           )
-        ).to.be.revertedWith(SIGNER_NOT_BROKER);
+        ).to.be.revertedWith(INVALID_SIGNATURE);
       });
 
       it('revert on set coSigner virtual address with not coSigner sig', async () => {
         await expect(
           VaultImpl.connect(someone).setCoSignerVirtualAddress(
-            ...(await setVirtualAddressParams(coSigner2.address, someone))
+            coSigner2.address,
+            await encodeAndSign(someone, ['address'], [coSigner2.address])
           )
-        ).to.be.revertedWith(SIGNER_NOT_COSIGNER);
+        ).to.be.revertedWith(INVALID_SIGNATURE);
       });
 
       it('revert on set broker virtual address to zero address', async () => {
         await expect(
           VaultImpl.connect(someone).setBrokerVirtualAddress(
-            ...(await setVirtualAddressParams(AddressZero, broker1))
+            AddressZero,
+            await encodeAndSign(broker1, ['address'], [AddressZero])
           )
         ).to.be.revertedWith(INVALID_VIRTUAL_ADDRESS);
       });
@@ -187,7 +192,8 @@ describe('Vault implementation', () => {
       it('revert on set coSigner virtual address to zero address', async () => {
         await expect(
           VaultImpl.connect(someone).setCoSignerVirtualAddress(
-            ...(await setVirtualAddressParams(AddressZero, coSigner1))
+            AddressZero,
+            await encodeAndSign(coSigner1, ['address'], [AddressZero])
           )
         ).to.be.revertedWith(INVALID_VIRTUAL_ADDRESS);
       });
@@ -195,7 +201,8 @@ describe('Vault implementation', () => {
       // virtual address events
       it('emit event on successful set broker address', async () => {
         const tx = await VaultImpl.connect(someone).setBrokerVirtualAddress(
-          ...(await setVirtualAddressParams(broker2.address, broker1))
+          broker2.address,
+          await encodeAndSign(broker1, ['address'], [broker2.address])
         );
 
         const receipt = await tx.wait();
@@ -213,7 +220,8 @@ describe('Vault implementation', () => {
 
       it('emit event on successful set broker address', async () => {
         const tx = await VaultImpl.connect(someone).setCoSignerVirtualAddress(
-          ...(await setVirtualAddressParams(coSigner2.address, coSigner1))
+          coSigner2.address,
+          await encodeAndSign(coSigner1, ['address'], [coSigner2.address])
         );
 
         const receipt = await tx.wait();
