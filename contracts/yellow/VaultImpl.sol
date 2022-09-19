@@ -8,6 +8,8 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import './VaultImplBase.sol';
 import './IVault.sol';
 
+// TODO: Benchmark if storing error messages as constants is cheaper than using string literals.
+
 /**
  * @dev Implementation for the Proxy. Version 1.0.
  */
