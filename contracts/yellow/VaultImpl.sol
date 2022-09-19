@@ -85,7 +85,7 @@ contract VaultImpl is VaultImplBase, IVault {
         }
 
         require(payload.implAddress == address(this), 'Invalid implementation address');
-        require(payload.chainId == getChainId(), 'Incorrect chain id');
+        require(payload.chainId == getChainId(), 'Invalid chain id');
     }
 
     /**
