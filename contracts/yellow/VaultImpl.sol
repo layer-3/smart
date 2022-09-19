@@ -101,13 +101,13 @@ contract VaultImpl is VaultImplBase, IVault {
     /**
      * @notice Transfer given amount of the asset from a supplied address.
      * @dev Succeed if supplied account has allowed the vault to operate `amount` of their funds.
+     * @param from Ethereum address to be debited.
      * @param asset Asset address to transfer.
-     * @param from Ethereum address to be credited.
      * @param amount Quantity of assets to be transferred.
      */
     function _transferAssetFrom(
-        address asset,
         address from,
+        address asset,
         uint256 amount
     ) internal {
         require(from != address(0), 'Transfer is zero address');
@@ -126,13 +126,13 @@ contract VaultImpl is VaultImplBase, IVault {
     /**
      * @notice Transfer the given amount of the asset to a supplied address.
      * @dev Transfer the given amount of the asset to a supplied address.
-     * @param asset Asset address to transfer.
      * @param destination Ethereum address to be credited.
+     * @param asset Asset address to transfer.
      * @param amount Quantity of assets to be transferred.
      */
     function _transferAssetTo(
-        address asset,
         address destination,
+        address asset,
         uint256 amount
     ) internal {
         require(destination != address(0), 'Transfer is zero address');
@@ -275,8 +275,8 @@ contract VaultImpl is VaultImplBase, IVault {
         // deposit allocations
         for (uint256 i = 0; i < payload.allocations.length; i++) {
             _transferAssetFrom(
-                payload.allocations[i].asset,
                 payload.destination,
+                payload.allocations[i].asset,
                 payload.allocations[i].amount
             );
 
@@ -326,8 +326,8 @@ contract VaultImpl is VaultImplBase, IVault {
         // withdraw allocations
         for (uint256 i = 0; i < payload.allocations.length; i++) {
             _transferAssetTo(
-                payload.allocations[i].asset,
                 payload.destination,
+                payload.allocations[i].asset,
                 payload.allocations[i].amount
             );
 
