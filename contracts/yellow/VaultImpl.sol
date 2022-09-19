@@ -109,6 +109,7 @@ contract VaultImpl is VaultImplBase, IVault {
         uint256 amount
     ) internal {
         require(from != address(0), 'Transfer is zero address');
+
         if (asset == address(0)) {
             require(msg.value == amount, 'Incorrect msg.value');
         } else {
@@ -133,8 +134,10 @@ contract VaultImpl is VaultImplBase, IVault {
         uint256 amount
     ) internal {
         require(destination != address(0), 'Transfer is zero address');
+
         if (asset == address(0)) {
             (bool success, ) = destination.call{value: amount}(''); //solhint-disable-line avoid-low-level-calls
+
             require(success, 'Could not transfer ETH');
         } else {
             IERC20(asset).transfer(destination, amount);
@@ -152,6 +155,7 @@ contract VaultImpl is VaultImplBase, IVault {
         assembly {
             id := chainid()
         }
+
         /* solhint-disable no-inline-assembly */
         return id;
     }
