@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {BigNumber, Contract, providers, utils} from 'ethers';
+import {Contract, providers, utils} from 'ethers';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
