@@ -17,6 +17,7 @@ import {
   REQUEST_EXPIRED,
   SIGNATURE_ALREAD_USED,
   AMOUNT_ZERO,
+  INVALID_IMPL_ADDRESS,
 } from './src/revert-reasons';
 import {depositParams, setVirtualAddressParams, withdrawParams} from './src/transactions';
 import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET} from './src/event-names';
@@ -364,7 +365,15 @@ describe('Vault implementation', () => {
       });
 
       it('revert on wrong impl address', async () => {
-        //todo
+        payload.implAddress = broker1.address;
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        await expect(
+          VaultImpl.connect(someone).deposit(
+            ...(await depositParams(payload, broker1, coSigner1)),
+            {value: AMOUNT}
+          )
+        ).to.be.revertedWith(INVALID_IMPL_ADDRESS);
       });
 
       it('revert on wrong chain id', async () => {

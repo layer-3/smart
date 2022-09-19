@@ -84,7 +84,7 @@ contract VaultImpl is VaultImplBase, IVault {
             require(payload.allocations[i].amount > 0, 'Amount is zero');
         }
 
-        require(payload.implAddress == address(this), 'Invalid vault address');
+        require(payload.implAddress == address(this), 'Invalid implementation address');
         require(payload.chainId == getChainId(), 'Incorrect chain id');
     }
 
