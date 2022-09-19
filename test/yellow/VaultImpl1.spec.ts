@@ -11,6 +11,7 @@ import {
   INVALID_VIRTUAL_ADDRESS,
   INVALID_SIGNATURE,
   VAULT_ALREADY_SETUP,
+  INVALID_ETH_AMOUNT,
 } from './src/revert-reasons';
 import {depositParams, setVirtualAddressParams} from './src/transactions';
 import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET} from './src/event-names';
@@ -264,11 +265,45 @@ describe('Vault implementation', () => {
       });
 
       it('can deposit ERC20', async () => {
-        //todo
+        await ERC20.connect(someone).setBalance(AMOUNT);
+
+        const balanceBefore = await ERC20.balanceOf(someone.address);
+
+        await ERC20.connect(someone).approve(VaultImpl.address, AMOUNT);
+
+        await VaultImpl.connect(someone).deposit(
+          ...(await depositParams(
+            addAllocation(payload, ERC20.address, AMOUNT.toNumber()),
+            broker1,
+            coSigner1
+          ))
+        );
+
+        expect(await ERC20.balanceOf(VaultImpl.address)).to.equal(AMOUNT);
+        expect(await ERC20.balanceOf(someone.address)).to.equal(balanceBefore.sub(AMOUNT));
       });
 
       it('revert when supplied and specified ETH differ', async () => {
-        //todo
+        await expect(
+          VaultImpl.connect(someone).deposit(
+            ...(await depositParams(
+              addAllocation(payload, AddressZero, AMOUNT.toNumber()),
+              broker1,
+              coSigner1
+            )),
+            {value: AMOUNT.add(1)}
+          )
+        ).to.be.revertedWith(INVALID_ETH_AMOUNT);
+
+        await expect(
+          VaultImpl.connect(someone).deposit(
+            ...(await depositParams(
+              addAllocation(payload, AddressZero, AMOUNT.toNumber()),
+              broker1,
+              coSigner1
+            ))
+          )
+        ).to.be.revertedWith(INVALID_ETH_AMOUNT);
       });
 
       it('revert on deposit from zero address', async () => {
