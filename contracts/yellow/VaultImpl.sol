@@ -99,54 +99,6 @@ contract VaultImpl is VaultImplBase, IVault {
     }
 
     /**
-     * @notice Transfer given amount of the asset from a supplied address.
-     * @dev Succeed if supplied account has allowed the vault to operate `amount` of their funds.
-     * @param from Ethereum address to be debited.
-     * @param asset Asset address to transfer.
-     * @param amount Quantity of assets to be transferred.
-     */
-    function _transferAssetFrom(
-        address from,
-        address asset,
-        uint256 amount
-    ) internal {
-        require(from != address(0), 'Transfer is zero address');
-
-        if (asset == address(0)) {
-            require(msg.value == amount, 'Incorrect msg.value');
-        } else {
-            // require successful deposit before updating holdings (protect against reentrancy)
-            require(
-                IERC20(asset).transferFrom(from, address(this), amount),
-                'Could not deposit ERC20'
-            );
-        }
-    }
-
-    /**
-     * @notice Transfer the given amount of the asset to a supplied address.
-     * @dev Transfer the given amount of the asset to a supplied address.
-     * @param destination Ethereum address to be credited.
-     * @param asset Asset address to transfer.
-     * @param amount Quantity of assets to be transferred.
-     */
-    function _transferAssetTo(
-        address destination,
-        address asset,
-        uint256 amount
-    ) internal {
-        require(destination != address(0), 'Transfer is zero address');
-
-        if (asset == address(0)) {
-            (bool success, ) = destination.call{value: amount}(''); //solhint-disable-line avoid-low-level-calls
-
-            require(success, 'Could not transfer ETH');
-        } else {
-            IERC20(asset).transfer(destination, amount);
-        }
-    }
-
-    /**
      * @notice Return chain id.
      * @dev Return chain id.
      * @return uint256 Chain id.
@@ -274,11 +226,18 @@ contract VaultImpl is VaultImplBase, IVault {
 
         // deposit allocations
         for (uint256 i = 0; i < payload.allocations.length; i++) {
-            _transferAssetFrom(
-                payload.destination,
-                payload.allocations[i].asset,
-                payload.allocations[i].amount
-            );
+            address asset = payload.allocations[i].asset;
+            uint256 amount = payload.allocations[i].amount;
+
+            if (asset == address(0)) {
+                require(msg.value == amount, 'Incorrect msg.value');
+            } else {
+                // require successful deposit before updating holdings (protect against reentrancy)
+                require(
+                    IERC20(asset).transferFrom(payload.destination, address(this), amount),
+                    'Could not deposit ERC20'
+                );
+            }
 
             _ledgerId.increment();
 
@@ -325,11 +284,16 @@ contract VaultImpl is VaultImplBase, IVault {
 
         // withdraw allocations
         for (uint256 i = 0; i < payload.allocations.length; i++) {
-            _transferAssetTo(
-                payload.destination,
-                payload.allocations[i].asset,
-                payload.allocations[i].amount
-            );
+            address asset = payload.allocations[i].asset;
+            uint256 amount = payload.allocations[i].amount;
+
+            if (asset == address(0)) {
+                (bool success, ) = payload.destination.call{value: amount}(''); //solhint-disable-line avoid-low-level-calls
+
+                require(success, 'Could not transfer ETH');
+            } else {
+                IERC20(asset).transfer(payload.destination, amount);
+            }
 
             _ledgerId.increment();
 
