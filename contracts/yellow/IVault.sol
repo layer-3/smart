@@ -95,6 +95,18 @@ interface IVault {
         bytes calldata otpSignature
     ) external payable;
 
+    /**
+     * @notice Address derived from broker's new public key is set.
+     * @param newBrokerVirtualAddress Updated virtual Broker address.
+     */
+    event BrokerVirtualAddressSet(address indexed newBrokerVirtualAddress);
+
+    /**
+     * @notice Address derived from CoSigner's new public key is set.
+     * @param newCoSignerVirtualAddress Updated virtual CoSigner address.
+     */
+    event CoSignerVirtualAddressSet(address indexed newCoSignerVirtualAddress);
+
     // ======================
     // Events
     // ======================
@@ -129,16 +141,4 @@ interface IVault {
         uint256 amount,
         bytes32 rid
     );
-
-    /**
-     * @notice Address derived from broker's new public key is set.
-     * @param newBrokerVirtualAddress Updated virtual Broker address.
-     */
-    event BrokerVirtualAddressSet(address indexed newBrokerVirtualAddress);
-
-    /**
-     * @notice Address derived from CoSigner's new public key is set.
-     * @param newCoSignerVirtualAddress Updated virtual CoSigner address.
-     */
-    event CoSignerVirtualAddressSet(address indexed newCoSignerVirtualAddress);
 }
