@@ -21,7 +21,7 @@ import {
   INVALID_CHAIN_ID,
 } from './src/revert-reasons';
 import {depositParams, setVirtualAddressParams, withdrawParams} from './src/transactions';
-import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET} from './src/event-names';
+import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET, DEPOSITED, WITHDRAWN} from './src/event-names';
 import {addAllocation, generalPayload, PartialPayload} from './src/payload';
 
 const AddressZero = ethers.constants.AddressZero;
@@ -206,16 +206,8 @@ describe('Vault implementation', () => {
         );
 
         const receipt = await tx.wait();
-        const event = receipt.events?.pop();
 
-        expect(event).not.to.be.undefined;
-
-        // workaround ts undefined checks
-        if (event != undefined && event.args != undefined) {
-          expect(event.event).to.be.equal(BROKER_ADDRESS_SET);
-          const {newBrokerVirtualAddress} = event.args;
-          expect(newBrokerVirtualAddress).to.be.equal(broker2.address);
-        }
+        expect(receipt).to.emit(VaultImpl, BROKER_ADDRESS_SET).withArgs(broker2.address);
       });
 
       it('emit event on successful set broker address', async () => {
@@ -224,16 +216,8 @@ describe('Vault implementation', () => {
         );
 
         const receipt = await tx.wait();
-        const event = receipt.events?.pop();
 
-        expect(event).not.to.be.undefined;
-
-        // workaround ts undefined checks
-        if (event != undefined && event.args != undefined) {
-          expect(event.event).to.be.equal(COSIGNER_ADDRESS_SET);
-          const {newCoSignerVirtualAddress} = event.args;
-          expect(newCoSignerVirtualAddress).to.be.equal(coSigner2.address);
-        }
+        expect(receipt).to.emit(VaultImpl, COSIGNER_ADDRESS_SET).withArgs(coSigner2.address);
       });
     });
 
@@ -425,6 +409,23 @@ describe('Vault implementation', () => {
           )
         ).to.be.revertedWith(INVALID_SIGNATURE);
       });
+
+      it('emit event on successful deposit', async () => {
+        const prevLedgerId = await VaultImpl.connect(someone).getLastId();
+
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        const tx = await VaultImpl.connect(someone).deposit(
+          ...(await depositParams(payload, broker1, coSigner1)),
+          {value: AMOUNT}
+        );
+
+        const receipt = await tx.wait();
+
+        expect(receipt)
+          .to.emit(VaultImpl, DEPOSITED)
+          .withArgs(prevLedgerId.add(1), someone.address, AddressZero, AMOUNT, payload.rid);
+      });
     });
 
     // ======================
@@ -586,6 +587,22 @@ describe('Vault implementation', () => {
             ...(await withdrawParams(payload, coSigner1, broker1))
           )
         ).to.be.revertedWith(INVALID_SIGNATURE);
+      });
+
+      it('emit event on successful withdraw', async () => {
+        const prevLedgerId = await VaultImpl.connect(someone).getLastId();
+
+        payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
+
+        const tx = await VaultImpl.connect(someone).withdraw(
+          ...(await withdrawParams(payload, broker1, coSigner1))
+        );
+
+        const receipt = await tx.wait();
+
+        expect(receipt)
+          .to.emit(VaultImpl, WITHDRAWN)
+          .withArgs(prevLedgerId.add(1), someone.address, AddressZero, AMOUNT, payload.rid);
       });
     });
   });
