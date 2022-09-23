@@ -3,8 +3,8 @@ import {Contract, providers, utils} from 'ethers';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
-import VaultImplArtifact from '../../artifacts/contracts/yellow/VaultImpl.sol/VaultImpl.json';
-import {VaultImpl as VaultImplT, TESTVaultProxy, TestERC20} from '../../typechain/';
+import VaultImplArtifact from '../../artifacts/contracts/yellow/VaultImplV1.sol/VaultImplV1.json';
+import {VaultImplV1 as VaultImplT, TESTVaultProxy, TestERC20} from '../../typechain';
 
 import {
   ACCOUNT_MISSING_ROLE,
@@ -27,7 +27,7 @@ import {addAllocation, generalPayload, PartialPayload} from './src/payload';
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
 
-describe('Vault implementation', () => {
+describe('Vault implementation V1', () => {
   let provider: providers.Provider;
 
   let implAdmin: SignerWithAddress;
@@ -40,24 +40,24 @@ describe('Vault implementation', () => {
   let coSigner1: SignerWithAddress;
   let coSigner2: SignerWithAddress;
 
-  let VaultProxy1: Contract & TESTVaultProxy;
+  let VaultProxy: Contract & TESTVaultProxy;
   let VaultImpl: Contract & VaultImplT;
 
   let ERC20: Contract & TestERC20;
 
   beforeEach(async () => {
-    const VaultImplFactory = await ethers.getContractFactory('VaultImpl');
+    const VaultImplFactory = await ethers.getContractFactory('VaultImplV1');
     const VaultImplDirect = await VaultImplFactory.connect(implAdmin).deploy();
     await VaultImplDirect.deployed();
 
     const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
-    VaultProxy1 = (await VaultProxyFactory.connect(proxyAdmin).deploy(
+    VaultProxy = (await VaultProxyFactory.connect(proxyAdmin).deploy(
       VaultImplDirect.address
     )) as Contract & TESTVaultProxy;
-    await VaultProxy1.deployed();
+    await VaultProxy.deployed();
 
     // proxied implementation
-    VaultImpl = new ethers.Contract(VaultProxy1.address, VaultImplArtifact.abi) as Contract &
+    VaultImpl = new ethers.Contract(VaultProxy.address, VaultImplArtifact.abi) as Contract &
       VaultImplT;
 
     const ERC20Factory = await ethers.getContractFactory(

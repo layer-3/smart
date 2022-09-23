@@ -13,7 +13,7 @@ import './IVault.sol';
 /**
  * @dev Implementation for the Proxy. Version 1.0.
  */
-contract VaultImpl is VaultImplBase, IVault {
+contract VaultImplV1 is VaultImplBase, IVault {
     using ECDSA for bytes32;
     using Counters for Counters.Counter;
 
