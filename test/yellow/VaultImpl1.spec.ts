@@ -8,7 +8,7 @@ import {VaultImpl as VaultImplT, TESTVaultProxy, TestERC20} from '../../typechai
 
 import {
   ACCOUNT_MISSING_ROLE,
-  INVALID_VIRTUAL_ADDRESS,
+  INVALID_ADDRESS,
   INVALID_SIGNATURE,
   VAULT_ALREADY_SETUP,
   INVALID_ETH_AMOUNT,
@@ -20,7 +20,7 @@ import {
   INVALID_IMPL_ADDRESS,
   INVALID_CHAIN_ID,
 } from './src/revert-reasons';
-import {depositParams, setVirtualAddressParams, withdrawParams} from './src/transactions';
+import {depositParams, setAddressParams, withdrawParams} from './src/transactions';
 import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET, DEPOSITED, WITHDRAWN} from './src/event-names';
 import {addAllocation, generalPayload, PartialPayload} from './src/payload';
 
@@ -89,38 +89,38 @@ describe('Vault implementation', () => {
 
   describe('Proxied Vault logic', () => {
     // ======================
-    // virtual addresses
+    // Signer addresses
     // ======================
-    describe('virtual addresses before setup', () => {
+    describe('signer addresses before setup', () => {
       async function setup(
         caller: SignerWithAddress,
-        brokerVirtualAddress: string,
-        coSignerVirtualAddress: string,
+        brokerAddress: string,
+        coSignerAddress: string,
         reason: string | undefined
       ) {
         if (reason) {
           await expect(
-            VaultImpl.connect(caller).setup(brokerVirtualAddress, coSignerVirtualAddress)
+            VaultImpl.connect(caller).setup(brokerAddress, coSignerAddress)
           ).to.be.revertedWith(reason);
         } else {
           // must not revert
-          await VaultImpl.connect(caller).setup(brokerVirtualAddress, coSignerVirtualAddress);
+          await VaultImpl.connect(caller).setup(brokerAddress, coSignerAddress);
         }
       }
 
-      it('virtual addresses are not setup', async () => {
-        expect(await VaultImpl.connect(someone).getBrokerVirtualAddress()).to.equal(AddressZero);
-        expect(await VaultImpl.connect(someone).getCoSignerVirtualAddress()).to.equal(AddressZero);
+      it('signer addresses are not setup', async () => {
+        expect(await VaultImpl.connect(someone).getBrokerAddress()).to.equal(AddressZero);
+        expect(await VaultImpl.connect(someone).getCoSignerAddress()).to.equal(AddressZero);
       });
 
       it('accept when proxy admin setup', async () =>
         await setup(proxyAdmin, broker1.address, coSigner1.address, undefined));
 
       it('revert on setup broker to zero address', async () =>
-        await setup(proxyAdmin, AddressZero, coSigner1.address, INVALID_VIRTUAL_ADDRESS));
+        await setup(proxyAdmin, AddressZero, coSigner1.address, INVALID_ADDRESS));
 
       it('revert on setup coSigner to zero address', async () =>
-        await setup(proxyAdmin, broker1.address, AddressZero, INVALID_VIRTUAL_ADDRESS));
+        await setup(proxyAdmin, broker1.address, AddressZero, INVALID_ADDRESS));
 
       it('revert on not admin setup', async () =>
         await setup(
@@ -136,73 +136,69 @@ describe('Vault implementation', () => {
       });
     });
 
-    describe('virtual addresses after setup', () => {
+    describe('signer addresses after setup', () => {
       beforeEach(async () => {
         await VaultImpl.connect(proxyAdmin).setup(broker1.address, coSigner1.address);
       });
 
-      it('broker virtual address is set after setup', async () => {
-        expect(await VaultImpl.connect(someone).getBrokerVirtualAddress()).to.equal(
-          broker1.address
-        );
+      it('broker address is set after setup', async () => {
+        expect(await VaultImpl.connect(someone).getBrokerAddress()).to.equal(broker1.address);
       });
 
-      it('coSigner virtual address is set after setup', async () => {
-        expect(await VaultImpl.connect(someone).getCoSignerVirtualAddress()).to.equal(
-          coSigner1.address
-        );
+      it('coSigner address is set after setup', async () => {
+        expect(await VaultImpl.connect(someone).getCoSignerAddress()).to.equal(coSigner1.address);
       });
 
-      it('can set broker virtual address with broker sig', async () => {
+      it('can set broker address with broker sig', async () => {
         // must not revert
-        await VaultImpl.connect(someone).setBrokerVirtualAddress(
-          ...(await setVirtualAddressParams(broker1, broker2.address))
+        await VaultImpl.connect(someone).setBrokerAddress(
+          ...(await setAddressParams(broker1, broker2.address))
         );
       });
 
-      it('can set coSigner virtual address with coSigner sig', async () => {
+      it('can set coSigner address with coSigner sig', async () => {
         // must not revert
-        await VaultImpl.connect(someone).setCoSignerVirtualAddress(
-          ...(await setVirtualAddressParams(coSigner1, coSigner2.address))
+        await VaultImpl.connect(someone).setCoSignerAddress(
+          ...(await setAddressParams(coSigner1, coSigner2.address))
         );
       });
 
-      it('revert on set broker virtual address with not broker sig', async () => {
+      it('revert on set broker address with not broker sig', async () => {
         await expect(
-          VaultImpl.connect(someone).setBrokerVirtualAddress(
-            ...(await setVirtualAddressParams(someone, broker2.address))
+          VaultImpl.connect(someone).setBrokerAddress(
+            ...(await setAddressParams(someone, broker2.address))
           )
         ).to.be.revertedWith(INVALID_SIGNATURE);
       });
 
-      it('revert on set coSigner virtual address with not coSigner sig', async () => {
+      it('revert on set coSigner address with not coSigner sig', async () => {
         await expect(
-          VaultImpl.connect(someone).setCoSignerVirtualAddress(
-            ...(await setVirtualAddressParams(someone, coSigner2.address))
+          VaultImpl.connect(someone).setCoSignerAddress(
+            ...(await setAddressParams(someone, coSigner2.address))
           )
         ).to.be.revertedWith(INVALID_SIGNATURE);
       });
 
-      it('revert on set broker virtual address to zero address', async () => {
+      it('revert on set broker address to zero address', async () => {
         await expect(
-          VaultImpl.connect(someone).setBrokerVirtualAddress(
-            ...(await setVirtualAddressParams(broker1, AddressZero))
+          VaultImpl.connect(someone).setBrokerAddress(
+            ...(await setAddressParams(broker1, AddressZero))
           )
-        ).to.be.revertedWith(INVALID_VIRTUAL_ADDRESS);
+        ).to.be.revertedWith(INVALID_ADDRESS);
       });
 
-      it('revert on set coSigner virtual address to zero address', async () => {
+      it('revert on set coSigner address to zero address', async () => {
         await expect(
-          VaultImpl.connect(someone).setCoSignerVirtualAddress(
-            ...(await setVirtualAddressParams(coSigner1, AddressZero))
+          VaultImpl.connect(someone).setCoSignerAddress(
+            ...(await setAddressParams(coSigner1, AddressZero))
           )
-        ).to.be.revertedWith(INVALID_VIRTUAL_ADDRESS);
+        ).to.be.revertedWith(INVALID_ADDRESS);
       });
 
-      // virtual address events
+      // signer address events
       it('emit event on successful set broker address', async () => {
-        const tx = await VaultImpl.connect(someone).setBrokerVirtualAddress(
-          ...(await setVirtualAddressParams(broker1, broker2.address))
+        const tx = await VaultImpl.connect(someone).setBrokerAddress(
+          ...(await setAddressParams(broker1, broker2.address))
         );
 
         const receipt = await tx.wait();
@@ -211,8 +207,8 @@ describe('Vault implementation', () => {
       });
 
       it('emit event on successful set broker address', async () => {
-        const tx = await VaultImpl.connect(someone).setCoSignerVirtualAddress(
-          ...(await setVirtualAddressParams(coSigner1, coSigner2.address))
+        const tx = await VaultImpl.connect(someone).setCoSignerAddress(
+          ...(await setAddressParams(coSigner1, coSigner2.address))
         );
 
         const receipt = await tx.wait();

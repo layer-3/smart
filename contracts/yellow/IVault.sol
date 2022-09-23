@@ -28,12 +28,12 @@ interface IVault {
     // ======================
 
     /**
-     * @notice The setup function sets virtual addresses of the broker and coSigner.
-     * @dev Require DEFAULT_ADMIN_ROLE to invoke. NOTE: once virtual addresses are set, there is no way to change them if their private key is lost. In such case, vault implementation contract becomes useless and requires an upgrade.
-     * @param brokerVirtualAddress Address derived from broker public key.
-     * @param coSignerVirtualAddress Address derived from coSigner public key.
+     * @notice The setup function sets addresses of the broker and coSigner.
+     * @dev Require DEFAULT_ADMIN_ROLE to invoke. NOTE: once addresses are set, there is no way to change them if their private key is lost. In such case, vault implementation contract becomes useless and requires an upgrade.
+     * @param brokerAddress Address derived from broker public key.
+     * @param coSignerAddress Address derived from coSigner public key.
      */
-    function setup(address brokerVirtualAddress, address coSignerVirtualAddress) external;
+    function setup(address brokerAddress, address coSignerAddress) external;
 
     /**
      * @notice Get last ledger id (deposits and withdrawals id).
@@ -42,34 +42,34 @@ interface IVault {
     function getLastId() external view returns (uint256);
 
     /**
-     * @notice Get broker virtual (only public key it is derived from exists) key for this vault.
-     * @dev Get broker virtual (only public key it is derived from exists) key for this vault.
-     * @return address Broker virtual key for this vault.
+     * @notice Get broker (only public key it is derived from exists) key for this vault.
+     * @dev Get broker (only public key it is derived from exists) key for this vault.
+     * @return address Broker address for this vault.
      */
-    function getBrokerVirtualAddress() external view returns (address);
+    function getBrokerAddress() external view returns (address);
 
     /**
-     * @notice Set the address derived from the broker's new public key. Emits `BrokerVirtualAddressSet` event.
+     * @notice Set the address derived from the broker's new public key. Emits `BrokerAddressSet` event.
      * @dev Supplied payload must be signed by broker's current public key.
-     * @param virtualAddress New virtual broker address.
-     * @param signature New virtual address signed by broker's current public key.
+     * @param address_ New broker address.
+     * @param signature New address signed by broker's current public key.
      */
-    function setBrokerVirtualAddress(address virtualAddress, bytes calldata signature) external;
+    function setBrokerAddress(address address_, bytes calldata signature) external;
 
     /**
-     * @notice Get coSigner virtual (only public key it is derived from exists) key for this vault.
-     * @dev Get coSigner virtual (only public key it is derived from exists) key for this vault.
-     * @return address CoSigner virtual key for this vault.
+     * @notice Get coSigner (only public key it is derived from exists) key for this vault.
+     * @dev Get coSigner (only public key it is derived from exists) key for this vault.
+     * @return address CoSigner address for this vault.
      */
-    function getCoSignerVirtualAddress() external view returns (address);
+    function getCoSignerAddress() external view returns (address);
 
     /**
-     * @notice Set the address derived from the coSigner's new public key. Emits `CoSignerVirtualAddressSet` event.
+     * @notice Set the address derived from the coSigner's new public key. Emits `CoSignerAddressSet` event.
      * @dev Supplied payload must be signed by coSigner's current public key.
-     * @param virtualAddress New virtual coSigner address.
-     * @param signature New virtual address signed by coSigner's current public key.
+     * @param address_ New coSigner address.
+     * @param signature New address signed by coSigner's current public key.
      */
-    function setCoSignerVirtualAddress(address virtualAddress, bytes calldata signature) external;
+    function setCoSignerAddress(address address_, bytes calldata signature) external;
 
     /**
      * @notice Deposit assets with given payload from the caller. Emits `Deposited` event.
@@ -97,15 +97,15 @@ interface IVault {
 
     /**
      * @notice Address derived from broker's new public key is set.
-     * @param newBrokerVirtualAddress Updated virtual Broker address.
+     * @param newBrokerAddress Updated Broker address.
      */
-    event BrokerVirtualAddressSet(address indexed newBrokerVirtualAddress);
+    event BrokerAddressSet(address indexed newBrokerAddress);
 
     /**
      * @notice Address derived from CoSigner's new public key is set.
-     * @param newCoSignerVirtualAddress Updated virtual CoSigner address.
+     * @param newCoSignerAddress Updated CoSigner address.
      */
-    event CoSignerVirtualAddressSet(address indexed newCoSignerVirtualAddress);
+    event CoSignerAddressSet(address indexed newCoSignerAddress);
 
     // ======================
     // Events

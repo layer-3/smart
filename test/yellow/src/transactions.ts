@@ -15,14 +15,8 @@ function signEncoded(signer: Signer, encodedData: string): Promise<string> {
   return signer.signMessage(utils.arrayify(utils.keccak256(encodedData)));
 }
 
-export async function setVirtualAddressParams(
-  signer: Signer,
-  virtualAddress: string
-): Promise<[string, string]> {
-  return [
-    virtualAddress,
-    await signEncoded(signer, utils.defaultAbiCoder.encode(['address'], [virtualAddress])),
-  ];
+export async function setAddressParams(signer: Signer, address: string): Promise<[string, string]> {
+  return [address, await signEncoded(signer, utils.defaultAbiCoder.encode(['address'], [address]))];
 }
 
 async function encodeAndSignPayload(
