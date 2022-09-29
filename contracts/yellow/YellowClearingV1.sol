@@ -3,47 +3,43 @@ pragma solidity 0.8.16;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
 
-// TODO: Share a common base and use `bytes` to represent arbitrary version specific data
-// This allow to share Status and Data strucs, plus get/set methods and migration logic
-
-abstract contract YellowClearingRegistryV1 {
-    //
-}
-
-abstract contract YellowClearingLockingV1 {
-    //
-}
-
-contract YellowClearingV1 is AccessControl {
+abstract contract YellowClearingBase is AccessControl {
+    // Participant status
     enum ParticipantStatus {
+        // Participant is not registered
         None,
+        // Participant is registered but not active
         Pending,
+        // Participant is registered but do not have token staked
         Inactive,
+        // Participant is registered and have token staked
         Active,
+        // Participant is registered but is not allowed to participate
         Suspended,
+        // Participant is registered but have migrated to a new version
         Migrated
     }
 
-    enum ParticipantFlags {
-        None
-        // TODO: add flags
-    }
-
+    // Participant data
     struct ParticipantData {
         ParticipantStatus status;
-        // uint64 flags;
         bytes data;
     }
 
     // REGISTRY_MAINTAINER_ROLE
     bytes32 public constant REGISTRY_MAINTAINER_ROLE = keccak256('REGISTRY_MAINTAINER_ROLE');
 
-    // Participant data
+    // Participant data mapping
     mapping(address => ParticipantData) private _participantData;
 
+    // Previous version
+    YellowClearingBase private _previousVersion;
+
     // Constructor
-    constructor() {
+    constructor(YellowClearingBase previousVersion) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+
+        _previousVersion = previousVersion;
     }
 
     // Has participant
@@ -76,95 +72,43 @@ contract YellowClearingV1 is AccessControl {
 
         _participantData[participant] = data;
     }
-}
-
-contract YellowClearingV2 is AccessControl {
-    enum ParticipantFlags {
-        None
-        // TODO: add flags
-    }
-
-    struct ParticipantData {
-        YellowClearingV1.ParticipantStatus status;
-        uint64 flags;
-    }
-
-    // REGISTRY_MAINTAINER_ROLE
-    bytes32 public constant REGISTRY_MAINTAINER_ROLE = keccak256('REGISTRY_MAINTAINER_ROLE');
-
-    // Previous version
-    YellowClearingV1 private constant _PREVIOUS_VERSION =
-        YellowClearingV1(0x0000000000000000000000000000000000000000);
-
-    // Participant data
-    mapping(address => ParticipantData) private _participantData;
-
-    // Constructor
-    constructor() {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    }
-
-    // Has participant
-    function hasParticipant(address participant) public view returns (bool) {
-        return _participantData[participant].status != YellowClearingV1.ParticipantStatus.None;
-    }
-
-    // Get participant data
-    function getParticipantData(address participant)
-        external
-        view
-        returns (ParticipantData memory)
-    {
-        require(hasParticipant(participant), 'Participant does not exist');
-
-        return _participantData[participant];
-    }
-
-    // Set participant data
-    function setParticipantData(address participant, ParticipantData memory data)
-        external
-        onlyRole(REGISTRY_MAINTAINER_ROLE)
-    {
-        require(participant != address(0), 'Invalid participant address');
-
-        _participantData[participant] = data;
-    }
 
     // Migrate participant
-    function migrateParticipant() external {
+    function migrate() external {
         address participant = msg.sender;
 
-        require(_PREVIOUS_VERSION.hasParticipant(participant), 'Participant does not exist');
+        require(_previousVersion.hasParticipant(participant), 'Participant does not exist');
 
         // Get previous participant data
-        YellowClearingV1.ParticipantData memory previousData = _PREVIOUS_VERSION.getParticipantData(
-            participant
-        );
+        ParticipantData memory previousData = _previousVersion.getParticipantData(participant);
 
-        require(
-            previousData.status != YellowClearingV1.ParticipantStatus.Migrated,
-            'Participant already migrated'
-        );
+        require(previousData.status != ParticipantStatus.Migrated, 'Participant already migrated');
 
         // Migrate data
-        _participantData[participant] = ParticipantData({
-            status: previousData.status,
-            flags: previousData.flags
-        });
+        _participantData[participant] = previousData;
 
-        // Update previous participant data
-        _PREVIOUS_VERSION.setParticipantData(
+        // Mark participant as migrated on previous version
+        _previousVersion.setParticipantData(
             participant,
-            YellowClearingV1.ParticipantData({
-                status: YellowClearingV1.ParticipantStatus.Migrated,
-                flags: previousData.flags
-            })
+            ParticipantData({status: ParticipantStatus.Migrated, data: previousData.data})
         );
     }
+}
+
+contract YellowClearingV1 is YellowClearingBase {
+    // Constructor
+    constructor()
+        YellowClearingBase(YellowClearingBase(0x0000000000000000000000000000000000000000))
+    {}
+}
+
+contract YellowClearingV2 is YellowClearingBase {
+    // Constructor
+    constructor()
+        YellowClearingBase(YellowClearingV1(0x0000000000000000000000000000000000000001))
+    {}
 
     function lockTokens(address participant, uint256 amount) external {
         //
     }
 }
-
-// V3
