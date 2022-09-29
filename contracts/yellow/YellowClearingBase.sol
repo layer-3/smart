@@ -94,21 +94,3 @@ abstract contract YellowClearingBase is AccessControl {
         );
     }
 }
-
-contract YellowClearingV1 is YellowClearingBase {
-    // Constructor
-    constructor()
-        YellowClearingBase(YellowClearingBase(0x0000000000000000000000000000000000000000))
-    {}
-}
-
-contract YellowClearingV2 is YellowClearingBase {
-    // Constructor
-    constructor()
-        YellowClearingBase(YellowClearingV1(0x0000000000000000000000000000000000000001))
-    {}
-
-    function lockTokens(address participant, uint256 amount) external {
-        //
-    }
-}
