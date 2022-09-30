@@ -5,9 +5,8 @@ import '../YellowClearingBase.sol';
 import './TESTYellowClearingV1.sol';
 
 contract TESTYellowClearingV2 is YellowClearingBase {
-    // address of previous clearing contract version is supplied for easier testing
-    constructor(TESTYellowClearingV1 clearingV1)
-        YellowClearingBase(clearingV1)
+    constructor()
+        YellowClearingBase(2)
     {}
 
     // can introduce new storage variables

@@ -26,21 +26,36 @@ abstract contract YellowClearingBase is AccessControl {
         bytes data;
     }
 
-    // REGISTRY_MAINTAINER_ROLE
-    bytes32 public constant REGISTRY_MAINTAINER_ROLE = keccak256('REGISTRY_MAINTAINER_ROLE');
+    // Roles
+    bytes32 public constant MAINTAINER_ROLE = keccak256('MAINTAINER_ROLE');
+    bytes32 public constant PREVIOUS_VERSION_ROLE = keccak256('PREVIOUS_VERSION_ROLE');
 
     // Participant data mapping
     mapping(address => ParticipantData) private _participantData;
 
-    // Previous version
-    YellowClearingBase private _previousVersion;
+    // This version
+    uint8 immutable version;
+
+    // Next version
+    YellowClearingBase private _nextVersion;
 
     // Constructor
-    constructor(YellowClearingBase previousVersion) {
+    constructor(uint8 version_) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(REGISTRY_MAINTAINER_ROLE, msg.sender);
+        _grantRole(MAINTAINER_ROLE, msg.sender);
+        version = version_;
+    }
 
-        _previousVersion = previousVersion;
+    // Get next version address
+    function getNextVersion() external view returns (YellowClearingBase) {
+        return _nextVersion;
+    }
+
+    // Set next version address
+    function setNextVersion(YellowClearingBase nextVersion) external onlyRole(MAINTAINER_ROLE) {
+        require(nextVersion.hasRole(PREVIOUS_VERSION_ROLE, address(this)), 'Previous version role is absent');
+
+        _nextVersion = nextVersion;
     }
 
     // Has participant
@@ -62,7 +77,7 @@ abstract contract YellowClearingBase is AccessControl {
     // Set participant data
     function setParticipantData(address participant, ParticipantData memory data)
         external
-        onlyRole(REGISTRY_MAINTAINER_ROLE)
+        onlyRole(MAINTAINER_ROLE)
     {
         require(participant != address(0), 'Invalid participant address');
 
@@ -80,26 +95,31 @@ abstract contract YellowClearingBase is AccessControl {
     function migrateParticipant() external {
         address participant = msg.sender;
 
-        require(_previousVersion.hasParticipant(participant), 'Participant does not exist');
+        require(hasParticipant(participant), 'Participant does not exist'); 
 
         // Get previous participant data
-        ParticipantData memory previousData = _previousVersion.getParticipantData(participant);
-
-        require(previousData.status != ParticipantStatus.Migrated, 'Participant already migrated');
+        ParticipantData memory currentData = _participantData[participant];
+        require(currentData.status != ParticipantStatus.Migrated, 'Participant already migrated');
 
         // Migrate data
-        _participantData[participant] = previousData;
+        _nextVersion.migrateParticipantData(participant, currentData);
 
-        // Mark participant as migrated on previous version
-        _previousVersion.setParticipantData(
-            participant,
-            ParticipantData({status: ParticipantStatus.Migrated, data: previousData.data})
-        );
+        // Mark participant as migrated on this version
+        _participantData[participant] = ParticipantData({status: ParticipantStatus.Migrated, data: currentData.data});
+    }
 
-        emit ParticipantMigrated(participant);
+    // Migrate participant data on either this or next version
+    function migrateParticipantData(address participant, ParticipantData memory data) external onlyRole(PREVIOUS_VERSION_ROLE) {
+        if (address(_nextVersion) != address(0)) {
+            _nextVersion.migrateParticipantData(participant, data);
+        } else {
+            _participantData[participant] = data;
+
+            emit ParticipantMigrated(participant, version);
+        }
     }
 
     event ParticipantDataSet(address indexed participant, ParticipantData data);
 
-    event ParticipantMigrated(address indexed participant);
+    event ParticipantMigrated(address indexed participant, uint8 indexed toVersion);
 }
