@@ -39,6 +39,9 @@ abstract contract YellowClearingBase is AccessControl {
     // Next version
     YellowClearingBase private _nextVersion;
 
+    // Address of this contract
+    address private immutable _self = address(this);
+
     // Constructor
     constructor(uint8 version_) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -53,9 +56,17 @@ abstract contract YellowClearingBase is AccessControl {
 
     // Set next version address
     function setNextVersion(YellowClearingBase nextVersion) external onlyRole(MAINTAINER_ROLE) {
+        require(address(_nextVersion) != address(0), 'Next version already set');
+        require(
+            address(nextVersion) != address(0) && address(nextVersion) != _self,
+            'Invalid nextVersion supplied'
+        );
+
         require(nextVersion.hasRole(PREVIOUS_VERSION_ROLE, address(this)), 'Previous version role is absent');
 
         _nextVersion = nextVersion;
+
+        emit NextVersionSet(nextVersion);
     }
 
     // Has participant
@@ -93,6 +104,8 @@ abstract contract YellowClearingBase is AccessControl {
 
     // Migrate participant
     function migrateParticipant() external {
+        require(address(_nextVersion) != address(0), 'Next version is not set');
+
         address participant = msg.sender;
 
         require(hasParticipant(participant), 'Participant does not exist'); 
@@ -118,6 +131,8 @@ abstract contract YellowClearingBase is AccessControl {
             emit ParticipantMigrated(participant, version);
         }
     }
+
+    event NextVersionSet(YellowClearingBase nextVersion);
 
     event ParticipantDataSet(address indexed participant, ParticipantData data);
 
