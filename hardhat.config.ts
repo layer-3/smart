@@ -74,12 +74,8 @@ const config: HardhatUserConfig = {
         mnemonic: 'blue yellow soon open speed web then enable rich work success matrix',
       },
     },
-    ropsten: {
-      url: process.env.ROPSTEN_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    rinkeby: {
-      url: process.env.RINKEBY_URL || '',
+    goerli: {
+      url: process.env.GOERLI_URL || '',
       accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     generic: {
