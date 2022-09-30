@@ -38,6 +38,7 @@ abstract contract YellowClearingBase is AccessControl {
     // Constructor
     constructor(YellowClearingBase previousVersion) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(REGISTRY_MAINTAINER_ROLE, msg.sender);
 
         _previousVersion = previousVersion;
     }
@@ -71,10 +72,12 @@ abstract contract YellowClearingBase is AccessControl {
         );
 
         _participantData[participant] = data;
+
+        emit ParticipantDataSet(participant, data);
     }
 
     // Migrate participant
-    function migrate() external {
+    function migrateParticipant() external {
         address participant = msg.sender;
 
         require(_previousVersion.hasParticipant(participant), 'Participant does not exist');
@@ -92,5 +95,11 @@ abstract contract YellowClearingBase is AccessControl {
             participant,
             ParticipantData({status: ParticipantStatus.Migrated, data: previousData.data})
         );
+
+        emit ParticipantMigrated(participant);
     }
+
+    event ParticipantDataSet(address indexed participant, ParticipantData data);
+
+    event ParticipantMigrated(address indexed participant);
 }

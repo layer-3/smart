@@ -12,6 +12,8 @@ describe('Network Registry', () => {
     it('Revert on supplying not YellowClearingBase address');
 
     it('Deployer is admin');
+
+    it('Deployer is maintainer');
   });
 
   describe('participant data manipulation', () => {
@@ -32,6 +34,8 @@ describe('Network Registry', () => {
     it('Revert on setting data of zero address');
 
     it('Revert on setting data of migrated participant');
+
+    it('Event emmited on participant data set');
   });
 
   describe('migrate', () => {
@@ -44,5 +48,7 @@ describe('Network Registry', () => {
     it('Revert on migrating unexisting participant');
 
     it('Revert on migrating already migrated participant');
+
+    it('Event emmited on participant migrate');
   });
 });
