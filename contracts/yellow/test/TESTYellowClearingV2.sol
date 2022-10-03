@@ -5,7 +5,7 @@ import '../YellowClearingBase.sol';
 import './TESTYellowClearingV1.sol';
 
 contract TESTYellowClearingV2 is YellowClearingBase {
-    constructor() YellowClearingBase(2) {}
+    constructor() YellowClearingBase() {}
 
     // can introduce new storage variables
     uint256 newStorageVariable = 42;

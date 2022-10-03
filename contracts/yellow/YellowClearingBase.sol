@@ -33,9 +33,6 @@ abstract contract YellowClearingBase is AccessControl {
     // Participant data mapping
     mapping(address => ParticipantData) private _participantData;
 
-    // This version
-    uint8 immutable version;
-
     // Next implementation
     YellowClearingBase private _nextImplementation;
 
@@ -43,10 +40,9 @@ abstract contract YellowClearingBase is AccessControl {
     address private immutable _self = address(this);
 
     // Constructor
-    constructor(uint8 version_) {
+    constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(REGISTRY_MAINTAINER_ROLE, msg.sender);
-        version = version_;
     }
 
     // Get next implementation address
@@ -131,7 +127,7 @@ abstract contract YellowClearingBase is AccessControl {
         } else {
             _participantData[participant] = data;
 
-            emit ParticipantMigrated(participant, version);
+            emit ParticipantMigrated(participant, _self);
         }
     }
 
@@ -139,5 +135,5 @@ abstract contract YellowClearingBase is AccessControl {
 
     event ParticipantDataSet(address indexed participant, ParticipantData data);
 
-    event ParticipantMigrated(address indexed participant, uint8 indexed toVersion);
+    event ParticipantMigrated(address indexed participant, address indexed toAddress);
 }
