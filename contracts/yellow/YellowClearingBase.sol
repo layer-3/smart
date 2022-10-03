@@ -56,7 +56,7 @@ abstract contract YellowClearingBase is AccessControl {
 
     // Set next version address
     function setNextVersion(YellowClearingBase nextVersion) external onlyRole(MAINTAINER_ROLE) {
-        require(address(_nextVersion) != address(0), 'Next version already set');
+        require(address(_nextVersion) == address(0), 'Next version already set');
         require(
             address(nextVersion) != address(0) && address(nextVersion) != _self,
             'Invalid nextVersion supplied'

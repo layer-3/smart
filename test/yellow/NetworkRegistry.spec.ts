@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {Contract, Wallet} from 'ethers';
+import {Contract} from 'ethers';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
@@ -7,6 +7,7 @@ import {TESTYellowClearingV1, TESTYellowClearingV2, TESTYellowClearingV3} from '
 
 import {deployRegistry} from './src/NetworkRegistry/helpers';
 import {Data, Status} from './src/NetworkRegistry/participantData';
+import {ACCOUNT_MISSING_ROLE, INVALID_NEXT_VERSION, NEXT_VERSION_SET} from './src/revert-reasons';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
@@ -33,27 +34,64 @@ describe('Network Registry', () => {
   });
 
   describe('constructor', () => {
-    it('Revert on supplying not YellowClearingBase address');
+    it('Deployer is admin', async () => {
+      expect(await RegistryV1.hasRole(ADM_ROLE, registryAdmin.address)).to.be.true;
+    });
 
-    it('Deployer is admin');
-
-    it('Deployer is maintainer');
+    it('Deployer is maintainer', async () => {
+      expect(await RegistryV1.hasRole(MNTR_ROLE, registryAdmin.address)).to.be.true;
+    });
   });
 
-  describe('nextImplementation', () => {
-    it('Next version address is zero after deployment');
+  describe.only('nextImplementation', () => {
+    let RegistryV2: Contract & TESTYellowClearingV2;
 
-    it('Can set next version address');
+    beforeEach(async () => {
+      RegistryV2 = (await deployRegistry(2, registryAdmin)) as TESTYellowClearingV2;
+    });
 
-    it('Revert on set already set next version address');
+    it('Next version address is zero after deployment', async () => {
+      expect(await RegistryV1.getNextVersion()).to.equal(AddressZero);
+    });
 
-    it('Revert on set next version address to 0');
+    it('Admin can set next version address', async () => {
+      await RegistryV1.setNextVersion(RegistryV2.address);
+      expect(await RegistryV1.getNextVersion()).to.equal(RegistryV2.address);
+    });
 
-    it('Revert on set next version address to self');
+    it('Revert on supply not YellowClearingBase SC', async () => {
+      await expect(RegistryV1.setNextVersion(someone.address)).to.be.reverted;
+    });
 
-    it('Revert on set next version without required role');
+    it('Revert on set next version without required role', async () => {
+      await expect(
+        RegistryV1.connect(someone).setNextAddress(RegistryV2.address)
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE));
+    });
 
-    it('Event emmited on next version address set');
+    it('Revert on set already set next version address', async () => {
+      await RegistryV1.setNextVersion(RegistryV2.address);
+      await expect(RegistryV1.setNextVersion(RegistryV2.address)).to.be.revertedWith(
+        NEXT_VERSION_SET
+      );
+    });
+
+    it('Revert on set next version address to 0', async () => {
+      await expect(RegistryV1.setNextVersion(AddressZero)).to.be.revertedWith(INVALID_NEXT_VERSION);
+    });
+
+    it('Revert on set next version address to self', async () => {
+      await expect(RegistryV1.setNextVersion(RegistryV1.address)).to.be.revertedWith(
+        INVALID_NEXT_VERSION
+      );
+    });
+
+    it('Event emmited on next version address set', async () => {
+      const tx = await RegistryV1.setNextVersion(RegistryV2.address);
+
+      const receipt = await tx.wait();
+      expect(receipt).to.emit(RegistryV1, NEXT_VERSION_SET).withArgs(RegistryV2.address);
+    });
   });
 
   describe('participant data manipulation', () => {
@@ -78,7 +116,7 @@ describe('Network Registry', () => {
     it('Event emmited on participant data set');
   });
 
-  describe('migrate', () => {
+  describe('migrate participant', () => {
     let RegistryV2: Contract & TESTYellowClearingV2;
     let RegistryV3: Contract & TESTYellowClearingV3;
 

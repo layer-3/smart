@@ -8,3 +8,6 @@ export const BROKER_ADDRESS_SET = 'BrokerVirtualAddressSet';
 export const COSIGNER_ADDRESS_SET = 'CoSignerVirtualAddressSet';
 export const DEPOSITED = 'Deposited';
 export const WITHDRAWN = 'Withdrawn';
+
+// network registry
+export const NEXT_VERSION_SET = 'NextVersionSet';

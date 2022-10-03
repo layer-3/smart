@@ -26,6 +26,10 @@ export const AMOUNT_ZERO = 'Amount is zero';
 export const INVALID_IMPL_ADDRESS = 'Invalid implementation address';
 export const INVALID_CHAIN_ID = 'Invalid chain id';
 
+// network registry
+export const NEXT_VERSION_SET = 'Next version already set';
+export const INVALID_NEXT_VERSION = 'Invalid nextVersion supplied';
+
 export function ACCOUNT_MISSING_ROLE(account: string, role: string): string {
   return `AccessControl: account ${hexify(account)} is missing role ${role}`;
 }
