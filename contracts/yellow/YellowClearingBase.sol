@@ -2,8 +2,12 @@
 pragma solidity 0.8.16;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
+import '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
+import './IVault.sol';
 
 abstract contract YellowClearingBase is AccessControl {
+    using ECDSA for bytes32;
+
     // Participant status
     enum ParticipantStatus {
         // Participant is not registered
@@ -23,7 +27,14 @@ abstract contract YellowClearingBase is AccessControl {
     // Participant data
     struct ParticipantData {
         ParticipantStatus status;
-        bytes data;
+        IVault vault;
+        uint256 registrationBlock;
+    }
+
+    // Data required to register a participant
+    struct ParticipantRegisterData {
+        IVault vault;
+        bytes vaultBrokerSignature;
     }
 
     // Roles
@@ -45,6 +56,7 @@ abstract contract YellowClearingBase is AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(REGISTRY_MAINTAINER_ROLE, msg.sender);
 
+        // Review: introduce a helper `isValidAddress(address)` method
         if (address(previousImplementation) != address(0)) {
             _grantRole(PREVIOUS_IMPLEMENTATION_ROLE, address(previousImplementation));
         }
@@ -92,6 +104,37 @@ abstract contract YellowClearingBase is AccessControl {
         return _participantData[participant];
     }
 
+    // Recursively check that participant is not present in the registry
+    function requireParticipantNotRegistered(address participant) public view {
+        if (address(_nextImplementation) != address(0)) {
+            _nextImplementation.requireParticipantNotRegistered(participant);
+        }
+
+        require(!hasParticipant(participant), 'Participant already registered');
+    }
+
+    // Register participant with Pending status using signature by its Broker
+    function registerParticipant(address participant, ParticipantRegisterData calldata rData)
+        external
+    {
+        requireParticipantNotRegistered(participant);
+
+        require(
+            keccak256(abi.encode(participant)).toEthSignedMessageHash().recover(
+                rData.vaultBrokerSignature
+            ) == rData.vault.getBrokerAddress(),
+            'Signer is not participant vault broker'
+        );
+
+        _participantData[participant] = ParticipantData(
+            ParticipantStatus.Pending,
+            rData.vault,
+            block.number
+        );
+
+        emit ParticipantRegistered(participant);
+    }
+
     // Set participant data
     function setParticipantData(address participant, ParticipantData memory data)
         external
@@ -127,7 +170,8 @@ abstract contract YellowClearingBase is AccessControl {
         // Mark participant as migrated on this implementation
         _participantData[participant] = ParticipantData({
             status: ParticipantStatus.Migrated,
-            data: currentData.data
+            vault: currentData.vault,
+            registrationBlock: currentData.registrationBlock
         });
     }
 
@@ -154,6 +198,8 @@ abstract contract YellowClearingBase is AccessControl {
     }
 
     event NextImplementationSet(YellowClearingBase nextImplementation);
+
+    event ParticipantRegistered(address participant);
 
     event ParticipantDataSet(address indexed participant, ParticipantData data);
 
