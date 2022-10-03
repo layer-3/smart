@@ -5,5 +5,6 @@ import '../YellowClearingBase.sol';
 import './TESTYellowClearingV1.sol';
 
 contract TESTYellowClearingV3 is YellowClearingBase {
-    constructor() YellowClearingBase() {}
+    constructor(YellowClearingBase previousImplementation)
+        YellowClearingBase(previousImplementation) {}
 }

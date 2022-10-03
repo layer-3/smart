@@ -40,9 +40,13 @@ abstract contract YellowClearingBase is AccessControl {
     address private immutable _self = address(this);
 
     // Constructor
-    constructor() {
+    constructor(YellowClearingBase previousImplementation) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(REGISTRY_MAINTAINER_ROLE, msg.sender);
+
+        if (address(previousImplementation) != address(0)) {
+            _grantRole(PREVIOUS_IMPLEMENTATION_ROLE, address(previousImplementation));
+        }
     }
 
     // Get next implementation address
@@ -58,7 +62,10 @@ abstract contract YellowClearingBase is AccessControl {
             'Invalid nextImplementation supplied'
         );
 
-        require(nextImplementation.hasRole(PREVIOUS_IMPLEMENTATION_ROLE, address(this)), 'Previous implementation role is absent');
+        require(
+            nextImplementation.hasRole(PREVIOUS_IMPLEMENTATION_ROLE, address(this)),
+            'Previous implementation role is absent'
+        );
 
         _nextImplementation = nextImplementation;
 
