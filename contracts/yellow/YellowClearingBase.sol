@@ -28,7 +28,8 @@ abstract contract YellowClearingBase is AccessControl {
 
     // Roles
     bytes32 public constant REGISTRY_MAINTAINER_ROLE = keccak256('REGISTRY_MAINTAINER_ROLE');
-    bytes32 public constant PREVIOUS_IMPLEMENTATION_ROLE = keccak256('PREVIOUS_IMPLEMENTATION_ROLE');
+    bytes32 public constant PREVIOUS_IMPLEMENTATION_ROLE =
+        keccak256('PREVIOUS_IMPLEMENTATION_ROLE');
 
     // Participant data mapping
     mapping(address => ParticipantData) private _participantData;
@@ -55,7 +56,10 @@ abstract contract YellowClearingBase is AccessControl {
     }
 
     // Set next implementation address
-    function setNextImplementation(YellowClearingBase nextImplementation) external onlyRole(REGISTRY_MAINTAINER_ROLE) {
+    function setNextImplementation(YellowClearingBase nextImplementation)
+        external
+        onlyRole(REGISTRY_MAINTAINER_ROLE)
+    {
         require(address(_nextImplementation) == address(0), 'Next implementation already set');
         require(
             address(nextImplementation) != address(0) && address(nextImplementation) != _self,
@@ -111,7 +115,7 @@ abstract contract YellowClearingBase is AccessControl {
 
         address participant = msg.sender;
 
-        require(hasParticipant(participant), 'Participant does not exist'); 
+        require(hasParticipant(participant), 'Participant does not exist');
 
         // Get previous participant data
         ParticipantData memory currentData = _participantData[participant];
@@ -121,7 +125,10 @@ abstract contract YellowClearingBase is AccessControl {
         _nextImplementation.migrateParticipantData(participant, currentData);
 
         // Mark participant as migrated on this implementation
-        _participantData[participant] = ParticipantData({status: ParticipantStatus.Migrated, data: currentData.data});
+        _participantData[participant] = ParticipantData({
+            status: ParticipantStatus.Migrated,
+            data: currentData.data
+        });
     }
 
     // Migrate participant data on either this or next implementation
@@ -132,10 +139,18 @@ abstract contract YellowClearingBase is AccessControl {
         if (address(_nextImplementation) != address(0)) {
             _nextImplementation.migrateParticipantData(participant, data);
         } else {
-            _participantData[participant] = data;
+            _migrateParticipantData(participant, data);
 
             emit ParticipantMigrated(participant, _self);
         }
+    }
+
+    // Internal migrate logic. Can be overriden.
+    function _migrateParticipantData(address participant, ParticipantData memory data)
+        internal
+        virtual
+    {
+        _participantData[participant] = data;
     }
 
     event NextImplementationSet(YellowClearingBase nextImplementation);
