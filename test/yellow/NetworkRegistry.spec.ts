@@ -7,12 +7,12 @@ import {TESTYellowClearingV1, TESTYellowClearingV2, TESTYellowClearingV3} from '
 
 import {deployRegistry} from './src/NetworkRegistry/helpers';
 import {Data, Status} from './src/NetworkRegistry/participantData';
-import {ACCOUNT_MISSING_ROLE, INVALID_NEXT_VERSION, NEXT_VERSION_SET} from './src/revert-reasons';
+import {ACCOUNT_MISSING_ROLE, INVALID_NEXT_IMPL, NEXT_IMPL_SET} from './src/revert-reasons';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
-const MNTR_ROLE = ethers.utils.id('MAINTAINER_ROLE');
-const PREV_VER_ROLE = ethers.utils.id('PREVIOUS_VERSION_ROLE');
+const MNTR_ROLE = ethers.utils.id('REGISTRY_MAINTAINER_ROLE');
+const PREV_IMPL_ROLE = ethers.utils.id('PREVIOUS_IMPLEMENTATION_ROLE');
 
 describe('Network Registry', () => {
   let registryAdmin: SignerWithAddress;
@@ -50,47 +50,47 @@ describe('Network Registry', () => {
       RegistryV2 = (await deployRegistry(2, registryAdmin)) as TESTYellowClearingV2;
     });
 
-    it('Next version address is zero after deployment', async () => {
-      expect(await RegistryV1.getNextVersion()).to.equal(AddressZero);
+    it('Next impl address is zero after deployment', async () => {
+      expect(await RegistryV1.getNextImplementation()).to.equal(AddressZero);
     });
 
-    it('Admin can set next version address', async () => {
-      await RegistryV1.setNextVersion(RegistryV2.address);
-      expect(await RegistryV1.getNextVersion()).to.equal(RegistryV2.address);
+    it('Admin can set next impl address', async () => {
+      await RegistryV1.setNextImplementation(RegistryV2.address);
+      expect(await RegistryV1.getNextImplementation()).to.equal(RegistryV2.address);
     });
 
     it('Revert on supply not YellowClearingBase SC', async () => {
-      await expect(RegistryV1.setNextVersion(someone.address)).to.be.reverted;
+      await expect(RegistryV1.setNextImplementation(someone.address)).to.be.reverted;
     });
 
-    it('Revert on set next version without required role', async () => {
+    it('Revert on set next impl without required role', async () => {
       await expect(
         RegistryV1.connect(someone).setNextAddress(RegistryV2.address)
       ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE));
     });
 
-    it('Revert on set already set next version address', async () => {
-      await RegistryV1.setNextVersion(RegistryV2.address);
-      await expect(RegistryV1.setNextVersion(RegistryV2.address)).to.be.revertedWith(
-        NEXT_VERSION_SET
+    it('Revert on set already set next impl address', async () => {
+      await RegistryV1.setNextImplementation(RegistryV2.address);
+      await expect(RegistryV1.setNextImplementation(RegistryV2.address)).to.be.revertedWith(
+        NEXT_IMPL_SET
       );
     });
 
-    it('Revert on set next version address to 0', async () => {
-      await expect(RegistryV1.setNextVersion(AddressZero)).to.be.revertedWith(INVALID_NEXT_VERSION);
+    it('Revert on set next impl address to 0', async () => {
+      await expect(RegistryV1.setNextImplementation(AddressZero)).to.be.revertedWith(INVALID_NEXT_IMPL);
     });
 
-    it('Revert on set next version address to self', async () => {
-      await expect(RegistryV1.setNextVersion(RegistryV1.address)).to.be.revertedWith(
-        INVALID_NEXT_VERSION
+    it('Revert on set next impl address to self', async () => {
+      await expect(RegistryV1.setNextImplementation(RegistryV1.address)).to.be.revertedWith(
+        INVALID_NEXT_IMPL
       );
     });
 
-    it('Event emmited on next version address set', async () => {
-      const tx = await RegistryV1.setNextVersion(RegistryV2.address);
+    it('Event emmited on next impl address set', async () => {
+      const tx = await RegistryV1.setNextImplementation(RegistryV2.address);
 
       const receipt = await tx.wait();
-      expect(receipt).to.emit(RegistryV1, NEXT_VERSION_SET).withArgs(RegistryV2.address);
+      expect(receipt).to.emit(RegistryV1, NEXT_IMPL_SET).withArgs(RegistryV2.address);
     });
   });
 
@@ -125,7 +125,7 @@ describe('Network Registry', () => {
       RegistryV3 = (await deployRegistry(3, registryAdmin)) as TESTYellowClearingV3;
     });
 
-    it('Revert on migrate call without next version set', async () => {
+    it('Revert on migrate call without next impl set', async () => {
       await RegistryV1.connect(storedPartipant).migrateParticipant();
     });
 
@@ -133,7 +133,7 @@ describe('Network Registry', () => {
 
     it('Participant is marked as migrated on migrate');
 
-    it('Migrate is successful with intermediate version');
+    it('Migrate is successful with intermediate impl');
 
     it('Revert on migrating unexisting participant');
 

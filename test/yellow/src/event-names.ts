@@ -10,4 +10,4 @@ export const DEPOSITED = 'Deposited';
 export const WITHDRAWN = 'Withdrawn';
 
 // network registry
-export const NEXT_VERSION_SET = 'NextVersionSet';
+export const NEXT_IMPL_SET = 'NextImplementationSet';

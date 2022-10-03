@@ -16,7 +16,7 @@ abstract contract YellowClearingBase is AccessControl {
         Active,
         // Participant is registered but is not allowed to participate
         Suspended,
-        // Participant is registered but have migrated to a new version
+        // Participant is registered but have migrated to the next implementation
         Migrated
     }
 
@@ -27,8 +27,8 @@ abstract contract YellowClearingBase is AccessControl {
     }
 
     // Roles
-    bytes32 public constant MAINTAINER_ROLE = keccak256('MAINTAINER_ROLE');
-    bytes32 public constant PREVIOUS_VERSION_ROLE = keccak256('PREVIOUS_VERSION_ROLE');
+    bytes32 public constant REGISTRY_MAINTAINER_ROLE = keccak256('REGISTRY_MAINTAINER_ROLE');
+    bytes32 public constant PREVIOUS_IMPLEMENTATION_ROLE = keccak256('PREVIOUS_IMPLEMENTATION_ROLE');
 
     // Participant data mapping
     mapping(address => ParticipantData) private _participantData;
@@ -36,8 +36,8 @@ abstract contract YellowClearingBase is AccessControl {
     // This version
     uint8 immutable version;
 
-    // Next version
-    YellowClearingBase private _nextVersion;
+    // Next implementation
+    YellowClearingBase private _nextImplementation;
 
     // Address of this contract
     address private immutable _self = address(this);
@@ -45,28 +45,28 @@ abstract contract YellowClearingBase is AccessControl {
     // Constructor
     constructor(uint8 version_) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(MAINTAINER_ROLE, msg.sender);
+        _grantRole(REGISTRY_MAINTAINER_ROLE, msg.sender);
         version = version_;
     }
 
-    // Get next version address
-    function getNextVersion() external view returns (YellowClearingBase) {
-        return _nextVersion;
+    // Get next implementation address
+    function getNextImplementation() external view returns (YellowClearingBase) {
+        return _nextImplementation;
     }
 
-    // Set next version address
-    function setNextVersion(YellowClearingBase nextVersion) external onlyRole(MAINTAINER_ROLE) {
-        require(address(_nextVersion) == address(0), 'Next version already set');
+    // Set next implementation address
+    function setNextImplementation(YellowClearingBase nextImplementation) external onlyRole(REGISTRY_MAINTAINER_ROLE) {
+        require(address(_nextImplementation) == address(0), 'Next implementation already set');
         require(
-            address(nextVersion) != address(0) && address(nextVersion) != _self,
-            'Invalid nextVersion supplied'
+            address(nextImplementation) != address(0) && address(nextImplementation) != _self,
+            'Invalid nextImplementation supplied'
         );
 
-        require(nextVersion.hasRole(PREVIOUS_VERSION_ROLE, address(this)), 'Previous version role is absent');
+        require(nextImplementation.hasRole(PREVIOUS_IMPLEMENTATION_ROLE, address(this)), 'Previous implementation role is absent');
 
-        _nextVersion = nextVersion;
+        _nextImplementation = nextImplementation;
 
-        emit NextVersionSet(nextVersion);
+        emit NextImplementationSet(nextImplementation);
     }
 
     // Has participant
@@ -88,7 +88,7 @@ abstract contract YellowClearingBase is AccessControl {
     // Set participant data
     function setParticipantData(address participant, ParticipantData memory data)
         external
-        onlyRole(MAINTAINER_ROLE)
+        onlyRole(REGISTRY_MAINTAINER_ROLE)
     {
         require(participant != address(0), 'Invalid participant address');
 
@@ -104,7 +104,7 @@ abstract contract YellowClearingBase is AccessControl {
 
     // Migrate participant
     function migrateParticipant() external {
-        require(address(_nextVersion) != address(0), 'Next version is not set');
+        require(address(_nextImplementation) != address(0), 'Next version is not set');
 
         address participant = msg.sender;
 
@@ -115,16 +115,19 @@ abstract contract YellowClearingBase is AccessControl {
         require(currentData.status != ParticipantStatus.Migrated, 'Participant already migrated');
 
         // Migrate data
-        _nextVersion.migrateParticipantData(participant, currentData);
+        _nextImplementation.migrateParticipantData(participant, currentData);
 
-        // Mark participant as migrated on this version
+        // Mark participant as migrated on this implementation
         _participantData[participant] = ParticipantData({status: ParticipantStatus.Migrated, data: currentData.data});
     }
 
-    // Migrate participant data on either this or next version
-    function migrateParticipantData(address participant, ParticipantData memory data) external onlyRole(PREVIOUS_VERSION_ROLE) {
-        if (address(_nextVersion) != address(0)) {
-            _nextVersion.migrateParticipantData(participant, data);
+    // Migrate participant data on either this or next implementation
+    function migrateParticipantData(address participant, ParticipantData memory data)
+        external
+        onlyRole(PREVIOUS_IMPLEMENTATION_ROLE)
+    {
+        if (address(_nextImplementation) != address(0)) {
+            _nextImplementation.migrateParticipantData(participant, data);
         } else {
             _participantData[participant] = data;
 
@@ -132,7 +135,7 @@ abstract contract YellowClearingBase is AccessControl {
         }
     }
 
-    event NextVersionSet(YellowClearingBase nextVersion);
+    event NextImplementationSet(YellowClearingBase nextImplementation);
 
     event ParticipantDataSet(address indexed participant, ParticipantData data);
 
