@@ -7,7 +7,7 @@ import {TESTYellowClearingV1, TESTYellowClearingV2, TESTYellowClearingV3} from '
 
 import {deployNextRegistry, deployRegistry} from './src/NetworkRegistry/helpers';
 import {MockData, Status} from './src/NetworkRegistry/participantData';
-import {ACCOUNT_MISSING_ROLE, INVALID_NEXT_IMPL, NEXT_IMPL_SET, PREV_IMPL_ROLE_REQUIRED} from './src/revert-reasons';
+import {ACCOUNT_MISSING_ROLE, INVALID_NEXT_IMPL, NEXT_IMPL_SET, NO_PARTICIPANT, PREV_IMPL_ROLE_REQUIRED} from './src/revert-reasons';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
@@ -20,11 +20,19 @@ describe('Network Registry', () => {
   let someone: SignerWithAddress;
   let someother: SignerWithAddress;
   let presentPartipant: SignerWithAddress;
+  let notPresentPartipant: SignerWithAddress;
   let noneParticipant: SignerWithAddress;
 
   before(async () => {
-    [registryAdmin, registryMaintrainer, someone, someother, presentPartipant, noneParticipant] =
-      await ethers.getSigners();
+    [
+      registryAdmin,
+      registryMaintrainer,
+      someone,
+      someother,
+      presentPartipant,
+      notPresentPartipant,
+      noneParticipant,
+    ] = await ethers.getSigners();
   });
 
   let RegistryV1: Contract & TESTYellowClearingV1;
@@ -123,20 +131,12 @@ describe('Network Registry', () => {
     });
 
     it('Return false if participant is not present', async () => {
-      expect(await RegistryV1.hasParticipant(someone.address)).to.be.false;
+      expect(await RegistryV1.hasParticipant(notPresentPartipant.address)).to.be.false;
     });
 
     it('Return false if participant is present and with status "None"', async () => {
       expect(await RegistryV1.hasParticipant(noneParticipant.address)).to.be.false;
     });
-  });
-
-  describe('getParticipantData', () => {
-    it('Successfully return present participant data');
-
-    it('Revert if participant is not present');
-
-    it('Revert if participant status is None');
   });
 
   describe('requireParticipantNotPresent', () => {
@@ -151,6 +151,36 @@ describe('Network Registry', () => {
     it('Revert if participant is present in 2nd consequent impl');
 
     it('Revert if participant is present in 3rd consequent impl');
+  });
+
+  describe('getParticipantData', () => {
+    it('Successfully return present participant data', async () => {
+      await expect(RegistryV1.getParticipantData(presentPartipant.address)).to.not.be.reverted;
+    });
+
+    it('Returned participant data has all required fields', async () => {
+      const data = await RegistryV1.getParticipantData(presentPartipant.address);
+
+      expect(data.status).not.to.be.undefined;
+      expect(data.status).not.to.equal(Status.None);
+
+      expect(data.vault).not.to.be.undefined;
+
+      expect(data.registrationTime).not.to.be.undefined;
+      expect(data.registrationTime).not.to.equal(0);
+    });
+
+    it('Revert if participant is not present', async () => {
+      await expect(RegistryV1.getParticipantData(notPresentPartipant.address)).to.be.revertedWith(
+        NO_PARTICIPANT
+      );
+    });
+
+    it('Revert if participant status is None', async () => {
+      await expect(RegistryV1.getParticipantData(noneParticipant.address)).to.be.revertedWith(
+        NO_PARTICIPANT
+      );
+    });
   });
 
   describe('registerParticipant', () => {
