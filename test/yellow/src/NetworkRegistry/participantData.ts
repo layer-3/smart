@@ -11,8 +11,8 @@ export enum Status {
 
 export function MockData(status: Status) {
   return {
+    registrationTime: Date.now(),
     status: BigNumber.from(status),
     vault: Wallet.createRandom().address,
-    registrationTime: Date.now(),
   };
 }

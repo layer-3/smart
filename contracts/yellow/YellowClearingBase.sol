@@ -26,9 +26,9 @@ abstract contract YellowClearingBase is AccessControl {
 
     // Participant data
     struct ParticipantData {
+        uint256 registrationTime;
         ParticipantStatus status;
         IVault vault;
-        uint256 registrationTime;
     }
 
     // Data required to register a participant
