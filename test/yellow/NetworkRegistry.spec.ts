@@ -19,10 +19,11 @@ describe('Network Registry', () => {
   let registryMaintrainer: SignerWithAddress;
   let someone: SignerWithAddress;
   let someother: SignerWithAddress;
-  let registeredPartipant: SignerWithAddress;
+  let presentPartipant: SignerWithAddress;
+  let noneParticipant: SignerWithAddress;
 
   before(async () => {
-    [registryAdmin, registryMaintrainer, someone, someother, registeredPartipant] =
+    [registryAdmin, registryMaintrainer, someone, someother, presentPartipant, noneParticipant] =
       await ethers.getSigners();
   });
 
@@ -30,7 +31,8 @@ describe('Network Registry', () => {
 
   beforeEach(async () => {
     RegistryV1 = await deployRegistry(1, registryAdmin);
-    await RegistryV1.setParticipantData(registeredPartipant.address, MockData(Status.Active));
+    await RegistryV1.setParticipantData(presentPartipant.address, MockData(Status.Active));
+    await RegistryV1.setParticipantData(noneParticipant.address, MockData(Status.None));
   });
 
   describe('constructor', () => {
@@ -116,11 +118,17 @@ describe('Network Registry', () => {
   });
 
   describe('hasParticipant', () => {
-    it('Return true if participant is present');
+    it('Return true if participant is present', async () => {
+      expect(await RegistryV1.hasParticipant(presentPartipant.address)).to.be.true;
+    });
 
-    it('Return false if participant is not present');
+    it('Return false if participant is not present', async () => {
+      expect(await RegistryV1.hasParticipant(someone.address)).to.be.false;
+    });
 
-    it('Return false if participant is present and with status "None"');
+    it('Return false if participant is present and with status "None"', async () => {
+      expect(await RegistryV1.hasParticipant(noneParticipant.address)).to.be.false;
+    });
   });
 
   describe('getParticipantData', () => {
@@ -192,7 +200,7 @@ describe('Network Registry', () => {
 
     it('Revert when next impl is not set', async () => {
       // TODO:
-      // await RegistryV1.connect(registeredPartipant).migrateParticipant();
+      // await RegistryV1.connect(presentPartipant).migrateParticipant();
     });
 
     it('Revert when participant is not present');
