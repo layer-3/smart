@@ -10,5 +10,6 @@ contract TESTYellowClearingV1 is YellowClearingBase {
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // SECUTIRY VULNERABILITY HERE \/ \/ \/
     constructor(YellowClearingBase previousImplementation)
-      YellowClearingBase(previousImplementation) {}
+        YellowClearingBase(previousImplementation)
+    {}
 }

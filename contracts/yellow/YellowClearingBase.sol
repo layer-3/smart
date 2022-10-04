@@ -93,6 +93,15 @@ abstract contract YellowClearingBase is AccessControl {
         return _participantData[participant].status != ParticipantStatus.None;
     }
 
+    // Recursively check that participant is not present in the registry
+    function requireParticipantNotPresent(address participant) public view {
+        if (address(_nextImplementation) != address(0)) {
+            _nextImplementation.requireParticipantNotPresent(participant);
+        }
+
+        require(!hasParticipant(participant), 'Participant already registered');
+    }
+
     // Get participant data
     function getParticipantData(address participant)
         external
@@ -102,15 +111,6 @@ abstract contract YellowClearingBase is AccessControl {
         require(hasParticipant(participant), 'Participant does not exist');
 
         return _participantData[participant];
-    }
-
-    // Recursively check that participant is not present in the registry
-    function requireParticipantNotPresent(address participant) public view {
-        if (address(_nextImplementation) != address(0)) {
-            _nextImplementation.requireParticipantNotPresent(participant);
-        }
-
-        require(!hasParticipant(participant), 'Participant already registered');
     }
 
     // Register participant with Pending status using signature by its Broker

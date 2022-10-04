@@ -6,5 +6,8 @@ import './TESTYellowClearingV1.sol';
 
 contract TESTYellowClearingV3 is YellowClearingBase {
     constructor(YellowClearingBase previousImplementation)
-        YellowClearingBase(previousImplementation) {}
+        YellowClearingBase(previousImplementation)
+    {}
+
+    // TODO: add override `_migrateParticipantData` example
 }
