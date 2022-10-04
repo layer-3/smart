@@ -28,7 +28,7 @@ abstract contract YellowClearingBase is AccessControl {
     struct ParticipantData {
         ParticipantStatus status;
         IVault vault;
-        uint256 registrationBlock;
+        uint256 registrationTime;
     }
 
     // Data required to register a participant
@@ -126,11 +126,11 @@ abstract contract YellowClearingBase is AccessControl {
             'Signer is not participant vault broker'
         );
 
-        _participantData[participant] = ParticipantData(
-            ParticipantStatus.Pending,
-            rData.vault,
-            block.number
-        );
+        _participantData[participant] = ParticipantData({
+            status: ParticipantStatus.Pending,
+            vault: rData.vault,
+            registrationTime: block.timestamp
+        });
 
         emit ParticipantRegistered(participant);
     }
@@ -171,7 +171,7 @@ abstract contract YellowClearingBase is AccessControl {
         _participantData[participant] = ParticipantData({
             status: ParticipantStatus.Migrated,
             vault: currentData.vault,
-            registrationBlock: currentData.registrationBlock
+            registrationTime: currentData.registrationTime
         });
     }
 
