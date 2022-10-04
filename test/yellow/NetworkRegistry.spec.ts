@@ -6,7 +6,7 @@ import {ethers} from 'hardhat';
 import {TESTYellowClearingV1, TESTYellowClearingV2, TESTYellowClearingV3} from '../../typechain';
 
 import {deployRegistry} from './src/NetworkRegistry/helpers';
-import {Data, Status} from './src/NetworkRegistry/participantData';
+import {MockData, Status} from './src/NetworkRegistry/participantData';
 import {ACCOUNT_MISSING_ROLE, INVALID_NEXT_IMPL, NEXT_IMPL_SET} from './src/revert-reasons';
 
 const AddressZero = ethers.constants.AddressZero;
@@ -19,10 +19,10 @@ describe('Network Registry', () => {
   let registryMaintrainer: SignerWithAddress;
   let someone: SignerWithAddress;
   let someother: SignerWithAddress;
-  let storedPartipant: SignerWithAddress;
+  let registeredPartipant: SignerWithAddress;
 
   before(async () => {
-    [registryAdmin, registryMaintrainer, someone, someother, storedPartipant] =
+    [registryAdmin, registryMaintrainer, someone, someother, registeredPartipant] =
       await ethers.getSigners();
   });
 
@@ -30,7 +30,7 @@ describe('Network Registry', () => {
 
   beforeEach(async () => {
     RegistryV1 = await deployRegistry(1, registryAdmin);
-    await RegistryV1.setParticipantData(storedPartipant.address, Data(Status.Active, '0xtest'));
+    await RegistryV1.setParticipantData(registeredPartipant.address, MockData(Status.Active));
   });
 
   describe('constructor', () => {
@@ -41,60 +41,66 @@ describe('Network Registry', () => {
     it('Deployer is maintainer', async () => {
       expect(await RegistryV1.hasRole(MNTR_ROLE, registryAdmin.address)).to.be.true;
     });
+
+    it('If prev impl is not 0, set PREV_IMPL role');
   });
 
-  describe.only('nextImplementation', () => {
+  describe.only('getNextImplementation', () => {
+    it('Next impl address is zero after deployment', async () => {
+      expect(await RegistryV1.getNextImplementation()).to.equal(AddressZero);
+    });
+  });
+
+  describe.only('setNextImplementation', () => {
     let RegistryV2: Contract & TESTYellowClearingV2;
 
     beforeEach(async () => {
       RegistryV2 = (await deployRegistry(2, registryAdmin)) as TESTYellowClearingV2;
     });
 
-    it('Next impl address is zero after deployment', async () => {
-      expect(await RegistryV1.getNextImplementation()).to.equal(AddressZero);
-    });
-
-    it('Admin can set next impl address', async () => {
+    it('Succeed when caller is admin and address is correct', async () => {
       await RegistryV1.setNextImplementation(RegistryV2.address);
       expect(await RegistryV1.getNextImplementation()).to.equal(RegistryV2.address);
     });
 
-    it('Revert on supply not YellowClearingBase SC', async () => {
+    it.skip('Revert when caller is missing required role', async () => {
+      // TODO:
+      await expect(
+        RegistryV1.connect(someone).setNextAddress(RegistryV2.address)
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE));
+    });
+
+    it.skip('Revert on next impl contract missing required role', async () => {
+      // TODO:
+      // await expect(
+      //   RegistryV1.connect(someone).setNextAddress(RegistryV2.address)
+      // ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE));
+    });
+
+    it('Revert when setting to not YellowClearingBase SC', async () => {
       await expect(RegistryV1.setNextImplementation(someone.address)).to.be.reverted;
     });
 
-    it.skip('Revert on set next impl missing required role', async () => {
-      // TODO:
-      await expect(
-        RegistryV1.connect(someone).setNextAddress(RegistryV2.address)
-      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE));
-    });
-
-    it.skip('Revert on set next impl by account missing required role', async () => {
-      // TODO:
-      await expect(
-        RegistryV1.connect(someone).setNextAddress(RegistryV2.address)
-      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE));
-    });
-
-    it('Revert on set already set next impl address', async () => {
+    it('Revert when setting twice', async () => {
       await RegistryV1.setNextImplementation(RegistryV2.address);
       await expect(RegistryV1.setNextImplementation(RegistryV2.address)).to.be.revertedWith(
         NEXT_IMPL_SET
       );
     });
 
-    it('Revert on set next impl address to 0', async () => {
-      await expect(RegistryV1.setNextImplementation(AddressZero)).to.be.revertedWith(INVALID_NEXT_IMPL);
+    it('Revert when setting to address 0', async () => {
+      await expect(RegistryV1.setNextImplementation(AddressZero)).to.be.revertedWith(
+        INVALID_NEXT_IMPL
+      );
     });
 
-    it('Revert on set next impl address to self', async () => {
+    it('Revert when setting to self', async () => {
       await expect(RegistryV1.setNextImplementation(RegistryV1.address)).to.be.revertedWith(
         INVALID_NEXT_IMPL
       );
     });
 
-    it('Event emmited on next impl address set', async () => {
+    it('Event emmited', async () => {
       const tx = await RegistryV1.setNextImplementation(RegistryV2.address);
 
       const receipt = await tx.wait();
@@ -102,29 +108,67 @@ describe('Network Registry', () => {
     });
   });
 
-  describe('participant data manipulation', () => {
+  describe('hasParticipant', () => {
     it('Return true if participant is present');
 
     it('Return false if participant is not present');
 
     it('Return false if participant is present and with status "None"');
+  });
 
-    it('Return existing participant data');
+  describe('getParticipantData', () => {
+    it('Successfully return present participant data');
 
-    it('Revert when getting unexisting participant data');
+    it('Revert if participant is not present');
 
-    it('Maintainer can set participant data');
+    it('Revert if participant status is None');
+  });
 
-    it('Revert on not maintainer setting participant data');
+  describe('requireParticipantNotPresent', () => {
+    it('Succeed if participant is not present in this impl');
 
-    it('Revert on setting data of zero address');
+    it('Succeed if participant is not present in 2 consequent impls');
+
+    it('Succeed if participant is not present in 3 consequent impls');
+
+    it('Revert if participant is present in this impl');
+
+    it('Revert if participant is present in 2nd consequent impl');
+
+    it('Revert if participant is present in 3rd consequent impl');
+  });
+
+  describe('registerParticipant', () => {
+    it('Can register participant');
+
+    it('Block timestamp is stored');
+
+    it('Revert on signer not broker');
+
+    it('Revert on supplying vault with different broker');
+
+    it('Revert on incorrect signed value');
+
+    it('Revert when participant already present');
+
+    it('Revert on supplying not vault address');
+
+    it('Event emmited');
+  });
+
+  describe('setParticipantData', () => {
+    it('Succeed when maintainer is caller');
+
+    it('Revert when caller is not maintainer');
+
+    it('Revert on setting to zero address');
 
     it('Revert on setting data of migrated participant');
 
-    it('Event emmited on participant data set');
+    it('Event emmited');
   });
 
-  describe('migrate participant', () => {
+  describe('migrateParticipant', () => {
     let RegistryV2: Contract & TESTYellowClearingV2;
     let RegistryV3: Contract & TESTYellowClearingV3;
 
@@ -133,20 +177,22 @@ describe('Network Registry', () => {
       RegistryV3 = (await deployRegistry(3, registryAdmin)) as TESTYellowClearingV3;
     });
 
-    it('Revert on migrate call without next impl set', async () => {
-      await RegistryV1.connect(storedPartipant).migrateParticipant();
-    });
+    it('Participant data is copied');
 
-    it('Participant data is copied on migrate');
-
-    it('Participant is marked as migrated on migrate');
+    it('Participant is marked as migrated');
 
     it('Migrate is successful with intermediate impl');
 
-    it('Revert on migrating unexisting participant');
+    it('Revert when next impl is not set', async () => {
+      await RegistryV1.connect(registeredPartipant).migrateParticipant();
+    });
 
-    it('Revert on migrating already migrated participant');
+    it('Revert migrating unexisting participant');
 
-    it('Event emmited on participant migrate');
+    it('Revert migrating already migrated participant');
+
+    it('Succesfully migrate with overriden migrateData');
+
+    it('Event emmited');
   });
 });
