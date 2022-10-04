@@ -5,9 +5,16 @@ import {ethers} from 'hardhat';
 
 import {TESTYellowClearingV1, TESTYellowClearingV2, TESTYellowClearingV3} from '../../typechain';
 
-import {deployNextRegistry, deployRegistry} from './src/NetworkRegistry/helpers';
+import {deployAndLinkNextRegistry, deployNextRegistry, deployRegistry, setParticipantStatus} from './src/NetworkRegistry/helpers';
 import {MockData, Status} from './src/NetworkRegistry/participantData';
-import {ACCOUNT_MISSING_ROLE, INVALID_NEXT_IMPL, NEXT_IMPL_SET, NO_PARTICIPANT, PREV_IMPL_ROLE_REQUIRED} from './src/revert-reasons';
+import {
+  ACCOUNT_MISSING_ROLE,
+  INVALID_NEXT_IMPL,
+  NEXT_IMPL_SET,
+  NO_PARTICIPANT,
+  PARTICIPANT_REGISTERED,
+  PREV_IMPL_ROLE_REQUIRED,
+} from './src/revert-reasons';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
@@ -39,8 +46,8 @@ describe('Network Registry', () => {
 
   beforeEach(async () => {
     RegistryV1 = await deployRegistry(1, registryAdmin);
-    await RegistryV1.setParticipantData(presentPartipant.address, MockData(Status.Active));
-    await RegistryV1.setParticipantData(noneParticipant.address, MockData(Status.None));
+    await setParticipantStatus(RegistryV1, presentPartipant, Status.Active);
+    await setParticipantStatus(RegistryV1, noneParticipant, Status.None);
   });
 
   describe('constructor', () => {
@@ -53,7 +60,7 @@ describe('Network Registry', () => {
     });
 
     it('If prev impl is not 0, set PREV_IMPL role', async () => {
-      const RegistryV2 = await deployNextRegistry(2, RegistryV1.address, registryAdmin);
+      const RegistryV2 = await deployNextRegistry(2, RegistryV1, registryAdmin);
       expect(await RegistryV2.hasRole(PREV_IMPL_ROLE, RegistryV1.address)).to.be.true;
     });
   });
@@ -68,11 +75,7 @@ describe('Network Registry', () => {
     let RegistryV2: Contract & TESTYellowClearingV2;
 
     beforeEach(async () => {
-      RegistryV2 = (await deployNextRegistry(
-        2,
-        RegistryV1.address,
-        registryAdmin
-      )) as TESTYellowClearingV2;
+      RegistryV2 = (await deployNextRegistry(2, RegistryV1, registryAdmin)) as TESTYellowClearingV2;
     });
 
     it('Succeed when caller is admin and address is correct', async () => {
@@ -140,17 +143,50 @@ describe('Network Registry', () => {
   });
 
   describe('requireParticipantNotPresent', () => {
-    it('Succeed if participant is not present in this impl');
+    it('Succeed if participant is not present in this impl', async () => {
+      await expect(RegistryV1.requireParticipantNotPresent(notPresentPartipant.address)).not.to.be
+        .reverted;
+    });
 
-    it('Succeed if participant is not present in 2 consequent impls');
+    it('Succeed if participant is not present in 2 consequent impls', async () => {
+      await deployNextRegistry(2, RegistryV1, registryAdmin);
 
-    it('Succeed if participant is not present in 3 consequent impls');
+      await expect(RegistryV1.requireParticipantNotPresent(notPresentPartipant.address)).not.to.be
+        .reverted;
+    });
 
-    it('Revert if participant is present in this impl');
+    it('Succeed if participant is not present in 3 consequent impls', async () => {
+      const RegistryV2 = await deployNextRegistry(2, RegistryV1, registryAdmin);
+      await deployNextRegistry(3, RegistryV2, registryAdmin);
 
-    it('Revert if participant is present in 2nd consequent impl');
+      await expect(RegistryV1.requireParticipantNotPresent(notPresentPartipant.address)).not.to.be
+        .reverted;
+    });
 
-    it('Revert if participant is present in 3rd consequent impl');
+    it('Revert if participant is present in this impl', async () => {
+      await expect(
+        RegistryV1.requireParticipantNotPresent(presentPartipant.address)
+      ).to.be.revertedWith(PARTICIPANT_REGISTERED);
+    });
+
+    it('Revert if participant is present in 2nd consequent impl', async () => {
+      const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
+      await setParticipantStatus(RegistryV2, someone, Status.Active);
+
+      await expect(RegistryV1.requireParticipantNotPresent(someone.address)).to.be.revertedWith(
+        PARTICIPANT_REGISTERED
+      );
+    });
+
+    it('Revert if participant is present in 3rd consequent impl', async () => {
+      const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
+      const RegistryV3 = await deployAndLinkNextRegistry(3, RegistryV2, registryAdmin);
+      await setParticipantStatus(RegistryV3, someone, Status.Active);
+
+      await expect(RegistryV1.requireParticipantNotPresent(someone.address)).to.be.revertedWith(
+        PARTICIPANT_REGISTERED
+      );
+    });
   });
 
   describe('getParticipantData', () => {
@@ -198,7 +234,7 @@ describe('Network Registry', () => {
 
     it('Revert on supplying not vault address');
 
-    it('Event emmited');
+    it('Event emitted');
   });
 
   describe('setParticipantData', () => {
@@ -210,7 +246,7 @@ describe('Network Registry', () => {
 
     it('Revert on setting data of migrated participant');
 
-    it('Event emmited');
+    it('Event emitted');
   });
 
   describe('migrateParticipant', () => {
@@ -241,6 +277,6 @@ describe('Network Registry', () => {
 
     it('Succesfully migrate with overriden migrateData');
 
-    it('Event emmited');
+    it('Event emitted');
   });
 });
