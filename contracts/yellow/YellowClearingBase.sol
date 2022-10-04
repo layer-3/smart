@@ -120,9 +120,8 @@ abstract contract YellowClearingBase is AccessControl {
         requireParticipantNotPresent(participant);
 
         require(
-            keccak256(abi.encode(participant)).toEthSignedMessageHash().recover(
-                rData.vaultBrokerSignature
-            ) == rData.vault.getBrokerAddress(),
+            _recoverAddressSigner(participant, rData.vaultBrokerSignature) ==
+                rData.vault.getBrokerAddress(),
             'Signer is not participant vault broker'
         );
 
@@ -153,10 +152,13 @@ abstract contract YellowClearingBase is AccessControl {
     }
 
     // Migrate participant
-    function migrateParticipant() external {
+    function migrateParticipant(address participant, bytes calldata signature) external {
         require(address(_nextImplementation) != address(0), 'Next version is not set');
 
-        address participant = msg.sender;
+        require(
+            _recoverAddressSigner(participant, signature) == participant,
+            'Signer not participant'
+        );
 
         require(hasParticipant(participant), 'Participant does not exist');
 
@@ -187,6 +189,15 @@ abstract contract YellowClearingBase is AccessControl {
 
             emit ParticipantMigrated(participant, _self);
         }
+    }
+
+    // Recover signer from `signature` provided `_address` is signed.
+    function _recoverAddressSigner(address _address, bytes memory signature)
+        internal
+        pure
+        returns (address)
+    {
+        return keccak256(abi.encode(_address)).toEthSignedMessageHash().recover(signature);
     }
 
     // Internal migrate logic. Can be overriden.
