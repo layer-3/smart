@@ -105,9 +105,9 @@ abstract contract YellowClearingBase is AccessControl {
     }
 
     // Recursively check that participant is not present in the registry
-    function requireParticipantNotRegistered(address participant) public view {
+    function requireParticipantNotPresent(address participant) public view {
         if (address(_nextImplementation) != address(0)) {
-            _nextImplementation.requireParticipantNotRegistered(participant);
+            _nextImplementation.requireParticipantNotPresent(participant);
         }
 
         require(!hasParticipant(participant), 'Participant already registered');
@@ -117,7 +117,7 @@ abstract contract YellowClearingBase is AccessControl {
     function registerParticipant(address participant, ParticipantRegisterData calldata rData)
         external
     {
-        requireParticipantNotRegistered(participant);
+        requireParticipantNotPresent(participant);
 
         require(
             keccak256(abi.encode(participant)).toEthSignedMessageHash().recover(
