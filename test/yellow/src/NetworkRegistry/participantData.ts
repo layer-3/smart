@@ -1,7 +1,4 @@
 import {BigNumber, Wallet} from 'ethers';
-import {ethers} from 'hardhat';
-
-const utils = ethers.utils;
 
 export enum Status {
   None,

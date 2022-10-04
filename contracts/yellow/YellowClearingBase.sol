@@ -80,7 +80,7 @@ abstract contract YellowClearingBase is AccessControl {
 
         require(
             nextImplementation.hasRole(PREVIOUS_IMPLEMENTATION_ROLE, address(this)),
-            'Previous implementation role is absent'
+            'Previous implementation role is required'
         );
 
         _nextImplementation = nextImplementation;

@@ -5,9 +5,9 @@ import {ethers} from 'hardhat';
 
 import {TESTYellowClearingV1, TESTYellowClearingV2, TESTYellowClearingV3} from '../../typechain';
 
-import {deployRegistry} from './src/NetworkRegistry/helpers';
+import {deployNextRegistry, deployRegistry} from './src/NetworkRegistry/helpers';
 import {MockData, Status} from './src/NetworkRegistry/participantData';
-import {ACCOUNT_MISSING_ROLE, INVALID_NEXT_IMPL, NEXT_IMPL_SET} from './src/revert-reasons';
+import {ACCOUNT_MISSING_ROLE, INVALID_NEXT_IMPL, NEXT_IMPL_SET, PREV_IMPL_ROLE_REQUIRED} from './src/revert-reasons';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
@@ -42,20 +42,27 @@ describe('Network Registry', () => {
       expect(await RegistryV1.hasRole(MNTR_ROLE, registryAdmin.address)).to.be.true;
     });
 
-    it('If prev impl is not 0, set PREV_IMPL role');
+    it('If prev impl is not 0, set PREV_IMPL role', async () => {
+      const RegistryV2 = await deployNextRegistry(2, RegistryV1.address, registryAdmin);
+      expect(await RegistryV2.hasRole(PREV_IMPL_ROLE, RegistryV1.address)).to.be.true;
+    });
   });
 
-  describe.only('getNextImplementation', () => {
+  describe('getNextImplementation', () => {
     it('Next impl address is zero after deployment', async () => {
       expect(await RegistryV1.getNextImplementation()).to.equal(AddressZero);
     });
   });
 
-  describe.only('setNextImplementation', () => {
+  describe('setNextImplementation', () => {
     let RegistryV2: Contract & TESTYellowClearingV2;
 
     beforeEach(async () => {
-      RegistryV2 = (await deployRegistry(2, registryAdmin)) as TESTYellowClearingV2;
+      RegistryV2 = (await deployNextRegistry(
+        2,
+        RegistryV1.address,
+        registryAdmin
+      )) as TESTYellowClearingV2;
     });
 
     it('Succeed when caller is admin and address is correct', async () => {
@@ -63,18 +70,18 @@ describe('Network Registry', () => {
       expect(await RegistryV1.getNextImplementation()).to.equal(RegistryV2.address);
     });
 
-    it.skip('Revert when caller is missing required role', async () => {
-      // TODO:
+    it('Revert when caller is missing required role', async () => {
       await expect(
-        RegistryV1.connect(someone).setNextAddress(RegistryV2.address)
+        RegistryV1.connect(someone).setNextImplementation(RegistryV2.address)
       ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE));
     });
 
-    it.skip('Revert on next impl contract missing required role', async () => {
-      // TODO:
-      // await expect(
-      //   RegistryV1.connect(someone).setNextAddress(RegistryV2.address)
-      // ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE));
+    it('Revert on next impl contract missing required role', async () => {
+      const RegistryV2NotLinked = await deployRegistry(2, registryAdmin);
+
+      await expect(
+        RegistryV1.setNextImplementation(RegistryV2NotLinked.address)
+      ).to.be.revertedWith(PREV_IMPL_ROLE_REQUIRED);
     });
 
     it('Revert when setting to not YellowClearingBase SC', async () => {
@@ -184,12 +191,15 @@ describe('Network Registry', () => {
     it('Migrate is successful with intermediate impl');
 
     it('Revert when next impl is not set', async () => {
-      await RegistryV1.connect(registeredPartipant).migrateParticipant();
+      // TODO:
+      // await RegistryV1.connect(registeredPartipant).migrateParticipant();
     });
 
-    it('Revert migrating unexisting participant');
+    it('Revert when participant is not present');
 
-    it('Revert migrating already migrated participant');
+    it('Revert when participant signer is not participant');
+
+    it('Revert when participant already migrated');
 
     it('Succesfully migrate with overriden migrateData');
 

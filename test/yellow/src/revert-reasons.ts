@@ -29,6 +29,7 @@ export const INVALID_CHAIN_ID = 'Invalid chain id';
 // network registry
 export const NEXT_IMPL_SET = 'Next implementation already set';
 export const INVALID_NEXT_IMPL = 'Invalid nextImplementation supplied';
+export const PREV_IMPL_ROLE_REQUIRED = 'Previous implementation role is required';
 
 export function ACCOUNT_MISSING_ROLE(account: string, role: string): string {
   return `AccessControl: account ${hexify(account)} is missing role ${role}`;
