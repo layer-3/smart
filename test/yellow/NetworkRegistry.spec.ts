@@ -159,22 +159,22 @@ describe('Network Registry', () => {
     });
   });
 
-  describe('requireParticipantNotPresent', () => {
+  describe.only('requireParticipantNotPresent', () => {
     it('Succeed if participant is not present in this impl', async () => {
       await expect(RegistryV1.requireParticipantNotPresent(notPresentPartipant.address)).not.to.be
         .reverted;
     });
 
     it('Succeed if participant is not present in 2 consequent impls', async () => {
-      await deployNextRegistry(2, RegistryV1, registryAdmin);
+      await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
 
       await expect(RegistryV1.requireParticipantNotPresent(notPresentPartipant.address)).not.to.be
         .reverted;
     });
 
     it('Succeed if participant is not present in 3 consequent impls', async () => {
-      const RegistryV2 = await deployNextRegistry(2, RegistryV1, registryAdmin);
-      await deployNextRegistry(3, RegistryV2, registryAdmin);
+      const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
+      await deployAndLinkNextRegistry(3, RegistryV2, registryAdmin);
 
       await expect(RegistryV1.requireParticipantNotPresent(notPresentPartipant.address)).not.to.be
         .reverted;
