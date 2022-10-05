@@ -104,7 +104,12 @@ describe('Network Registry', () => {
       expect(await RegistryV1.getNextImplementation()).to.equal(AddressZero);
     });
 
-    it('Return correct impl address after it has been set');
+    it('Return correct impl address after it has been set', async () => {
+      const RegistryV2 = await deployNextRegistry(2, RegistryV1, registryAdmin);
+      await RegistryV1.setNextImplementation(RegistryV2.address);
+
+      expect(await RegistryV1.getNextImplementation()).to.equal(RegistryV2.address);
+    });
   });
 
   describe('setNextImplementation', () => {
