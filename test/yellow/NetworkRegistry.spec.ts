@@ -48,8 +48,10 @@ describe('Network Registry', () => {
   let someother: SignerWithAddress;
   let presentPartipant: SignerWithAddress;
   let notPresentPartipant: SignerWithAddress;
-  let pendingParticipant: SignerWithAddress;
   let noneParticipant: SignerWithAddress;
+  let pendingParticipant: SignerWithAddress;
+  let suspendedParticipant: SignerWithAddress;
+  let migratedParticipant: SignerWithAddress;
   let virtualParticipant: SignerWithAddress;
 
   before(async () => {
@@ -61,8 +63,10 @@ describe('Network Registry', () => {
       someother,
       presentPartipant,
       notPresentPartipant,
-      pendingParticipant,
       noneParticipant,
+      pendingParticipant,
+      suspendedParticipant,
+      migratedParticipant,
       virtualParticipant,
     ] = await ethers.getSigners();
   });
@@ -76,6 +80,8 @@ describe('Network Registry', () => {
     await setParticipantStatus(RegistryV1, presentPartipant, Status.Active);
     await setParticipantStatus(RegistryV1, noneParticipant, Status.None);
     await setParticipantStatus(RegistryV1, pendingParticipant, Status.Pending);
+    await setParticipantStatus(RegistryV1, suspendedParticipant, Status.Suspended);
+    await setParticipantStatus(RegistryV1, migratedParticipant, Status.Migrated);
   });
 
   describe('constructor', () => {
@@ -331,17 +337,45 @@ describe('Network Registry', () => {
   });
 
   describe('suspendParticipant', () => {
-    it('Successfuly suspend participant');
+    it('Successfuly suspend participant', async () => {
+      await RegistryV1.connect(auditor).suspendParticipant(presentPartipant.address);
+      expect((await RegistryV1.getParticipantData(presentPartipant.address)).status).to.equal(
+        Status.Suspended
+      );
+    });
 
-    it('Revert if caller is not autidor');
+    it('Revert if caller is not autidor', async () => {
+      await expect(
+        RegistryV1.connect(someone).suspendParticipant(presentPartipant.address)
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, AUDITOR_ROLE));
+    });
 
-    it('Revert if participant is not present');
+    it('Revert if participant is not present', async () => {
+      await expect(
+        RegistryV1.connect(auditor).suspendParticipant(notPresentPartipant.address)
+      ).to.be.revertedWith(NO_PARTICIPANT);
+    });
 
-    it('Revert if status is None');
+    it('Revert if status is None', async () => {
+      await expect(
+        RegistryV1.connect(auditor).suspendParticipant(noneParticipant.address)
+      ).to.be.revertedWith(NO_PARTICIPANT);
+    });
 
-    it('Revert if status is Migrated');
+    it('Revert if status is Migrated', async () => {
+      await expect(
+        RegistryV1.connect(auditor).suspendParticipant(migratedParticipant.address)
+      ).to.be.revertedWith(INVALID_STATUS);
+    });
 
-    it('Event emmited');
+    it('Event emmited', async () => {
+      const tx = await RegistryV1.connect(auditor).suspendParticipant(presentPartipant.address);
+
+      const receipt = await tx.wait();
+      expect(receipt)
+        .to.emit(RegistryV1, PARTICIPANT_STATUS_CHANGED)
+        .withArgs(presentPartipant.address, Status.Suspended);
+    });
   });
 
   describe('reinstateParticipant', () => {
