@@ -122,7 +122,7 @@ abstract contract YellowClearingBase is AccessControl {
         require(
             _recoverAddressSigner(participant, rData.vaultBrokerSignature) ==
                 rData.vault.getBrokerAddress(),
-            'Signer is not participant vault broker'
+            'Signer is not vault broker'
         );
 
         _participantData[participant] = ParticipantData({

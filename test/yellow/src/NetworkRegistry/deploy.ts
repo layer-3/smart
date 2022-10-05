@@ -1,10 +1,7 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {Signer} from 'ethers';
 import {ethers} from 'hardhat';
-import { Address } from 'hardhat-deploy/dist/types';
 
 import {YellowClearingBase} from '../../../../typechain';
-import { MockData, Status } from './participantData';
 
 const AddressZero = ethers.constants.AddressZero;
 
@@ -73,12 +70,4 @@ async function _deployRegistry(
   }
 
   return NextRegistry;
-}
-
-export async function setParticipantStatus(
-  registry: YellowClearingBase,
-  participant: SignerWithAddress,
-  status: Status
-) {
-  await registry.setParticipantData(participant.address, MockData(status));
 }

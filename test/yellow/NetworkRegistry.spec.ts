@@ -1,44 +1,59 @@
 import {expect} from 'chai';
-import {Contract} from 'ethers';
+import {Contract, utils} from 'ethers';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
-import {TESTYellowClearingV1, TESTYellowClearingV2, TESTYellowClearingV3} from '../../typechain';
+import {
+  TESTYellowClearingV1,
+  TESTYellowClearingV2,
+  TESTYellowClearingV3,
+  VaultProxyBase,
+} from '../../typechain';
 
-import {deployAndLinkNextRegistry, deployNextRegistry, deployRegistry, setParticipantStatus} from './src/NetworkRegistry/helpers';
-import {MockData, Status} from './src/NetworkRegistry/participantData';
+import {
+  deployAndLinkNextRegistry,
+  deployNextRegistry,
+  deployRegistry,
+} from './src/NetworkRegistry/deploy';
+import {setParticipantStatus, Status} from './src/NetworkRegistry/participantData';
 import {
   ACCOUNT_MISSING_ROLE,
   INVALID_NEXT_IMPL,
   NEXT_IMPL_SET,
   NO_PARTICIPANT,
-  PARTICIPANT_REGISTERED,
+  PARTICIPANT_ALREADY_REGISTERED,
   PREV_IMPL_ROLE_REQUIRED,
+  SIGNER_NOT_BROKER,
 } from './src/revert-reasons';
+import {deployAndSetupVault} from './src/VaultImpl/deploy';
+import {registerParams} from './src/NetworkRegistry/transactions';
+import {randomSignerWithAddress} from './src/signers';
+import {signEncoded} from './src/signatures';
+import { PARTICIPANT_REGISTERED } from './src/event-names';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
-const MNTR_ROLE = ethers.utils.id('REGISTRY_MAINTAINER_ROLE');
-const PREV_IMPL_ROLE = ethers.utils.id('PREVIOUS_IMPLEMENTATION_ROLE');
+const MNTR_ROLE = utils.id('REGISTRY_MAINTAINER_ROLE');
+const PREV_IMPL_ROLE = utils.id('PREVIOUS_IMPLEMENTATION_ROLE');
 
 describe('Network Registry', () => {
   let registryAdmin: SignerWithAddress;
-  let registryMaintrainer: SignerWithAddress;
   let someone: SignerWithAddress;
   let someother: SignerWithAddress;
   let presentPartipant: SignerWithAddress;
   let notPresentPartipant: SignerWithAddress;
   let noneParticipant: SignerWithAddress;
+  let virtualParticipant: SignerWithAddress;
 
   before(async () => {
     [
       registryAdmin,
-      registryMaintrainer,
       someone,
       someother,
       presentPartipant,
       notPresentPartipant,
       noneParticipant,
+      virtualParticipant,
     ] = await ethers.getSigners();
   });
 
@@ -166,7 +181,7 @@ describe('Network Registry', () => {
     it('Revert if participant is present in this impl', async () => {
       await expect(
         RegistryV1.requireParticipantNotPresent(presentPartipant.address)
-      ).to.be.revertedWith(PARTICIPANT_REGISTERED);
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_REGISTERED);
     });
 
     it('Revert if participant is present in 2nd consequent impl', async () => {
@@ -174,7 +189,7 @@ describe('Network Registry', () => {
       await setParticipantStatus(RegistryV2, someone, Status.Active);
 
       await expect(RegistryV1.requireParticipantNotPresent(someone.address)).to.be.revertedWith(
-        PARTICIPANT_REGISTERED
+        PARTICIPANT_ALREADY_REGISTERED
       );
     });
 
@@ -184,7 +199,7 @@ describe('Network Registry', () => {
       await setParticipantStatus(RegistryV3, someone, Status.Active);
 
       await expect(RegistryV1.requireParticipantNotPresent(someone.address)).to.be.revertedWith(
-        PARTICIPANT_REGISTERED
+        PARTICIPANT_ALREADY_REGISTERED
       );
     });
   });
@@ -220,21 +235,85 @@ describe('Network Registry', () => {
   });
 
   describe('registerParticipant', () => {
-    it('Can register participant');
+    let VaultProxy: VaultProxyBase, broker: SignerWithAddress;
 
-    it('Block timestamp is stored');
+    beforeEach(async () => {
+      ({proxy: VaultProxy, broker} = await deployAndSetupVault());
+    });
 
-    it('Revert on signer not broker');
+    it('Can register participant', async () => {
+      await expect(
+        RegistryV1.connect(someone).registerParticipant(
+          ...(await registerParams(virtualParticipant, VaultProxy, broker))
+        )
+      ).not.to.be.reverted;
+    });
 
-    it('Revert on supplying vault with different broker');
+    it('Participant is marked Pending', async () => {
+      await RegistryV1.connect(someone).registerParticipant(
+        ...(await registerParams(virtualParticipant, VaultProxy, broker))
+      );
 
-    it('Revert on incorrect signed value');
+      expect((await RegistryV1.getParticipantData(virtualParticipant.address)).status).to.equal(
+        Status.Pending
+      );
+    });
 
-    it('Revert when participant already present');
+    it('Revert on signer not broker', async () => {
+      const notBroker = await randomSignerWithAddress();
+      await expect(
+        RegistryV1.connect(someone).registerParticipant(virtualParticipant.address, {
+          vault: VaultProxy.address,
+          vaultBrokerSignature: await signEncoded(
+            notBroker,
+            utils.defaultAbiCoder.encode(['address'], [someother.address])
+          ),
+        })
+      ).to.be.revertedWith(SIGNER_NOT_BROKER);
+    });
 
-    it('Revert on supplying not vault address');
+    it('Revert on incorrect signed value', async () => {
+      await expect(
+        RegistryV1.connect(someone).registerParticipant(virtualParticipant.address, {
+          vault: VaultProxy.address,
+          vaultBrokerSignature: await signEncoded(
+            broker,
+            utils.defaultAbiCoder.encode(['address'], [someother.address])
+          ),
+        })
+      ).to.be.revertedWith(SIGNER_NOT_BROKER);
+    });
 
-    it('Event emitted');
+    it('Revert when participant already present', async () => {
+      await expect(
+        RegistryV1.connect(someone).registerParticipant(
+          ...(await registerParams(presentPartipant, VaultProxy, broker))
+        )
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_REGISTERED);
+    });
+
+    it('Revert on supplying not vault address', async () => {
+      await expect(
+        RegistryV1.connect(someone).registerParticipant(virtualParticipant.address, {
+          vault: someother.address,
+          vaultBrokerSignature: await signEncoded(
+            broker,
+            utils.defaultAbiCoder.encode(['address'], [virtualParticipant.address])
+          ),
+        })
+      ).to.be.reverted;
+    });
+
+    it('Event emitted', async () => {
+      const tx = await RegistryV1.connect(someone).registerParticipant(
+        ...(await registerParams(virtualParticipant, VaultProxy, broker))
+      );
+
+      const receipt = await tx.wait();
+      expect(receipt)
+        .to.emit(RegistryV1, PARTICIPANT_REGISTERED)
+        .withArgs(virtualParticipant.address);
+    });
   });
 
   describe('setParticipantData', () => {
