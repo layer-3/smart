@@ -85,8 +85,8 @@ async function _deployVault(options: DeployVaultOptions): Promise<DeployVaultRet
 
   const VaultProxy = (await deployVaultProxy({admin: proxyAdmin, impl: VaultImpl})).proxy;
   const ProxiedImpl = (await ethers.getContractAt(
-    'TESTVaultUpgradability1',
-    VaultImpl.address,
+    'VaultImplV1',
+    VaultProxy.address,
     proxyAdmin
   )) as VaultImplV1;
 
