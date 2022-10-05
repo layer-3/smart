@@ -29,13 +29,6 @@ abstract contract YellowClearingBase is AccessControl {
         // Review: it is possible to store in uint64?
         uint256 registrationTime;
         ParticipantStatus status;
-        IVault vault;
-    }
-
-    // Data required to register a participant
-    struct ParticipantRegisterData {
-        IVault vault;
-        bytes vaultBrokerSignature;
     }
 
     // Roles
@@ -114,20 +107,13 @@ abstract contract YellowClearingBase is AccessControl {
     }
 
     // Register participant with Pending status using signature by its Broker
-    function registerParticipant(address participant, ParticipantRegisterData calldata rData)
-        external
-    {
+    function registerParticipant(address participant, bytes calldata signature) external {
         requireParticipantNotPresent(participant);
 
-        require(
-            _recoverAddressSigner(participant, rData.vaultBrokerSignature) ==
-                rData.vault.getBrokerAddress(),
-            'Invalid signer'
-        );
+        require(_recoverAddressSigner(participant, signature) == participant, 'Invalid signer');
 
         _participantData[participant] = ParticipantData({
             status: ParticipantStatus.Pending,
-            vault: rData.vault,
             registrationTime: block.timestamp
         });
 
@@ -169,7 +155,6 @@ abstract contract YellowClearingBase is AccessControl {
         // Mark participant as migrated on this implementation
         _participantData[participant] = ParticipantData({
             status: ParticipantStatus.Migrated,
-            vault: currentData.vault,
             registrationTime: currentData.registrationTime
         });
     }

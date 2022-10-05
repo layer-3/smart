@@ -1,5 +1,5 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {BigNumber, Wallet} from 'ethers';
+import {BigNumber} from 'ethers';
 
 import {YellowClearingBase} from '../../../../typechain';
 
@@ -16,7 +16,6 @@ export function MockData(status: Status) {
   return {
     registrationTime: Date.now(),
     status: BigNumber.from(status),
-    vault: Wallet.createRandom().address,
   };
 }
 
