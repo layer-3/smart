@@ -15,12 +15,14 @@ import {
   deployNextRegistry,
   deployRegistry,
 } from './src/NetworkRegistry/deploy';
-import {setParticipantStatus, Status} from './src/NetworkRegistry/participantData';
+import {MockData, setParticipantStatus, Status} from './src/NetworkRegistry/participantData';
 import {
   ACCOUNT_MISSING_ROLE,
   INVALID_NEXT_IMPL,
+  INVALID_PARTICIPANT_ADDRESS,
   NEXT_IMPL_SET,
   NO_PARTICIPANT,
+  PARTICIPANT_ALREADY_MIGRATED,
   PARTICIPANT_ALREADY_REGISTERED,
   PREV_IMPL_ROLE_REQUIRED,
   SIGNER_NOT_BROKER,
@@ -29,7 +31,7 @@ import {deployAndSetupVault} from './src/VaultImpl/deploy';
 import {registerParams} from './src/NetworkRegistry/transactions';
 import {randomSignerWithAddress} from './src/signers';
 import {signEncoded} from './src/signatures';
-import { PARTICIPANT_REGISTERED } from './src/event-names';
+import {PARTICIPANT_DATA_SET, PARTICIPANT_REGISTERED} from './src/event-names';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
@@ -316,16 +318,39 @@ describe('Network Registry', () => {
     });
   });
 
-  describe('setParticipantData', () => {
-    it('Succeed when maintainer is caller');
+  describe.only('setParticipantData', () => {
+    it('Succeed when caller is maintainer', async () => {
+      await expect(RegistryV1.setParticipantData(someone.address, MockData(Status.Active))).not.to
+        .be.reverted;
+    });
 
-    it('Revert when caller is not maintainer');
+    it('Revert when caller is not maintainer', async () => {
+      await expect(
+        RegistryV1.connect(someone).setParticipantData(someother.address, MockData(Status.Active))
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE));
+    });
 
-    it('Revert on setting to zero address');
+    it('Revert on setting zero address account', async () => {
+      await expect(
+        RegistryV1.setParticipantData(AddressZero, MockData(Status.Active))
+      ).to.be.revertedWith(INVALID_PARTICIPANT_ADDRESS);
+    });
 
-    it('Revert on setting data of migrated participant');
+    it('Revert on setting data of migrated participant', async () => {
+      await RegistryV1.setParticipantData(someone.address, MockData(Status.Migrated));
 
-    it('Event emitted');
+      await expect(
+        RegistryV1.setParticipantData(someone.address, MockData(Status.Active))
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_MIGRATED);
+    });
+
+    it('Event emitted', async () => {
+      const data = MockData(Status.Active);
+      const tx = await RegistryV1.setParticipantData(someone.address, data);
+
+      const receipt = await tx.wait();
+      expect(receipt).to.emit(RegistryV1, PARTICIPANT_DATA_SET).withArgs(someone.address, data);
+    });
   });
 
   describe('migrateParticipant', () => {

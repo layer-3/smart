@@ -12,3 +12,4 @@ export const WITHDRAWN = 'Withdrawn';
 // network registry
 export const NEXT_IMPL_SET = 'NextImplementationSet';
 export const PARTICIPANT_REGISTERED = 'ParticipantRegistered';
+export const PARTICIPANT_DATA_SET = 'ParticipantDataSet';

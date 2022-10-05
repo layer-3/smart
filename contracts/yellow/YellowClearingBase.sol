@@ -143,7 +143,7 @@ abstract contract YellowClearingBase is AccessControl {
 
         require(
             _participantData[participant].status != ParticipantStatus.Migrated,
-            'Participant migrated'
+            'Participant already migrated'
         );
 
         _participantData[participant] = data;
