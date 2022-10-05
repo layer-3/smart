@@ -22,3 +22,15 @@ export async function registerParams(
     },
   ];
 }
+
+export type migrateParams = [string, string];
+
+export async function migrateParams(participant: SignerWithAddress): Promise<migrateParams> {
+  return [
+    participant.address,
+    await signEncoded(
+      participant,
+      utils.defaultAbiCoder.encode(['address'], [participant.address])
+    ),
+  ];
+}

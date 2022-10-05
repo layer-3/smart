@@ -21,17 +21,22 @@ import {
   INVALID_NEXT_IMPL,
   INVALID_PARTICIPANT_ADDRESS,
   NEXT_IMPL_SET,
+  NO_NEXT_IMPL,
   NO_PARTICIPANT,
   PARTICIPANT_ALREADY_MIGRATED,
   PARTICIPANT_ALREADY_REGISTERED,
   PREV_IMPL_ROLE_REQUIRED,
-  SIGNER_NOT_BROKER,
+  INVALID_SIGNER,
 } from './src/revert-reasons';
 import {deployAndSetupVault} from './src/VaultImpl/deploy';
-import {registerParams} from './src/NetworkRegistry/transactions';
+import {migrateParams, registerParams} from './src/NetworkRegistry/transactions';
 import {randomSignerWithAddress} from './src/signers';
 import {signEncoded} from './src/signatures';
-import {PARTICIPANT_DATA_SET, PARTICIPANT_REGISTERED} from './src/event-names';
+import {
+  PARTICIPANT_DATA_SET,
+  PARTICIPANT_MIGRATED,
+  PARTICIPANT_REGISTERED,
+} from './src/event-names';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
@@ -159,7 +164,7 @@ describe('Network Registry', () => {
     });
   });
 
-  describe.only('requireParticipantNotPresent', () => {
+  describe('requireParticipantNotPresent', () => {
     it('Succeed if participant is not present in this impl', async () => {
       await expect(RegistryV1.requireParticipantNotPresent(notPresentPartipant.address)).not.to.be
         .reverted;
@@ -271,7 +276,7 @@ describe('Network Registry', () => {
             utils.defaultAbiCoder.encode(['address'], [someother.address])
           ),
         })
-      ).to.be.revertedWith(SIGNER_NOT_BROKER);
+      ).to.be.revertedWith(INVALID_SIGNER);
     });
 
     it('Revert on incorrect signed value', async () => {
@@ -283,7 +288,7 @@ describe('Network Registry', () => {
             utils.defaultAbiCoder.encode(['address'], [someother.address])
           ),
         })
-      ).to.be.revertedWith(SIGNER_NOT_BROKER);
+      ).to.be.revertedWith(INVALID_SIGNER);
     });
 
     it('Revert when participant already present', async () => {
@@ -318,7 +323,7 @@ describe('Network Registry', () => {
     });
   });
 
-  describe.only('setParticipantData', () => {
+  describe('setParticipantData', () => {
     it('Succeed when caller is maintainer', async () => {
       await expect(RegistryV1.setParticipantData(someone.address, MockData(Status.Active))).not.to
         .be.reverted;
@@ -358,29 +363,102 @@ describe('Network Registry', () => {
     let RegistryV3: Contract & TESTYellowClearingV3;
 
     beforeEach(async () => {
-      RegistryV2 = (await deployRegistry(2, registryAdmin)) as TESTYellowClearingV2;
-      RegistryV3 = (await deployRegistry(3, registryAdmin)) as TESTYellowClearingV3;
+      RegistryV2 = (await deployAndLinkNextRegistry(
+        2,
+        RegistryV1,
+        registryAdmin
+      )) as TESTYellowClearingV2;
+
+      RegistryV3 = (await deployNextRegistry(3, RegistryV2, registryAdmin)) as TESTYellowClearingV3;
     });
 
-    it('Participant data is copied');
+    it('Succeed when all requirements are met', async () => {
+      await expect(RegistryV1.migrateParticipant(...(await migrateParams(presentPartipant)))).not.to
+        .be.reverted;
+    });
 
-    it('Participant is marked as migrated');
+    it('Participant data is copied', async () => {
+      await RegistryV1.migrateParticipant(...(await migrateParams(presentPartipant)));
 
-    it('Migrate is successful with intermediate impl');
+      expect((await RegistryV2.getParticipantData(presentPartipant.address)).status).to.equal(
+        Status.Active
+      );
+    });
+
+    it('Participant is marked as migrated', async () => {
+      await RegistryV1.migrateParticipant(...(await migrateParams(presentPartipant)));
+
+      expect((await RegistryV1.getParticipantData(presentPartipant.address)).status).to.equal(
+        Status.Migrated
+      );
+    });
+
+    it('Migrate is successful with intermediate impl', async () => {
+      await RegistryV2.setNextImplementation(RegistryV3.address);
+      expect(await RegistryV2.getNextImplementation()).to.equal(RegistryV3.address);
+
+      // migrate successful
+      await RegistryV1.migrateParticipant(...(await migrateParams(presentPartipant)));
+
+      // copy data
+      expect((await RegistryV3.getParticipantData(presentPartipant.address)).status).to.equal(
+        Status.Active
+      );
+
+      // mark as migrated in first
+      expect((await RegistryV1.getParticipantData(presentPartipant.address)).status).to.equal(
+        Status.Migrated
+      );
+
+      // not appeared in second
+      expect(await RegistryV2.hasParticipant(presentPartipant.address)).to.be.false;
+    });
 
     it('Revert when next impl is not set', async () => {
-      // TODO:
-      // await RegistryV1.connect(presentPartipant).migrateParticipant();
+      const NotLinkedRegistry = await deployRegistry(1, registryAdmin);
+      await NotLinkedRegistry.setParticipantData(someone.address, MockData(Status.Active));
+
+      await expect(
+        NotLinkedRegistry.migrateParticipant(...(await migrateParams(someone)))
+      ).to.be.revertedWith(NO_NEXT_IMPL);
     });
 
-    it('Revert when participant is not present');
+    it('Revert when participant is not present', async () => {
+      await expect(
+        RegistryV1.migrateParticipant(...(await migrateParams(someone)))
+      ).to.be.revertedWith(NO_PARTICIPANT);
+    });
 
-    it('Revert when participant signer is not participant');
+    it('Revert when signer is not participant', async () => {
+      await expect(
+        RegistryV1.migrateParticipant(
+          presentPartipant.address,
+          await signEncoded(
+            someone,
+            utils.defaultAbiCoder.encode(['address'], [presentPartipant.address])
+          )
+        )
+      ).to.be.revertedWith(INVALID_SIGNER);
+    });
 
-    it('Revert when participant already migrated');
+    it('Revert when participant already migrated', async () => {
+      await RegistryV1.migrateParticipant(...(await migrateParams(presentPartipant)));
 
+      await expect(
+        RegistryV1.migrateParticipant(...(await migrateParams(presentPartipant)))
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_MIGRATED);
+    });
+
+    // TODO:
     it('Succesfully migrate with overriden migrateData');
 
-    it('Event emitted');
+    it('Event emitted', async () => {
+      const tx = await RegistryV1.migrateParticipant(...(await migrateParams(presentPartipant)));
+
+      const receipt = await tx.wait();
+      expect(receipt)
+        .to.emit(RegistryV1, PARTICIPANT_MIGRATED)
+        .withArgs(presentPartipant.address, RegistryV2.address);
+    });
   });
 });

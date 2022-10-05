@@ -26,6 +26,7 @@ abstract contract YellowClearingBase is AccessControl {
 
     // Participant data
     struct ParticipantData {
+        // Review: it is possible to store in uint64?
         uint256 registrationTime;
         ParticipantStatus status;
         IVault vault;
@@ -56,7 +57,6 @@ abstract contract YellowClearingBase is AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(REGISTRY_MAINTAINER_ROLE, msg.sender);
 
-        // Review: introduce a helper `isValidAddress(address)` method
         if (address(previousImplementation) != address(0)) {
             _grantRole(PREVIOUS_IMPLEMENTATION_ROLE, address(previousImplementation));
         }
@@ -122,7 +122,7 @@ abstract contract YellowClearingBase is AccessControl {
         require(
             _recoverAddressSigner(participant, rData.vaultBrokerSignature) ==
                 rData.vault.getBrokerAddress(),
-            'Signer is not vault broker'
+            'Invalid signer'
         );
 
         _participantData[participant] = ParticipantData({
@@ -153,12 +153,9 @@ abstract contract YellowClearingBase is AccessControl {
 
     // Migrate participant
     function migrateParticipant(address participant, bytes calldata signature) external {
-        require(address(_nextImplementation) != address(0), 'Next version is not set');
+        require(address(_nextImplementation) != address(0), 'Next implementation is not set');
 
-        require(
-            _recoverAddressSigner(participant, signature) == participant,
-            'Signer not participant'
-        );
+        require(_recoverAddressSigner(participant, signature) == participant, 'Invalid signer');
 
         require(hasParticipant(participant), 'Participant does not exist');
 
