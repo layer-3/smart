@@ -26,8 +26,7 @@ abstract contract YellowClearingBase is AccessControl {
 
     // Participant data
     struct ParticipantData {
-        // Review: it is possible to store in uint64?
-        uint256 registrationTime;
+        uint64 registrationTime;
         ParticipantStatus status;
     }
 
@@ -116,7 +115,7 @@ abstract contract YellowClearingBase is AccessControl {
 
         _participantData[participant] = ParticipantData({
             status: ParticipantStatus.Pending,
-            registrationTime: block.timestamp
+            registrationTime: uint64(block.timestamp)
         });
 
         emit ParticipantRegistered(participant);
