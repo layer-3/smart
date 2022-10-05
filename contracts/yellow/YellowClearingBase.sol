@@ -33,6 +33,8 @@ abstract contract YellowClearingBase is AccessControl {
 
     // Roles
     bytes32 public constant REGISTRY_MAINTAINER_ROLE = keccak256('REGISTRY_MAINTAINER_ROLE');
+    bytes32 public constant REGISTRY_VALIDATOR_ROLE = keccak256('REGISTRY_VALIDATOR_ROLE');
+    bytes32 public constant AUDITOR_ROLE = keccak256('AUDITOR_ROLE');
     bytes32 public constant PREVIOUS_IMPLEMENTATION_ROLE =
         keccak256('PREVIOUS_IMPLEMENTATION_ROLE');
 
@@ -120,6 +122,49 @@ abstract contract YellowClearingBase is AccessControl {
         emit ParticipantRegistered(participant);
     }
 
+    // Validate participant by setting its status to Active or Inactive
+    function validateParticipant(address participant) external onlyRole(REGISTRY_VALIDATOR_ROLE) {
+        require(hasParticipant(participant), 'Participant does not exist');
+        require(
+            _participantData[participant].status == ParticipantStatus.Pending,
+            'Invalid status'
+        );
+
+        // status changes to either Active or Inactive depending on internal logic yet to be added
+        _participantData[participant].status = ParticipantStatus.Active;
+
+        emit ParticipantStatusChanged(participant, ParticipantStatus.Active);
+    }
+
+    // Suspend participant by setting its status to Suspended
+    function suspendParticipant(address participant) external onlyRole(AUDITOR_ROLE) {
+        require(hasParticipant(participant), 'Participant does not exist');
+
+        ParticipantStatus status = _participantData[participant].status;
+        require(
+            status != ParticipantStatus.None && status != ParticipantStatus.Migrated,
+            'Invalid status'
+        );
+
+        _participantData[participant].status = ParticipantStatus.Suspended;
+
+        emit ParticipantStatusChanged(participant, ParticipantStatus.Suspended);
+    }
+
+    // Reinstate participant by setting its status back to Active or Inactive
+    function reinstateParticipant(address participant) external onlyRole(AUDITOR_ROLE) {
+        require(hasParticipant(participant), 'Participant does not exist');
+        require(
+            _participantData[participant].status == ParticipantStatus.Suspended,
+            'Invalid status'
+        );
+
+        // status changes to either Active or Inactive depending on internal logic yet to be added
+        _participantData[participant].status = ParticipantStatus.Active;
+
+        emit ParticipantStatusChanged(participant, ParticipantStatus.Active);
+    }
+
     // Set participant data
     function setParticipantData(address participant, ParticipantData memory data)
         external
@@ -169,7 +214,7 @@ abstract contract YellowClearingBase is AccessControl {
         } else {
             _migrateParticipantData(participant, data);
 
-            emit ParticipantMigrated(participant, _self);
+            emit ParticipantStatusChanged(participant, ParticipantStatus.Migrated);
         }
     }
 
@@ -194,7 +239,7 @@ abstract contract YellowClearingBase is AccessControl {
 
     event ParticipantRegistered(address participant);
 
-    event ParticipantDataSet(address indexed participant, ParticipantData data);
+    event ParticipantStatusChanged(address indexed participant, ParticipantStatus indexed status);
 
-    event ParticipantMigrated(address indexed participant, address indexed toAddress);
+    event ParticipantDataSet(address indexed participant, ParticipantData data);
 }
