@@ -33,6 +33,7 @@ export const PREV_IMPL_ROLE_REQUIRED = 'Previous implementation role is required
 export const PARTICIPANT_ALREADY_REGISTERED = 'Participant already registered';
 export const NO_PARTICIPANT = 'Participant does not exist';
 export const INVALID_SIGNER = 'Invalid signer';
+export const INVALID_STATUS = 'Invalid status';
 export const INVALID_PARTICIPANT_ADDRESS = 'Invalid participant address';
 export const PARTICIPANT_ALREADY_MIGRATED = 'Participant already migrated';
 export const NO_NEXT_IMPL = 'Next implementation is not set';
