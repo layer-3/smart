@@ -1,7 +1,7 @@
 import {isAddress} from 'ethers/lib/utils';
 import {ethers} from 'hardhat';
 
-import {YellowClearingBase} from '../../typechain';
+import {YellowClearingV1} from '../../typechain';
 
 async function main() {
   const provider = ethers.provider;
@@ -20,7 +20,7 @@ async function main() {
 
   // Deploy Clearing
   const ClearingFactory = await ethers.getContractFactory('YellowClearingV1');
-  const Clearing = (await ClearingFactory.deploy()) as YellowClearingBase;
+  const Clearing = (await ClearingFactory.deploy()) as YellowClearingV1;
   const {...deployTransaction} = Clearing.deployTransaction;
   console.log('Transaction hash:', deployTransaction.hash);
   await Clearing.deployed();
