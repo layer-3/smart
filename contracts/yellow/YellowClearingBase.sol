@@ -12,7 +12,7 @@ abstract contract YellowClearingBase is AccessControl {
     enum ParticipantStatus {
         // Participant is not registered
         None,
-        // Participant is registered but not active
+        // Participant is registered but not yet validated
         Pending,
         // Participant is registered but do not have token staked
         Inactive,
