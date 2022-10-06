@@ -2,7 +2,7 @@ import {ethers} from 'hardhat';
 
 async function main() {
   const provider = ethers.provider;
-  console.log('Current network:', provider.network.name);
+  console.log('Current network:', (await provider.getNetwork()).name);
 
   const [deployer] = await ethers.getSigners();
   console.log('Deployer address:', deployer.address);
