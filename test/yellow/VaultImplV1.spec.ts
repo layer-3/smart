@@ -20,9 +20,9 @@ import {
   INVALID_IMPL_ADDRESS,
   INVALID_CHAIN_ID,
 } from './src/revert-reasons';
-import {depositParams, setAddressParams, withdrawParams} from './src/transactions';
+import {depositParams, setAddressParams, withdrawParams} from './src/VaultImpl/transactions';
 import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET, DEPOSITED, WITHDRAWN} from './src/event-names';
-import {addAllocation, generalPayload, PartialPayload} from './src/payload';
+import {addAllocation, generalPayload, PartialPayload} from './src/VaultImpl/payload';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
@@ -34,7 +34,6 @@ describe('Vault implementation V1', () => {
   let proxyAdmin: SignerWithAddress;
   let tokenAdmin: SignerWithAddress;
   let someone: SignerWithAddress;
-  let someother: SignerWithAddress;
   let broker1: SignerWithAddress;
   let broker2: SignerWithAddress;
   let coSigner1: SignerWithAddress;
@@ -71,17 +70,8 @@ describe('Vault implementation V1', () => {
   });
 
   before(async () => {
-    [
-      implAdmin,
-      proxyAdmin,
-      tokenAdmin,
-      someone,
-      someother,
-      broker1,
-      broker2,
-      coSigner1,
-      coSigner2,
-    ] = await ethers.getSigners();
+    [implAdmin, proxyAdmin, tokenAdmin, someone, broker1, broker2, coSigner1, coSigner2] =
+      await ethers.getSigners();
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     provider = someone.provider!;

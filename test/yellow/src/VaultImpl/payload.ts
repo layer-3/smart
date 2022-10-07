@@ -1,6 +1,9 @@
+import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {utils} from 'ethers';
 import {ParamType} from 'ethers/lib/utils';
 import {ethers} from 'hardhat';
+
+import {signEncoded} from '../signatures';
 
 // keccak256('YELLOW_VAULT_DEPOSIT_ACTION');
 export const DEPOSIT_ACTION = '0xa2d4613c2e2e0782566f63085acedcb19fbd37900464a8316040997ccd6e9fea';
@@ -100,4 +103,19 @@ export function encodePayload(payload: Payload): string {
     ],
     [payload]
   );
+}
+
+export async function encodeAndSignPayload(
+  payload: Payload,
+  broker: SignerWithAddress,
+  coSigner: SignerWithAddress
+): Promise<[Payload, string, string]> {
+  const encodedPayload = encodePayload(payload);
+
+  const signatures = await Promise.all([
+    signEncoded(broker, encodedPayload),
+    signEncoded(coSigner, encodedPayload),
+  ]);
+
+  return [payload, signatures[0], signatures[1]];
 }
