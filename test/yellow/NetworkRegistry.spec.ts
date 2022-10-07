@@ -29,6 +29,8 @@ import {signEncoded} from './src/signatures';
 import {
   NEXT_IMPL_SET,
   PARTICIPANT_DATA_SET,
+  PARTICIPANT_MIGRATED_FROM,
+  PARTICIPANT_MIGRATED_TO,
   PARTICIPANT_REGISTERED,
   PARTICIPANT_STATUS_CHANGED,
 } from './src/event-names';
@@ -119,12 +121,12 @@ describe('Network Registry', () => {
       RegistryV2 = (await deployNextRegistry(2, RegistryV1, registryAdmin)) as TESTYellowClearingV2;
     });
 
-    it('Succeed when caller is admin and address is correct', async () => {
+    it('Succeed if caller is admin and address is correct', async () => {
       await RegistryV1.setNextImplementation(RegistryV2.address);
       expect(await RegistryV1.getNextImplementation()).to.equal(RegistryV2.address);
     });
 
-    it('Revert when caller is missing required role', async () => {
+    it('Revert if caller is missing required role', async () => {
       await expect(
         RegistryV1.connect(someone).setNextImplementation(RegistryV2.address)
       ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE));
@@ -138,24 +140,24 @@ describe('Network Registry', () => {
       ).to.be.revertedWith(PREV_IMPL_ROLE_REQUIRED);
     });
 
-    it('Revert when setting to not YellowClearingBase SC', async () => {
+    it('Revert if setting to not YellowClearingBase SC', async () => {
       await expect(RegistryV1.setNextImplementation(someone.address)).to.be.reverted;
     });
 
-    it('Revert when setting twice', async () => {
+    it('Revert if setting twice', async () => {
       await RegistryV1.setNextImplementation(RegistryV2.address);
       await expect(RegistryV1.setNextImplementation(RegistryV2.address)).to.be.revertedWith(
         NEXT_IMPL_ALREADY_SET
       );
     });
 
-    it('Revert when setting to address 0', async () => {
+    it('Revert if setting to address 0', async () => {
       await expect(RegistryV1.setNextImplementation(AddressZero)).to.be.revertedWith(
         INVALID_NEXT_IMPL
       );
     });
 
-    it('Revert when setting to self', async () => {
+    it('Revert if setting to self', async () => {
       await expect(RegistryV1.setNextImplementation(RegistryV1.address)).to.be.revertedWith(
         INVALID_NEXT_IMPL
       );
@@ -285,7 +287,7 @@ describe('Network Registry', () => {
       ).to.be.revertedWith(INVALID_SIGNER);
     });
 
-    it('Revert when participant already present', async () => {
+    it('Revert if participant already present', async () => {
       await expect(
         RegistryV1.connect(someone).registerParticipant(...(await registerParams(activePartipant)))
       ).to.be.revertedWith(PARTICIPANT_ALREADY_REGISTERED);
@@ -408,12 +410,12 @@ describe('Network Registry', () => {
   });
 
   describe('setParticipantData', () => {
-    it('Succeed when caller is maintainer', async () => {
+    it('Succeed if caller is maintainer', async () => {
       await expect(RegistryV1.setParticipantData(someone.address, MockData(Status.Active))).not.to
         .be.reverted;
     });
 
-    it('Revert when caller is not maintainer', async () => {
+    it('Revert if caller is not maintainer', async () => {
       await expect(
         RegistryV1.connect(someone).setParticipantData(someother.address, MockData(Status.Active))
       ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE));
@@ -460,7 +462,7 @@ describe('Network Registry', () => {
       RegistryV3 = (await deployNextRegistry(3, RegistryV2, registryAdmin)) as TESTYellowClearingV3;
     });
 
-    it('Succeed when all requirements are met', async () => {
+    it('Succeed if all requirements are met', async () => {
       await expect(RegistryV1.migrateParticipant(...(await migrateParams(activePartipant)))).not.to
         .be.reverted;
     });
@@ -502,7 +504,7 @@ describe('Network Registry', () => {
       expect(await RegistryV2.hasParticipant(activePartipant.address)).to.be.false;
     });
 
-    it('Revert when next impl is not set', async () => {
+    it('Revert if next impl is not set', async () => {
       const NotLinkedRegistry = await deployRegistry(1, registryAdmin);
       await NotLinkedRegistry.setParticipantData(someone.address, MockData(Status.Active));
 
@@ -511,13 +513,13 @@ describe('Network Registry', () => {
       ).to.be.revertedWith(NO_NEXT_IMPL);
     });
 
-    it('Revert when participant is not present', async () => {
+    it('Revert if participant is not present', async () => {
       await expect(
         RegistryV1.migrateParticipant(...(await migrateParams(someone)))
       ).to.be.revertedWith(NO_PARTICIPANT);
     });
 
-    it('Revert when signer is not participant', async () => {
+    it('Revert if signer is not participant', async () => {
       await expect(
         RegistryV1.migrateParticipant(
           activePartipant.address,
@@ -529,7 +531,7 @@ describe('Network Registry', () => {
       ).to.be.revertedWith(INVALID_SIGNER);
     });
 
-    it('Revert when participant already migrated', async () => {
+    it('Revert if participant already migrated', async () => {
       await RegistryV1.migrateParticipant(...(await migrateParams(activePartipant)));
 
       await expect(
@@ -537,14 +539,28 @@ describe('Network Registry', () => {
       ).to.be.revertedWith(PARTICIPANT_ALREADY_MIGRATED);
     });
 
-    // TODO:
-    it('Succesfully migrate with overriden migrateData');
+    it('Succesfully migrate with overriden migrateData', async () => {
+      await RegistryV2.setNextImplementation(RegistryV3.address);
 
-    it('Event emitted', async () => {
-      await expect(RegistryV1.migrateParticipant(...(await migrateParams(activePartipant))))
-        // we expect RegistryV2 to emit this event as it is the last contract in upgrades chain
-        .to.emit(RegistryV2, PARTICIPANT_STATUS_CHANGED)
-        .withArgs(activePartipant.address, Status.Migrated);
+      // migrate successful
+      await RegistryV1.migrateParticipant(...(await migrateParams(activePartipant)));
+
+      expect(
+        (await RegistryV3.getParticipantData(activePartipant.address)).registrationTime
+      ).to.equal(42);
+    });
+
+    it('Events emitted', async () => {
+      const tx = RegistryV1.migrateParticipant(...(await migrateParams(activePartipant)));
+
+      await expect(tx)
+        .to.emit(RegistryV1, PARTICIPANT_MIGRATED_FROM)
+        .withArgs(activePartipant.address, RegistryV1.address);
+
+      await expect(tx)
+        // we expect RegistryV2 to emit this event as it is the contract participant migrates to
+        .to.emit(RegistryV2, PARTICIPANT_MIGRATED_TO)
+        .withArgs(activePartipant.address, RegistryV2.address);
     });
   });
 });

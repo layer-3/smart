@@ -38,7 +38,7 @@ abstract contract YellowClearingBase is AccessControl {
         keccak256('PREVIOUS_IMPLEMENTATION_ROLE');
 
     // Participant data mapping
-    mapping(address => ParticipantData) private _participantData;
+    mapping(address => ParticipantData) internal _participantData;
 
     // Next implementation
     YellowClearingBase private _nextImplementation;
@@ -193,8 +193,11 @@ abstract contract YellowClearingBase is AccessControl {
         ParticipantData memory currentData = _participantData[participant];
         require(currentData.status != ParticipantStatus.Migrated, 'Participant already migrated');
 
-        // Migrate data
+        // Migrate data, emit ParticipantMigratedTo
         _nextImplementation.migrateParticipantData(participant, currentData);
+
+        // Emit event
+        emit ParticipantMigratedFrom(participant, _self);
 
         // Mark participant as migrated on this implementation
         _participantData[participant] = ParticipantData({
@@ -213,7 +216,7 @@ abstract contract YellowClearingBase is AccessControl {
         } else {
             _migrateParticipantData(participant, data);
 
-            emit ParticipantStatusChanged(participant, ParticipantStatus.Migrated);
+            emit ParticipantMigratedTo(participant, _self);
         }
     }
 
@@ -241,4 +244,8 @@ abstract contract YellowClearingBase is AccessControl {
     event ParticipantStatusChanged(address indexed participant, ParticipantStatus indexed status);
 
     event ParticipantDataSet(address indexed participant, ParticipantData data);
+
+    event ParticipantMigratedFrom(address indexed participant, address indexed from);
+
+    event ParticipantMigratedTo(address indexed participant, address indexed to);
 }

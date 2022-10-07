@@ -14,3 +14,5 @@ export const NEXT_IMPL_SET = 'NextImplementationSet';
 export const PARTICIPANT_REGISTERED = 'ParticipantRegistered';
 export const PARTICIPANT_DATA_SET = 'ParticipantDataSet';
 export const PARTICIPANT_STATUS_CHANGED = 'ParticipantStatusChanged';
+export const PARTICIPANT_MIGRATED_FROM = 'ParticipantMigratedFrom';
+export const PARTICIPANT_MIGRATED_TO = 'ParticipantMigratedTo';
