@@ -5,12 +5,16 @@ import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
 import './IVault.sol';
 
+/**
+ * @notice Base contract for Yellow Clearing. Responsible for all operations regarding Yellow Network.
+ * @dev The actual implementation must derive from YellowClearingBase and can override `_migrateParticipantData` function.
+ */
 abstract contract YellowClearingBase is AccessControl {
     using ECDSA for bytes32;
 
     // Participant status
     enum ParticipantStatus {
-        // Participant is not registered
+        // Participant is not registered or have been removed
         None,
         // Participant is registered but not yet validated
         Pending,
@@ -46,7 +50,10 @@ abstract contract YellowClearingBase is AccessControl {
     // Address of this contract
     address private immutable _self = address(this);
 
-    // Constructor
+    /**
+     * @notice Grant DEFAULT_ADMIN_ROLE and REGISTRY_MAINTAINER_ROLE roles to deployer, link previous implementation it supplied.
+     *
+     */
     constructor(YellowClearingBase previousImplementation) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(REGISTRY_MAINTAINER_ROLE, msg.sender);
@@ -56,12 +63,24 @@ abstract contract YellowClearingBase is AccessControl {
         }
     }
 
-    // Get next implementation address
+    // ======================
+    // Next Implementation
+    // ======================
+
+    /**
+     * @notice Get next implementation address if set, zero address if not.
+     * @dev Get next implementation address if set, zero address if not.
+     * @return YellowClearingBase Next implementation address if set, zero address if not.
+     */
     function getNextImplementation() external view returns (YellowClearingBase) {
         return _nextImplementation;
     }
 
-    // Set next implementation address
+    /**
+     * @notice Set next implementation address. Must not be zero address or self. Emit `NextImplementationSet` event.
+     * @dev Require REGISTRY_MAINTAINER_ROLE to be invoked. Require next implementation not to be already set. Require supplied next implementation contract to have granted this contract PREVIOUS_IMPLEMENTATION_ROLE.
+     * @param nextImplementation Next implementation address.
+     */
     function setNextImplementation(YellowClearingBase nextImplementation)
         external
         onlyRole(REGISTRY_MAINTAINER_ROLE)
@@ -82,12 +101,24 @@ abstract contract YellowClearingBase is AccessControl {
         emit NextImplementationSet(nextImplementation);
     }
 
-    // Has participant
+    // ======================
+    // participant checks
+    // ======================
+
+    /**
+     * @notice Check if participant is present in the registry. Participant is not present if it is not stored in the mapping or has `ParticipantStatus.None`.
+     * @dev Check if participant is present in the registry. Participant is not present if it is not stored in the mapping or has `ParticipantStatus.None`.
+     * @return True if participant is present, false otherwise.
+     */
     function hasParticipant(address participant) public view returns (bool) {
         return _participantData[participant].status != ParticipantStatus.None;
     }
 
-    // Recursively check that participant is not present in the registry
+    /**
+     * @notice Recursively check that participant is not present in this registry and any subsequent.
+     * @dev Recursively check that participant is not present in this registry and all subsequent.
+     * @param participant Address of participant to check.
+     */
     function requireParticipantNotPresent(address participant) public view {
         if (address(_nextImplementation) != address(0)) {
             _nextImplementation.requireParticipantNotPresent(participant);
@@ -96,7 +127,12 @@ abstract contract YellowClearingBase is AccessControl {
         require(!hasParticipant(participant), 'Participant already registered');
     }
 
-    // Get participant data
+    /**
+     * @notice Get participant data stored in the registry. Revert if participant is not present.
+     * @dev Get participant data stored in the registry. Revert if participant is not present.
+     * @param participant Address of participant to get data about.
+     * @return ParticipantData Participant data.
+     */
     function getParticipantData(address participant)
         external
         view
@@ -107,7 +143,16 @@ abstract contract YellowClearingBase is AccessControl {
         return _participantData[participant];
     }
 
-    // Register participant with Pending status using signature by its Broker
+    // ======================
+    // participant changes
+    // ======================
+
+    /**
+     * @notice Register participant by adding it to the registry with Pending status. Emit `ParticipantRegistered` event.
+     * @dev Participant must not be present in this or any subsequent implementations.
+     * @param participant Virtual (no address, only public key exist) address of participant to add.
+     * @param signature Participant virtual address signer by this same participant.
+     */
     function registerParticipant(address participant, bytes calldata signature) external {
         requireParticipantNotPresent(participant);
 
@@ -121,7 +166,12 @@ abstract contract YellowClearingBase is AccessControl {
         emit ParticipantRegistered(participant);
     }
 
-    // Validate participant by setting its status to Active or Inactive
+    // REVIEW: change docs comment after checks are added
+    /**
+     * @notice Validate participant and, depending on checks to be added, set their status to either Active or Inactive. Emit `ParticipantStatusChanged` event.
+     * @dev Require REGISTRY_VALIDATOR_ROLE to invoke. Participant must be present with Pending status.
+     * @param participant Address of participant to validate.
+     */
     function validateParticipant(address participant) external onlyRole(REGISTRY_VALIDATOR_ROLE) {
         require(hasParticipant(participant), 'Participant does not exist');
         require(
@@ -135,7 +185,12 @@ abstract contract YellowClearingBase is AccessControl {
         emit ParticipantStatusChanged(participant, ParticipantStatus.Active);
     }
 
-    // Suspend participant by setting its status to Suspended
+    // REVIEW: change docs comment after checks are added
+    /**
+     * @notice Suspend participantand set their status to Suspended. Emit `ParticipantStatusChanged` event.
+     * @dev Require AUDITOR_ROLE to invoke. Participant must be present and not migrated
+     * @param participant Address of participant to suspend.
+     */
     function suspendParticipant(address participant) external onlyRole(AUDITOR_ROLE) {
         require(hasParticipant(participant), 'Participant does not exist');
 
@@ -150,7 +205,12 @@ abstract contract YellowClearingBase is AccessControl {
         emit ParticipantStatusChanged(participant, ParticipantStatus.Suspended);
     }
 
-    // Reinstate participant by setting its status back to Active or Inactive
+    // REVIEW: change docs comment after checks are added
+    /**
+     * @notice Reinstate participant and, depending on checks to be added, set their status to either Active or Inactive. Emit `ParticipantStatusChanged` event.
+     * @dev Require AUDITOR_ROLE to invoke. Participant must have been suspended previously.
+     * @param participant Address of participant to reinstate.
+     */
     function reinstateParticipant(address participant) external onlyRole(AUDITOR_ROLE) {
         require(hasParticipant(participant), 'Participant does not exist');
         require(
@@ -164,7 +224,12 @@ abstract contract YellowClearingBase is AccessControl {
         emit ParticipantStatusChanged(participant, ParticipantStatus.Active);
     }
 
-    // Set participant data
+    /**
+     * @notice Set participiant data to data supplied. Emit `ParticipantDataChanged` event.
+     * @dev Require REGISTRY_MAINTAINER_ROLE to invoke. Participant must not have been migrated.
+     * @param participant Address of participant to set data of.
+     * @param data Data to set.
+     */
     function setParticipantData(address participant, ParticipantData memory data)
         external
         onlyRole(REGISTRY_MAINTAINER_ROLE)
@@ -181,7 +246,16 @@ abstract contract YellowClearingBase is AccessControl {
         emit ParticipantDataSet(participant, data);
     }
 
-    // Migrate participant
+    // ======================
+    // migrate participant
+    // ======================
+
+    /**
+     * @notice Migrate participant to the newest implementation present in upgrades chain. Emit `ParticipantMigratedFrom` and `ParticipantMigratedTo` events.
+     * @dev NextImplementation must have been set. Participant must not have been migrated.
+     * @param participant Address of participant to migrate.
+     * @param signature Participant address signed by that participant.
+     */
     function migrateParticipant(address participant, bytes calldata signature) external {
         require(address(_nextImplementation) != address(0), 'Next implementation is not set');
 
@@ -206,7 +280,12 @@ abstract contract YellowClearingBase is AccessControl {
         });
     }
 
-    // Migrate participant data on either this or next implementation
+    /**
+     * @notice Recursively migrate participant data to newest implementation in upgrades chain. Emit `ParticipantMigratedTo` event.
+     * @dev Require PREVIOUS_IMPLEMENTATION_ROLE to invoke.
+     * @param participant Address of participant to migrate data of.
+     * @param data Participant data to migrate.
+     */
     function migrateParticipantData(address participant, ParticipantData memory data)
         external
         onlyRole(PREVIOUS_IMPLEMENTATION_ROLE)
@@ -220,7 +299,18 @@ abstract contract YellowClearingBase is AccessControl {
         }
     }
 
+    // ======================
+    // internal functions
+    // ======================
+
     // Recover signer from `signature` provided `_address` is signed.
+    /**
+     * @notice Recover signer of the address.
+     * @dev Recover signer of the address.
+     * @param _address Address to be signed.
+     * @param signature Signed address.
+     * @return address Address of the signer.
+     */
     function _recoverAddressSigner(address _address, bytes memory signature)
         internal
         pure
@@ -229,7 +319,12 @@ abstract contract YellowClearingBase is AccessControl {
         return keccak256(abi.encode(_address)).toEthSignedMessageHash().recover(signature);
     }
 
-    // Internal migrate logic. Can be overriden.
+    /**
+     * @notice Internal logic of migrating participant data. Can be overriden to change.
+     * @dev Internal logic of migrating participant data. Can be overriden to change.
+     * @param participant Address of participant to migrate data of.
+     * @param data Participant data to migrate.
+     */
     function _migrateParticipantData(address participant, ParticipantData memory data)
         internal
         virtual
