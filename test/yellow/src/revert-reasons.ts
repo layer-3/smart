@@ -27,7 +27,7 @@ export const INVALID_IMPL_ADDRESS = 'Invalid implementation address';
 export const INVALID_CHAIN_ID = 'Invalid chain id';
 
 // network registry
-export const NEXT_IMPL_SET = 'Next implementation already set';
+export const NEXT_IMPL_ALREADY_SET = 'Next implementation already set';
 export const INVALID_NEXT_IMPL = 'Invalid nextImplementation supplied';
 export const PREV_IMPL_ROLE_REQUIRED = 'Previous implementation role is required';
 export const PARTICIPANT_ALREADY_REGISTERED = 'Participant already registered';

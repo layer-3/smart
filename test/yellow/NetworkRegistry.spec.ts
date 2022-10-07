@@ -15,7 +15,7 @@ import {
   ACCOUNT_MISSING_ROLE,
   INVALID_NEXT_IMPL,
   INVALID_PARTICIPANT_ADDRESS,
-  NEXT_IMPL_SET,
+  NEXT_IMPL_ALREADY_SET,
   NO_NEXT_IMPL,
   NO_PARTICIPANT,
   PARTICIPANT_ALREADY_MIGRATED,
@@ -27,8 +27,8 @@ import {
 import {migrateParams, registerParams} from './src/NetworkRegistry/transactions';
 import {signEncoded} from './src/signatures';
 import {
+  NEXT_IMPL_SET,
   PARTICIPANT_DATA_SET,
-  PARTICIPANT_MIGRATED,
   PARTICIPANT_REGISTERED,
   PARTICIPANT_STATUS_CHANGED,
 } from './src/event-names';
@@ -145,7 +145,7 @@ describe('Network Registry', () => {
     it('Revert when setting twice', async () => {
       await RegistryV1.setNextImplementation(RegistryV2.address);
       await expect(RegistryV1.setNextImplementation(RegistryV2.address)).to.be.revertedWith(
-        NEXT_IMPL_SET
+        NEXT_IMPL_ALREADY_SET
       );
     });
 
@@ -161,11 +161,10 @@ describe('Network Registry', () => {
       );
     });
 
-    it('Event emmited', async () => {
-      const tx = await RegistryV1.setNextImplementation(RegistryV2.address);
-
-      const receipt = await tx.wait();
-      expect(receipt).to.emit(RegistryV1, NEXT_IMPL_SET).withArgs(RegistryV2.address);
+    it('Event emitted', async () => {
+      await expect(RegistryV1.setNextImplementation(RegistryV2.address))
+        .to.emit(RegistryV1, NEXT_IMPL_SET)
+        .withArgs(RegistryV2.address);
     });
   });
 
@@ -293,12 +292,11 @@ describe('Network Registry', () => {
     });
 
     it('Event emitted', async () => {
-      const tx = await RegistryV1.connect(someone).registerParticipant(
-        ...(await registerParams(virtualParticipant))
-      );
-
-      const receipt = await tx.wait();
-      expect(receipt)
+      await expect(
+        RegistryV1.connect(someone).registerParticipant(
+          ...(await registerParams(virtualParticipant))
+        )
+      )
         .to.emit(RegistryV1, PARTICIPANT_REGISTERED)
         .withArgs(virtualParticipant.address);
     });
@@ -330,14 +328,10 @@ describe('Network Registry', () => {
       ).to.be.revertedWith(INVALID_STATUS);
     });
 
-    it('Event emmited', async () => {
-      const tx = await RegistryV1.connect(validator).validateParticipant(
-        pendingParticipant.address
-      );
-      const receipt = await tx.wait();
-      expect(receipt)
+    it('Event emitted', async () => {
+      await expect(RegistryV1.connect(validator).validateParticipant(pendingParticipant.address))
         .to.emit(RegistryV1, PARTICIPANT_STATUS_CHANGED)
-        .withArgs(pendingParticipant.address, Status.Pending);
+        .withArgs(pendingParticipant.address, Status.Active);
     });
   });
 
@@ -373,11 +367,8 @@ describe('Network Registry', () => {
       ).to.be.revertedWith(INVALID_STATUS);
     });
 
-    it('Event emmited', async () => {
-      const tx = await RegistryV1.connect(auditor).suspendParticipant(activePartipant.address);
-
-      const receipt = await tx.wait();
-      expect(receipt)
+    it('Event emitted', async () => {
+      await expect(RegistryV1.connect(auditor).suspendParticipant(activePartipant.address))
         .to.emit(RegistryV1, PARTICIPANT_STATUS_CHANGED)
         .withArgs(activePartipant.address, Status.Suspended);
     });
@@ -409,13 +400,8 @@ describe('Network Registry', () => {
       ).to.be.revertedWith(INVALID_STATUS);
     });
 
-    it('Event emmited', async () => {
-      const tx = await RegistryV1.connect(auditor).reinstateParticipant(
-        suspendedParticipant.address
-      );
-
-      const receipt = await tx.wait();
-      expect(receipt)
+    it('Event emitted', async () => {
+      await expect(RegistryV1.connect(auditor).reinstateParticipant(suspendedParticipant.address))
         .to.emit(RegistryV1, PARTICIPANT_STATUS_CHANGED)
         .withArgs(suspendedParticipant.address, Status.Active);
     });
@@ -449,10 +435,14 @@ describe('Network Registry', () => {
 
     it('Event emitted', async () => {
       const data = MockData(Status.Active);
-      const tx = await RegistryV1.setParticipantData(someone.address, data);
 
-      const receipt = await tx.wait();
-      expect(receipt).to.emit(RegistryV1, PARTICIPANT_DATA_SET).withArgs(someone.address, data);
+      await expect(RegistryV1.setParticipantData(someone.address, data)).to.emit(
+        RegistryV1,
+        PARTICIPANT_DATA_SET
+      );
+      // REVIEW: add when migrated to jest or hardhat-chai-matchers
+      // now does not work as waffle reading event.logs[i].args, which is array, but we expect it to be an object
+      //.withArgs(someone.address, data);
     });
   });
 
@@ -551,13 +541,10 @@ describe('Network Registry', () => {
     it('Succesfully migrate with overriden migrateData');
 
     it('Event emitted', async () => {
-      const tx = await RegistryV1.migrateParticipant(...(await migrateParams(activePartipant)));
-
-      const receipt = await tx.wait();
-      // TODO: check why event is emitted if it is absent
-      expect(receipt)
-        .to.emit(RegistryV1, PARTICIPANT_MIGRATED)
-        .withArgs(activePartipant.address, RegistryV2.address);
+      await expect(RegistryV1.migrateParticipant(...(await migrateParams(activePartipant))))
+        // we expect RegistryV2 to emit this event as it is the last contract in upgrades chain
+        .to.emit(RegistryV2, PARTICIPANT_STATUS_CHANGED)
+        .withArgs(activePartipant.address, Status.Migrated);
     });
   });
 });
