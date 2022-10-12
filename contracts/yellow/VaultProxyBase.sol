@@ -13,33 +13,33 @@ import './VaultImplBase.sol';
 abstract contract VaultProxyBase is Proxy, ERC1967Upgrade {
     /**
      * @notice Set the address of the latest version of implementation contract, provided the first implementation contract in the versions chain. Call `initialize` on that address. Grant admin role to deployer.
-     * @dev Recursively retrieve `newerImplementation` address starting with `startImplementation` supplied.
+     * @dev Recursively retrieve `nextImplementation` address starting with `startImplementation` supplied.
      */
-    constructor(address startImplementation) {
+    constructor(VaultImplBase startImplementation) {
         // Point to the first VaultImpl in the versions chain
-        address newImplementation = startImplementation;
-        address newerImplementation = address(0);
+        VaultImplBase newImplementation = startImplementation;
+        VaultImplBase nextImplementation = VaultImplBase(address(0));
 
         while (true) {
-            newerImplementation = VaultImplBase(newImplementation).getNewerImplementation();
+            nextImplementation = newImplementation.getNextImplementation();
 
-            if (newerImplementation == address(0)) {
+            if (address(nextImplementation) == address(0)) {
                 break;
             }
 
-            newImplementation = newerImplementation;
+            newImplementation = nextImplementation;
         }
 
         _upgradeToAndCall(
-            newImplementation,
+            address(newImplementation),
             abi.encodeWithSelector(bytes4(keccak256('initialize()'))),
             true
         );
 
         Address.functionDelegateCall(
-            newImplementation,
+            address(newImplementation),
             abi.encodeWithSelector(bytes4(keccak256('setupDeployerRoles()'))),
-            'deployer roles not set up'
+            'Deployer roles not set up'
         );
     }
 

@@ -12,14 +12,14 @@ import {
   ALREADY_MIGRATED,
   MUST_NOT_THROUGH_DELEGATECALL,
   MUST_THROUGH_DELEGATECALL,
-  NEWER_IMPL_IS_SET,
-  NEWER_IMPL_ZERO,
+  NEXT_IMPL_IS_SET,
+  NEXT_IMPL_ZERO,
   NOT_ADMIN,
   NOT_MAINTAINER,
-  INVALID_NEWER_IMPL,
+  INVALID_NEXT_IMPL,
   ACCOUNT_MISSING_ROLE,
 } from './src/revert-reasons';
-import {NEWER_IMPL_SET, ROLE_GRANTED, UPGRADED} from './src/event-names';
+import {NEXT_IMPL_SET, ROLE_GRANTED, UPGRADED} from './src/event-names';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
@@ -100,74 +100,74 @@ describe('Vault Upgradability Contracts', async () => {
     });
 
     // ======================
-    // Newer implementation
+    // Next implementation
     // ======================
-    it('newer implementation is 0x0', async () => {
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
+    it('next implementation is 0x0', async () => {
+      expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
     });
 
-    it('admin can set newer implementation', async () => {
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
-      const newerImplAddress = Wallet.createRandom().address;
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(newerImplAddress);
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(newerImplAddress);
+    it('admin can set next implementation', async () => {
+      expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
+      const nextImplAddress = Wallet.createRandom().address;
+      await VaultImpl1.connect(implAdmin).setNextImplementation(nextImplAddress);
+      expect(await VaultImpl1.getNextImplementation()).to.be.equal(nextImplAddress);
     });
 
-    it('maintainer can set newer implementation', async () => {
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
+    it('maintainer can set next implementation', async () => {
+      expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
 
       await VaultImpl1.connect(implAdmin).grantRole(MNTR_ROLE, someone.address);
       expect(await VaultImpl1.hasRole(MNTR_ROLE, someone.address)).to.be.true;
 
-      const newerImplAddress = Wallet.createRandom().address;
-      await VaultImpl1.connect(someone).setNewerImplementation(newerImplAddress);
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(newerImplAddress);
+      const nextImplAddress = Wallet.createRandom().address;
+      await VaultImpl1.connect(someone).setNextImplementation(nextImplAddress);
+      expect(await VaultImpl1.getNextImplementation()).to.be.equal(nextImplAddress);
     });
 
-    it('revert on someone set newer implementation', async () => {
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
-      const newerImplAddress = Wallet.createRandom().address;
+    it('revert on someone set next implementation', async () => {
+      expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
+      const nextImplAddress = Wallet.createRandom().address;
       await expect(
-        VaultImpl1.connect(someone).setNewerImplementation(newerImplAddress)
+        VaultImpl1.connect(someone).setNextImplementation(nextImplAddress)
       ).to.be.revertedWith(NOT_MAINTAINER);
     });
 
-    it('revert on setting different newer implementations twice', async () => {
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
-      const oneNewerImplAddress = Wallet.createRandom().address;
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(oneNewerImplAddress);
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(oneNewerImplAddress);
+    it('revert on setting different next implementations twice', async () => {
+      expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
+      const oneNextImplAddress = Wallet.createRandom().address;
+      await VaultImpl1.connect(implAdmin).setNextImplementation(oneNextImplAddress);
+      expect(await VaultImpl1.getNextImplementation()).to.be.equal(oneNextImplAddress);
 
-      const otherNewerImplAddress = Wallet.createRandom().address;
+      const otherNextImplAddress = Wallet.createRandom().address;
       await expect(
-        VaultImpl1.connect(implAdmin).setNewerImplementation(otherNewerImplAddress)
-      ).to.be.revertedWith(NEWER_IMPL_IS_SET);
+        VaultImpl1.connect(implAdmin).setNextImplementation(otherNextImplAddress)
+      ).to.be.revertedWith(NEXT_IMPL_IS_SET);
     });
 
-    it('revert on setting the same newer implementation twice', async () => {
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
-      const newerImplAddress = Wallet.createRandom().address;
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(newerImplAddress);
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(newerImplAddress);
+    it('revert on setting the same next implementation twice', async () => {
+      expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
+      const nextImplAddress = Wallet.createRandom().address;
+      await VaultImpl1.connect(implAdmin).setNextImplementation(nextImplAddress);
+      expect(await VaultImpl1.getNextImplementation()).to.be.equal(nextImplAddress);
       await expect(
-        VaultImpl1.connect(implAdmin).setNewerImplementation(newerImplAddress)
-      ).to.be.revertedWith(NEWER_IMPL_IS_SET);
+        VaultImpl1.connect(implAdmin).setNextImplementation(nextImplAddress)
+      ).to.be.revertedWith(NEXT_IMPL_IS_SET);
     });
 
-    /** @dev This testcase it present to avoid emitting NewerImplementationSet event */
-    it('revert on setting newer implementation to zero address', async () => {
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
-      const newerImplZero = ethers.constants.AddressZero;
+    /** @dev This testcase it present to avoid emitting NextImplementationSet event */
+    it('revert on setting next implementation to zero address', async () => {
+      expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
+      const nextImplZero = ethers.constants.AddressZero;
       await expect(
-        VaultImpl1.connect(implAdmin).setNewerImplementation(newerImplZero)
-      ).to.be.revertedWith(INVALID_NEWER_IMPL);
+        VaultImpl1.connect(implAdmin).setNextImplementation(nextImplZero)
+      ).to.be.revertedWith(INVALID_NEXT_IMPL);
     });
 
-    it('revert on setting newer implementation to itself', async () => {
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
+    it('revert on setting next implementation to itself', async () => {
+      expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
       await expect(
-        VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl1.address)
-      ).to.be.revertedWith(INVALID_NEWER_IMPL);
+        VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl1.address)
+      ).to.be.revertedWith(INVALID_NEXT_IMPL);
     });
 
     // ======================
@@ -206,9 +206,9 @@ describe('Vault Upgradability Contracts', async () => {
       }
     });
 
-    it('event emitted on newer implementation set', async () => {
-      const newerImplAddress = Wallet.createRandom().address;
-      const tx = await VaultImpl1.connect(implAdmin).setNewerImplementation(newerImplAddress);
+    it('event emitted on next implementation set', async () => {
+      const nextImplAddress = Wallet.createRandom().address;
+      const tx = await VaultImpl1.connect(implAdmin).setNextImplementation(nextImplAddress);
 
       const receipt = await tx.wait();
       const event = receipt.events?.pop();
@@ -217,9 +217,9 @@ describe('Vault Upgradability Contracts', async () => {
 
       // workaround ts undefined checks
       if (event != undefined && event.args != undefined) {
-        expect(event.event).to.be.equal(NEWER_IMPL_SET);
-        const {newerImplementation} = event.args;
-        expect(newerImplementation).to.be.equal(newerImplAddress);
+        expect(event.event).to.be.equal(NEXT_IMPL_SET);
+        const {nextImplementation} = event.args;
+        expect(nextImplementation).to.be.equal(nextImplAddress);
       }
     });
   });
@@ -288,16 +288,16 @@ describe('Vault Upgradability Contracts', async () => {
     // ======================
     // Not delegated
     // ======================
-    it('revert on call `getNewerImplementation` via proxy', async () => {
-      await expect(VaultImplProxied.connect(user).getNewerImplementation()).to.be.revertedWith(
+    it('revert on call `getNextImplementation` via proxy', async () => {
+      await expect(VaultImplProxied.connect(user).getNextImplementation()).to.be.revertedWith(
         MUST_NOT_THROUGH_DELEGATECALL
       );
     });
 
-    it('revert on call `setNewerImplementation` via proxy', async () => {
-      const newerImplAddress = Wallet.createRandom().address;
+    it('revert on call `setNextImplementation` via proxy', async () => {
+      const nextImplAddress = Wallet.createRandom().address;
       await expect(
-        VaultImplProxied.connect(implAdmin).setNewerImplementation(newerImplAddress)
+        VaultImplProxied.connect(implAdmin).setNextImplementation(nextImplAddress)
       ).to.be.revertedWith(MUST_NOT_THROUGH_DELEGATECALL);
     });
 
@@ -432,8 +432,8 @@ describe('Vault Upgradability Contracts', async () => {
       );
     });
 
-    it('initialize when 1 newer impl available', async () => {
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
+    it('initialize when 1 next impl available', async () => {
+      await VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl2.address);
 
       const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
       VaultProxy = await VaultProxyFactory.connect(proxyAdmin).deploy(VaultImpl1.address);
@@ -448,9 +448,9 @@ describe('Vault Upgradability Contracts', async () => {
       expect(await VaultImpl2Proxied.connect(user).initializedVersion()).to.be.equal(2);
     });
 
-    it('initialize when 2 newer impl available', async () => {
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
-      await VaultImpl2.connect(implAdmin).setNewerImplementation(VaultImpl3.address);
+    it('initialize when 2 next impl available', async () => {
+      await VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl2.address);
+      await VaultImpl2.connect(implAdmin).setNextImplementation(VaultImpl3.address);
 
       const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
       VaultProxy = await VaultProxyFactory.connect(proxyAdmin).deploy(VaultImpl1.address);
@@ -468,7 +468,7 @@ describe('Vault Upgradability Contracts', async () => {
     // Upgrade
     // ======================
     it('admin can upgrade', async () => {
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
+      await VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl2.address);
       await VaultImpl1Proxied.connect(proxyAdmin).upgrade();
     });
 
@@ -477,11 +477,11 @@ describe('Vault Upgradability Contracts', async () => {
       expect(await VaultImpl1Proxied.connect(proxyAdmin).hasRole(MNTR_ROLE, someone.address)).to.be
         .true;
 
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
+      await VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl2.address);
       await VaultImpl1Proxied.connect(someone).upgrade();
     });
 
-    it('upgrade when 1 newer contract available', async () => {
+    it('upgrade when 1 next contract available', async () => {
       // v1
       // Note: connecting user (3rd party address) to avoid any address collisions
       expect(await VaultImpl1Proxied.connect(user).version()).to.be.equal(1);
@@ -493,7 +493,7 @@ describe('Vault Upgradability Contracts', async () => {
       }
 
       // upgrading
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
+      await VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl2.address);
       await VaultImpl1Proxied.connect(proxyAdmin).upgrade();
 
       // v2
@@ -507,9 +507,9 @@ describe('Vault Upgradability Contracts', async () => {
       }
     });
 
-    it('upgrade when 2 newer contracts available', async () => {
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
-      await VaultImpl2.connect(implAdmin).setNewerImplementation(VaultImpl3.address);
+    it('upgrade when 2 next contracts available', async () => {
+      await VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl2.address);
+      await VaultImpl2.connect(implAdmin).setNextImplementation(VaultImpl3.address);
 
       await VaultImpl1Proxied.connect(proxyAdmin).upgrade();
 
@@ -517,50 +517,50 @@ describe('Vault Upgradability Contracts', async () => {
     });
 
     it('revert on upgrade to zero address', async () => {
-      expect(await VaultImpl1.getNewerImplementation()).to.be.equal(AddressZero);
+      expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
       await expect(VaultImpl1Proxied.connect(proxyAdmin).upgrade()).to.be.revertedWith(
-        NEWER_IMPL_ZERO
+        NEXT_IMPL_ZERO
       );
     });
 
     it('revert on someone upgrading', async () => {
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
+      await VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl2.address);
       await expect(VaultImpl1Proxied.connect(someone).upgrade()).to.be.revertedWith(NOT_ADMIN);
     });
 
     it('revert on second upgrading without impl address set', async () => {
       expect(await VaultImpl1Proxied.connect(user).version()).to.be.equal(1);
 
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
+      await VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl2.address);
       await VaultImpl1Proxied.connect(proxyAdmin).upgrade();
 
       expect(await VaultImpl2Proxied.connect(user).version()).to.be.equal(2);
 
       await expect(VaultImpl2Proxied.connect(proxyAdmin).upgrade()).to.be.revertedWith(
-        NEWER_IMPL_ZERO
+        NEXT_IMPL_ZERO
       );
     });
 
     // ======================
     // Migrate
     // ======================
-    it('migrate when 1 newer implementation available', async () => {
+    it('migrate when 1 next implementation available', async () => {
       expect(await VaultImpl1Proxied.connect(user).version()).to.be.equal(1);
       expect(await VaultImpl1Proxied.connect(user).migrationInvoked()).to.be.equal(0);
 
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
+      await VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl2.address);
       await VaultImpl1Proxied.connect(proxyAdmin).upgrade();
 
       expect(await VaultImpl2Proxied.connect(user).version()).to.be.equal(2);
       expect(await VaultImpl2Proxied.connect(user).migrationInvoked()).to.be.equal(1);
     });
 
-    it('migrate when 2 newer implementation available', async () => {
+    it('migrate when 2 next implementation available', async () => {
       expect(await VaultImpl1Proxied.connect(user).version()).to.be.equal(1);
       expect(await VaultImpl1Proxied.connect(user).migrationInvoked()).to.be.equal(0);
 
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
-      await VaultImpl2.connect(implAdmin).setNewerImplementation(VaultImpl3.address);
+      await VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl2.address);
+      await VaultImpl2.connect(implAdmin).setNextImplementation(VaultImpl3.address);
       await VaultImpl1Proxied.connect(proxyAdmin).upgrade();
 
       expect(await VaultImpl3Proxied.connect(user).version()).to.be.equal(3);
@@ -578,7 +578,7 @@ describe('Vault Upgradability Contracts', async () => {
         ALREADY_MIGRATED
       );
 
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
+      await VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl2.address);
       await VaultImpl1Proxied.connect(proxyAdmin).upgrade();
 
       await expect(VaultImpl2Proxied.connect(implAdmin).applyUpgrade()).to.be.revertedWith(
@@ -590,7 +590,7 @@ describe('Vault Upgradability Contracts', async () => {
     // Events
     // ======================
     it('event emitted on upgrade', async () => {
-      await VaultImpl1.connect(implAdmin).setNewerImplementation(VaultImpl2.address);
+      await VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl2.address);
       const tx = await VaultImpl1Proxied.connect(proxyAdmin).upgrade();
 
       const receipt = await tx.wait();

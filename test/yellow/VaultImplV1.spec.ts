@@ -4,7 +4,7 @@ import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
 import VaultImplArtifact from '../../artifacts/contracts/yellow/VaultImplV1.sol/VaultImplV1.json';
-import {VaultImplV1 as VaultImplT, TESTVaultProxy, TestERC20} from '../../typechain';
+import {VaultImplV1 as VaultImplT, TESTVaultProxy, TestERC20, VaultImplV1} from '../../typechain';
 
 import {
   ACCOUNT_MISSING_ROLE,
@@ -39,6 +39,7 @@ describe('Vault implementation V1', () => {
   let coSigner1: SignerWithAddress;
   let coSigner2: SignerWithAddress;
 
+  let VaultImplAddress: string;
   let VaultProxy: Contract & TESTVaultProxy;
   let VaultImpl: Contract & VaultImplT;
 
@@ -48,6 +49,8 @@ describe('Vault implementation V1', () => {
     const VaultImplFactory = await ethers.getContractFactory('VaultImplV1');
     const VaultImplDirect = await VaultImplFactory.connect(implAdmin).deploy();
     await VaultImplDirect.deployed();
+
+    VaultImplAddress = VaultImplDirect.address;
 
     const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
     VaultProxy = (await VaultProxyFactory.connect(proxyAdmin).deploy(
@@ -216,7 +219,7 @@ describe('Vault implementation V1', () => {
       let payload: PartialPayload;
 
       beforeEach(async () => {
-        payload = await generalPayload(someone.address, VaultImpl.address);
+        payload = await generalPayload(someone.address, VaultImplAddress);
 
         await VaultImpl.connect(proxyAdmin).setup(broker1.address, coSigner1.address);
       });
@@ -342,7 +345,7 @@ describe('Vault implementation V1', () => {
 
         await VaultImpl.connect(someone).deposit(...usedParams, {value: AMOUNT});
 
-        let otherPayload = await generalPayload(someone.address, VaultImpl.address);
+        let otherPayload = await generalPayload(someone.address, VaultImplAddress);
         otherPayload = addAllocation(otherPayload, AddressZero, AMOUNT.toNumber());
 
         const newParams = await depositParams(otherPayload, broker1, coSigner1);
@@ -452,11 +455,11 @@ describe('Vault implementation V1', () => {
       let payload: PartialPayload;
 
       beforeEach(async () => {
-        payload = await generalPayload(someone.address, VaultImpl.address);
+        payload = await generalPayload(someone.address, VaultImplAddress);
 
         await VaultImpl.connect(proxyAdmin).setup(broker1.address, coSigner1.address);
 
-        let depositPayload = await generalPayload(someone.address, VaultImpl.address);
+        let depositPayload = await generalPayload(someone.address, VaultImplAddress);
         depositPayload = addAllocation(depositPayload, AddressZero, AMOUNT.toNumber());
 
         await VaultImpl.connect(someone).deposit(
@@ -557,7 +560,7 @@ describe('Vault implementation V1', () => {
 
         await VaultImpl.connect(someone).withdraw(...usedParams);
 
-        let otherPayload = await generalPayload(someone.address, VaultImpl.address);
+        let otherPayload = await generalPayload(someone.address, VaultImplAddress);
         otherPayload = addAllocation(otherPayload, AddressZero, AMOUNT.toNumber());
 
         const newParams = await withdrawParams(otherPayload, broker1, coSigner1);

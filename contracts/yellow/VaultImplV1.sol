@@ -84,7 +84,7 @@ contract VaultImplV1 is VaultImplBase, IVault {
             require(payload.allocations[i].amount > 0, 'Amount is zero');
         }
 
-        require(payload.implAddress == address(this), 'Invalid implementation address');
+        require(payload.implAddress == _getImplementation(), 'Invalid implementation address');
         require(payload.chainId == getChainId(), 'Invalid chain id');
     }
 
@@ -122,6 +122,7 @@ contract VaultImplV1 is VaultImplBase, IVault {
      */
     function setup(address brokerAddress, address coSignerAddress)
         external
+        onlyProxy
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         require(!_isSetup, 'Vault is already setup');
@@ -140,7 +141,7 @@ contract VaultImplV1 is VaultImplBase, IVault {
      * @dev Get last ledger id (deposits and withdrawals id).
      * @return uint256 Ledger id.
      */
-    function getLastId() external view override returns (uint256) {
+    function getLastId() external view override onlyProxy returns (uint256) {
         return _ledgerId.current();
     }
 
@@ -149,7 +150,7 @@ contract VaultImplV1 is VaultImplBase, IVault {
      * @dev Get broker (only public key it is derived from exists) key for this vault.
      * @return address Broker (only public key it is derived from exists) key.
      */
-    function getBrokerAddress() external view returns (address) {
+    function getBrokerAddress() external view onlyProxy returns (address) {
         return _brokerAddress;
     }
 
@@ -159,7 +160,7 @@ contract VaultImplV1 is VaultImplBase, IVault {
      * @param address_ New broker address.
      * @param signature New address signed by broker's current public key.
      */
-    function setBrokerAddress(address address_, bytes calldata signature) external {
+    function setBrokerAddress(address address_, bytes calldata signature) external onlyProxy {
         _requireValidSignature(_brokerAddress, abi.encode(address_), signature);
         _requireValidAddress(address_);
 
@@ -173,7 +174,7 @@ contract VaultImplV1 is VaultImplBase, IVault {
      * @dev Get coSigner (only public key it is derived from exists) key for this vault.
      * @return address CoSigner (only public key it is derived from exists) key.
      */
-    function getCoSignerAddress() external view returns (address) {
+    function getCoSignerAddress() external view onlyProxy returns (address) {
         return _coSignerAddress;
     }
 
@@ -183,7 +184,7 @@ contract VaultImplV1 is VaultImplBase, IVault {
      * @param address_ New coSigner address.
      * @param signature New address signed by coSigner's current public key.
      */
-    function setCoSignerAddress(address address_, bytes calldata signature) external {
+    function setCoSignerAddress(address address_, bytes calldata signature) external onlyProxy {
         _requireValidSignature(_coSignerAddress, abi.encode(address_), signature);
         _requireValidAddress(address_);
 
@@ -203,7 +204,7 @@ contract VaultImplV1 is VaultImplBase, IVault {
         Payload calldata payload,
         bytes calldata brokerSignature,
         bytes calldata coSignerSignature
-    ) external payable {
+    ) external payable onlyProxy {
         address issuer = msg.sender;
 
         // check signatures
@@ -232,11 +233,14 @@ contract VaultImplV1 is VaultImplBase, IVault {
             if (asset == address(0)) {
                 require(msg.value == amount, 'Incorrect msg.value');
             } else {
-                // require successful deposit before updating holdings (protect against reentrancy)
-                require(
-                    IERC20(asset).transferFrom(payload.destination, address(this), amount),
-                    'Could not deposit ERC20'
+                bool success = IERC20(asset).transferFrom(
+                    payload.destination,
+                    address(this),
+                    amount
                 );
+
+                // require successful deposit before updating holdings (protect against reentrancy)
+                require(success, 'Could not deposit ERC20');
             }
 
             _ledgerId.increment();
@@ -262,7 +266,7 @@ contract VaultImplV1 is VaultImplBase, IVault {
         Payload calldata payload,
         bytes calldata brokerSignature,
         bytes calldata coSignerSignature
-    ) external payable {
+    ) external payable onlyProxy {
         address issuer = msg.sender;
 
         // check signatures
@@ -292,7 +296,9 @@ contract VaultImplV1 is VaultImplBase, IVault {
 
                 require(success, 'Could not transfer ETH');
             } else {
-                IERC20(asset).transfer(payload.destination, amount);
+                bool success = IERC20(asset).transfer(payload.destination, amount);
+
+                require(success, 'Could not transfer ERC20');
             }
 
             _ledgerId.increment();

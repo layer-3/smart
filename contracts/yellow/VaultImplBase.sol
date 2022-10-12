@@ -30,8 +30,8 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade, AccessCont
      * a proxy contract with an implementation (as defined in ERC1967) pointing to self.
      */
     modifier onlyProxy() {
-        require(address(this) != __self, 'must be called through delegatecall');
-        require(_getImplementation() == __self, 'must be called through active proxy');
+        require(address(this) != __self, 'Must be called through delegatecall');
+        require(_getImplementation() == __self, 'Must be called through active proxy');
         _;
     }
 
@@ -40,7 +40,7 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade, AccessCont
      * callable on the implementing contract but not through proxies.
      */
     modifier notDelegated() {
-        require(address(this) == __self, 'must not be called through delegatecall');
+        require(address(this) == __self, 'Must not be called through delegatecall');
         _;
     }
 
@@ -50,7 +50,7 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade, AccessCont
      * If called directly, this contract's storage is checked. This logic allows to have a different Proxy and Implementation roles.
      */
     modifier onlyMaintainer() {
-        require(AccessControl.hasRole(MAINTAINER_ROLE, msg.sender), 'caller not maintainer');
+        require(AccessControl.hasRole(MAINTAINER_ROLE, msg.sender), 'Caller not maintainer');
         _;
     }
 
@@ -79,46 +79,46 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade, AccessCont
     // Implementation context storage
     // ======================
     /**
-     * @dev Indicates that a newer implemenetation address was set.
-     * @param newerImplementation Address of a newer implementation that was set.
+     * @dev Indicates that a next implemenetation address was set.
+     * @param nextImplementation Address of a next implementation that was set.
      */
-    event NewerImplementationSet(address indexed newerImplementation);
+    event NextImplementationSet(VaultImplBase indexed nextImplementation);
 
     /** @dev Double underscore enables using the same variable name with a single underscore in a derived contract */
-    address private __newerImplementation;
+    VaultImplBase private __nextImplementation;
 
     /**
-     * @notice Return newer implementation contract address or zero address if not set yet.
-     * NewerImplementation points to the newer implementation contract in a chain of contracts to allow upgrading.
+     * @notice Return next implementation contract address or zero address if not set yet.
+     * NextImplementation points to the next implementation contract in a chain of contracts to allow upgrading.
      * @dev Must not be a delegated call.
-     * @return address Newer implementation contract address or zero address if not set yet.
+     * @return VaultImplBase Next implementation contract address or zero address if not set yet.
      */
-    function getNewerImplementation() external view notDelegated returns (address) {
-        return __newerImplementation;
+    function getNextImplementation() external view notDelegated returns (VaultImplBase) {
+        return __nextImplementation;
     }
 
     /**
-     * @notice Set newer implementation contract address if not set yet.
-     * NewerImplementation points to the newer implementation contract in a chain of contracts to allow upgrading.
+     * @notice Set next implementation contract address if not set yet.
+     * NextImplementation points to the next implementation contract in a chain of contracts to allow upgrading.
      * @dev Must not be a delegated call. Require caller to be Implementation Maintainer. Must not be zero address or self address.
-     * Emits `NewerImplementationSet` event.
-     * @param newerImplementation Newer implementation contract address.
+     * Emits `NextImplementationSet` event.
+     * @param nextImplementation Next implementation contract address.
      */
-    function setNewerImplementation(address newerImplementation)
+    function setNextImplementation(VaultImplBase nextImplementation)
         external
         notDelegated
         onlyMaintainer
     {
-        require(__newerImplementation == address(0), 'newerImplementation is already set');
-        // prevent unnecessary event emitions & infinite newerImplementaion chain
+        require(address(__nextImplementation) == address(0), 'nextImplementation is already set');
+        // prevent unnecessary event emitions & infinite nextImplementaion chain
         require(
-            newerImplementation != address(0) && newerImplementation != __self,
-            'invalid newerImplementation supplied'
+            address(nextImplementation) != address(0) && address(nextImplementation) != __self,
+            'Invalid nextImplementation supplied'
         );
 
-        __newerImplementation = newerImplementation;
+        __nextImplementation = nextImplementation;
 
-        emit NewerImplementationSet(newerImplementation);
+        emit NextImplementationSet(nextImplementation);
     }
 
     /**
@@ -146,7 +146,7 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade, AccessCont
      * @dev Can only be called by Proxy.
      */
     function initialize() external onlyProxy {
-        require(__initialized == false, 'already initialized');
+        require(__initialized == false, 'Already initialized');
         __initialized = true;
         __migrated = true;
         _initialize();
@@ -163,30 +163,31 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade, AccessCont
      * @dev Can only be called by Proxy.
      */
     function applyUpgrade() external onlyProxy {
-        require(__migrated == false, 'already migrated');
+        require(__migrated == false, 'Already migrated');
         __migrated = true;
         _migrate();
 
-        if (VaultImplBase(_getImplementation()).getNewerImplementation() != address(0)) {
+        if (address(VaultImplBase(_getImplementation()).getNextImplementation()) != address(0)) {
             // do recursive upgrade
             upgrade();
         }
     }
 
     /**
-     * @notice Perform an upgrade from the current implementation contract to a newer one specified in a current Implementation. Also calls `applyUpgrade` on a newer implementation.
+     * @notice Perform an upgrade from the current implementation contract to a next one specified in a current Implementation. Also calls `applyUpgrade` on a next implementation.
      * @dev Require called to be Proxy Maintainer. Can only be called by Proxy.
      */
     function upgrade() public onlyMaintainer onlyProxy {
-        address newerImplementation = VaultImplBase(_getImplementation()).getNewerImplementation();
+        VaultImplBase nextImplementation = VaultImplBase(_getImplementation())
+            .getNextImplementation();
 
-        if (newerImplementation == address(0)) {
-            revert('no newer implementation to upgrade to');
+        if (address(nextImplementation) == address(0)) {
+            revert('No next implementation to upgrade to');
         }
 
         __migrated = false;
         _upgradeToAndCallUUPS(
-            newerImplementation,
+            address(nextImplementation),
             abi.encodeWithSelector(bytes4(keccak256('applyUpgrade()'))),
             true
         );

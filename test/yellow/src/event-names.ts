@@ -1,5 +1,5 @@
 // upgradability
-export const NEWER_IMPL_SET = 'NewerImplementationSet';
+export const NEXT_IMPL_SET = 'NextImplementationSet';
 export const UPGRADED = 'Upgraded';
 export const ROLE_GRANTED = 'RoleGranted';
 
@@ -10,7 +10,6 @@ export const DEPOSITED = 'Deposited';
 export const WITHDRAWN = 'Withdrawn';
 
 // network registry
-export const NEXT_IMPL_SET = 'NextImplementationSet';
 export const PARTICIPANT_REGISTERED = 'ParticipantRegistered';
 export const PARTICIPANT_DATA_SET = 'ParticipantDataSet';
 export const PARTICIPANT_STATUS_CHANGED = 'ParticipantStatusChanged';

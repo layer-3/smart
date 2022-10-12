@@ -3,15 +3,15 @@ import {utils} from 'ethers';
 const hexify = utils.hexlify;
 
 // upgradability
-export const NOT_ADMIN = 'caller not maintainer';
-export const NOT_MAINTAINER = 'caller not maintainer';
-export const NEWER_IMPL_IS_SET = 'newerImplementation is already set';
-export const INVALID_NEWER_IMPL = 'invalid newerImplementation supplied';
-export const NEWER_IMPL_ZERO = 'no newer implementation to upgrade to';
-export const MUST_THROUGH_DELEGATECALL = 'must be called through delegatecall';
-export const MUST_NOT_THROUGH_DELEGATECALL = 'must not be called through delegatecall';
-export const ALREADY_INITIALIZED = 'already initialized';
-export const ALREADY_MIGRATED = 'already migrated';
+export const NOT_ADMIN = 'Caller not maintainer';
+export const NOT_MAINTAINER = 'Caller not maintainer';
+export const NEXT_IMPL_IS_SET = 'nextImplementation is already set';
+export const INVALID_NEXT_IMPL = 'Invalid nextImplementation supplied';
+export const NEXT_IMPL_ZERO = 'No next implementation to upgrade to';
+export const MUST_THROUGH_DELEGATECALL = 'Must be called through delegatecall';
+export const MUST_NOT_THROUGH_DELEGATECALL = 'Must not be called through delegatecall';
+export const ALREADY_INITIALIZED = 'Already initialized';
+export const ALREADY_MIGRATED = 'Already migrated';
 
 // vault
 export const VAULT_ALREADY_SETUP = 'Vault is already setup';
@@ -28,7 +28,6 @@ export const INVALID_CHAIN_ID = 'Invalid chain id';
 
 // network registry
 export const NEXT_IMPL_ALREADY_SET = 'Next implementation already set';
-export const INVALID_NEXT_IMPL = 'Invalid nextImplementation supplied';
 export const PREV_IMPL_ROLE_REQUIRED = 'Previous implementation role is required';
 export const PARTICIPANT_ALREADY_REGISTERED = 'Participant already registered';
 export const NO_PARTICIPANT = 'Participant does not exist';
