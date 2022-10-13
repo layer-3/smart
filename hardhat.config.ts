@@ -74,8 +74,20 @@ const config: HardhatUserConfig = {
         mnemonic: 'blue yellow soon open speed web then enable rich work success matrix',
       },
     },
+    ethereum: {
+      url: process.env.ETHEREUM_URL || '',
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
     goerli: {
       url: process.env.GOERLI_URL || '',
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    polygon: {
+      url: process.env.POLYGON_URL || '',
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    mumbai: {
+      url: process.env.MUMBAI_URL || '',
       accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     generic: {
@@ -83,9 +95,6 @@ const config: HardhatUserConfig = {
       chainId: parseInt(process.env.GENERIC_CHAIN_ID || '0'),
       gasPrice: process.env.GENERIC_GAS_PRICE ? parseInt(process.env.GENERIC_GAS_PRICE) : 'auto',
       accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    ganache: {
-      url: process.env.GANACHE_URL || '',
     },
   },
   gasReporter: {
