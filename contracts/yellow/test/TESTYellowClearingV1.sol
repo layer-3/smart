@@ -8,7 +8,7 @@ import '../YellowClearingBase.sol';
  */
 contract TESTYellowClearingV1 is YellowClearingBase {
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // SECUTIRY VULNERABILITY HERE \/ \/ \/
+    // SECURITY VULNERABILITY HERE \/ \/ \/
     constructor(YellowClearingBase previousImplementation)
         YellowClearingBase(previousImplementation)
     {}
