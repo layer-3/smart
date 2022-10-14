@@ -3,10 +3,9 @@ import {Contract, Wallet} from 'ethers';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
-import TESTVaultUpgradability1Artifact from '../../artifacts/contracts/yellow/test/TESTVaultUpgradability1.sol/TESTVaultUpgradability1.json';
-import TESTVaultUpgradability2Artifact from '../../artifacts/contracts/yellow/test/TESTVaultUpgradability2.sol/TESTVaultUpgradability2.json';
-import TESTVaultUpgradability3Artifact from '../../artifacts/contracts/yellow/test/TESTVaultUpgradability3.sol/TESTVaultUpgradability3.json';
-
+import TESTVaultUpgradability1Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradability1.sol/TESTVaultUpgradability1.json';
+import TESTVaultUpgradability2Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradability2.sol/TESTVaultUpgradability2.json';
+import TESTVaultUpgradability3Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradability3.sol/TESTVaultUpgradability3.json';
 import {
   ALREADY_INITIALIZED,
   ALREADY_MIGRATED,
@@ -18,8 +17,8 @@ import {
   NOT_MAINTAINER,
   INVALID_NEXT_IMPL,
   ACCOUNT_MISSING_ROLE,
-} from './src/revert-reasons';
-import {NEXT_IMPL_SET, ROLE_GRANTED, UPGRADED} from './src/event-names';
+} from '../../src/revert-reasons';
+import {NEXT_IMPL_SET, ROLE_GRANTED, UPGRADED} from '../../src/event-names';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;

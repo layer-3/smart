@@ -1,7 +1,7 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {BigNumber} from 'ethers';
 
-import {YellowClearingBase} from '../../../../typechain';
+import {YellowClearingBase} from '../../../typechain';
 
 export enum Status {
   None,

@@ -1,7 +1,7 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {utils, Signer} from 'ethers';
 
-import {signEncoded} from '../signatures';
+import {signEncoded} from '../../../src/signatures';
 
 import {
   PartialPayload,

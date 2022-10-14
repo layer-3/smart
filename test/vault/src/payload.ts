@@ -3,7 +3,7 @@ import {utils} from 'ethers';
 import {ParamType} from 'ethers/lib/utils';
 import {ethers} from 'hardhat';
 
-import {signEncoded} from '../signatures';
+import {signEncoded} from '../../../src/signatures';
 
 // keccak256('YELLOW_VAULT_DEPOSIT_ACTION');
 export const DEPOSIT_ACTION = '0xa2d4613c2e2e0782566f63085acedcb19fbd37900464a8316040997ccd6e9fea';
