@@ -61,7 +61,10 @@ async function main() {
     accounts.push({privateKey, address});
   }
 
-  writeFileSync(__dirname + '/../deployments/accounts.json', JSON.stringify(accounts, null, 2));
+  writeFileSync(
+    __dirname + '/../addresses/hardhat-accounts.json',
+    JSON.stringify(accounts, null, 2)
+  );
 }
 
 main().catch((error) => {

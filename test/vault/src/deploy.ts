@@ -2,8 +2,8 @@ import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {Contract} from 'ethers';
 import {ethers} from 'hardhat';
 
-import {VaultImplBase, VaultImplV1, VaultProxyBase} from '../../../../typechain';
-import {randomSignerWithAddress} from '../signers';
+import {randomSignerWithAddress} from '../../../src/signers';
+import {VaultImplBase, VaultImplV1, VaultProxyBase} from '../../../typechain';
 
 // TODO: add functions and use them in `VaultUpgradability.spec.ts` and `VaultImplV1.spec.ts`
 

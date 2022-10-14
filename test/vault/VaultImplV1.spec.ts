@@ -3,9 +3,8 @@ import {Contract, providers, utils} from 'ethers';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
-import VaultImplArtifact from '../../artifacts/contracts/yellow/VaultImplV1.sol/VaultImplV1.json';
-import {VaultImplV1 as VaultImplT, TESTVaultProxy, TestERC20, VaultImplV1} from '../../typechain';
-
+import VaultImplArtifact from '../../artifacts/contracts/vault/VaultImplV1.sol/VaultImplV1.json';
+import {VaultImplV1 as VaultImplT, TESTVaultProxy, TestERC20} from '../../typechain';
 import {
   ACCOUNT_MISSING_ROLE,
   INVALID_ADDRESS,
@@ -19,10 +18,16 @@ import {
   AMOUNT_ZERO,
   INVALID_IMPL_ADDRESS,
   INVALID_CHAIN_ID,
-} from './src/revert-reasons';
-import {depositParams, setAddressParams, withdrawParams} from './src/VaultImpl/transactions';
-import {BROKER_ADDRESS_SET, COSIGNER_ADDRESS_SET, DEPOSITED, WITHDRAWN} from './src/event-names';
-import {addAllocation, generalPayload, PartialPayload} from './src/VaultImpl/payload';
+} from '../../src/revert-reasons';
+import {
+  BROKER_ADDRESS_SET,
+  COSIGNER_ADDRESS_SET,
+  DEPOSITED,
+  WITHDRAWN,
+} from '../../src/event-names';
+
+import {depositParams, setAddressParams, withdrawParams} from './src/transactions';
+import {addAllocation, generalPayload, PartialPayload} from './src/payload';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;

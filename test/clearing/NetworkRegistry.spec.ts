@@ -4,13 +4,6 @@ import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
 import {TESTYellowClearingV1, TESTYellowClearingV2, TESTYellowClearingV3} from '../../typechain';
-
-import {
-  deployAndLinkNextRegistry,
-  deployNextRegistry,
-  deployRegistry,
-} from './src/NetworkRegistry/deploy';
-import {MockData, setParticipantStatus, Status} from './src/NetworkRegistry/participantData';
 import {
   ACCOUNT_MISSING_ROLE,
   INVALID_NEXT_IMPL,
@@ -23,9 +16,8 @@ import {
   PREV_IMPL_ROLE_REQUIRED,
   INVALID_SIGNER,
   INVALID_STATUS,
-} from './src/revert-reasons';
-import {migrateParams, registerParams} from './src/NetworkRegistry/transactions';
-import {signEncoded} from './src/signatures';
+} from '../../src/revert-reasons';
+import {signEncoded} from '../../src/signatures';
 import {
   NEXT_IMPL_SET,
   PARTICIPANT_DATA_SET,
@@ -33,7 +25,11 @@ import {
   PARTICIPANT_MIGRATED_TO,
   PARTICIPANT_REGISTERED,
   PARTICIPANT_STATUS_CHANGED,
-} from './src/event-names';
+} from '../../src/event-names';
+
+import {deployAndLinkNextRegistry, deployNextRegistry, deployRegistry} from './src/deploy';
+import {MockData, setParticipantStatus, Status} from './src/participantData';
+import {migrateParams, registerParams} from './src/transactions';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;

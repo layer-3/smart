@@ -1,7 +1,7 @@
 import {Signer} from 'ethers';
 import {ethers} from 'hardhat';
 
-import {YellowClearingBase} from '../../../../typechain';
+import {YellowClearingBase} from '../../../typechain';
 
 const AddressZero = ethers.constants.AddressZero;
 
