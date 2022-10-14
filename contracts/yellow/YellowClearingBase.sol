@@ -3,7 +3,6 @@ pragma solidity 0.8.16;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
-import './IVault.sol';
 
 /**
  * @notice Base contract for Yellow Clearing. Responsible for all operations regarding Yellow Network.
@@ -187,7 +186,7 @@ abstract contract YellowClearingBase is AccessControl {
 
     // REVIEW: change docs comment after checks are added
     /**
-     * @notice Suspend participantand set their status to Suspended. Emit `ParticipantStatusChanged` event.
+     * @notice Suspend participant and set their status to Suspended. Emit `ParticipantStatusChanged` event.
      * @dev Require AUDITOR_ROLE to invoke. Participant must be present and not migrated
      * @param participant Address of participant to suspend.
      */
@@ -225,7 +224,7 @@ abstract contract YellowClearingBase is AccessControl {
     }
 
     /**
-     * @notice Set participiant data to data supplied. Emit `ParticipantDataChanged` event.
+     * @notice Set participant data to data supplied. Emit `ParticipantDataChanged` event.
      * @dev Require REGISTRY_MAINTAINER_ROLE to invoke. Participant must not have been migrated.
      * @param participant Address of participant to set data of.
      * @param data Data to set.
@@ -320,8 +319,8 @@ abstract contract YellowClearingBase is AccessControl {
     }
 
     /**
-     * @notice Internal logic of migrating participant data. Can be overriden to change.
-     * @dev Internal logic of migrating participant data. Can be overriden to change.
+     * @notice Internal logic of migrating participant data. Can be overridden to change.
+     * @dev Internal logic of migrating participant data. Can be overridden to change.
      * @param participant Address of participant to migrate data of.
      * @param data Participant data to migrate.
      */
