@@ -2,7 +2,7 @@ import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {Signer} from 'ethers';
 import {ethers} from 'hardhat';
 
-import {encodeSelf} from '../../test/yellow/src/signatures';
+import {signSelf} from '../../test/yellow/src/signatures';
 
 async function main() {
   const provider = ethers.provider;
@@ -19,7 +19,7 @@ async function main() {
   }
 
   console.log('Signer:', signer);
-  console.log(await encodeSelf(signer));
+  console.log(await signSelf(signer));
 }
 
 main().catch((error) => {
