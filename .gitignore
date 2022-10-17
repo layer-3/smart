@@ -6,7 +6,6 @@ typechain
 
 # Misc
 .DS_Store
-/.vscode
 
 # Hardhat files
 /abi
