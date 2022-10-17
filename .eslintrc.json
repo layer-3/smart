@@ -1,0 +1,73 @@
+{
+  "env": {
+    "node": true,
+    "es2022": true
+  },
+
+  "extends": [
+    "eslint:recommended",
+
+    "plugin:array-func/recommended",
+    "plugin:eslint-comments/recommended",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript",
+
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:@typescript-eslint/strict",
+
+    "plugin:prettier/recommended"
+  ],
+
+  "parser": "@typescript-eslint/parser",
+
+  "plugins": [
+    "@typescript-eslint",
+    "prettier",
+    // Enforce certain rules on how imports are handled
+    "import"
+  ],
+
+  "settings": {
+    "import/extensions": [".ts"],
+    "import/external-module-folders": ["node_modules", "node_modules/@types"],
+    "import/internal-regex": "^@(alpha|core|game|game-app|game-client|game-service)/",
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts"]
+    },
+    "import/resolver": {
+      "typescript": true,
+      "node": false
+    }
+  },
+
+  "rules": {
+    "no-self-compare": "error",
+    "import/named": "off",
+    "import/no-internal-modules": "error",
+    "import/no-self-import": "error",
+    "import/no-useless-path-segments": "error",
+    "import/no-relative-packages": "error",
+    "import/no-extraneous-dependencies": ["error"],
+    "import/no-mutable-exports": ["error"],
+    "import/no-nodejs-modules": ["error"],
+    "import/first": ["error"],
+    "import/no-duplicates": ["error"],
+    "import/no-namespace": ["error"],
+    "import/order": [
+      "warn",
+      {
+        "groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
+        "newlines-between": "always"
+      }
+    ],
+    "import/newline-after-import": ["error"],
+    "import/no-unassigned-import": ["error"],
+    "import/no-default-export": ["error"],
+
+    "array-func/prefer-array-from": "off",
+
+    "prettier/prettier": "warn"
+  }
+}
