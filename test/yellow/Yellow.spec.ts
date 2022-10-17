@@ -109,19 +109,21 @@ describe('Yellow Contract', function () {
     expect(await yellowContract.balanceOf(user.address)).to.equal(initialAmount.sub(burnAmount));
 
     // burnFrom
-    await expect(yellowContract.connect(someone).burnFrom(user.address, burnAmount)).to.be.revertedWith(
-      insufficientAllowanceError()
-    );
-    expect(await yellowContract.connect(user).approve(someone.address, burnAmount)).to.not.be.undefined;
-    expect(await yellowContract.connect(someone).burnFrom(user.address, burnAmount)).to.not.be.undefined;
-    await expect(yellowContract.connect(someone).burnFrom(user.address, burnAmount)).to.be.revertedWith(
-      insufficientAllowanceError()
-    );
+    await expect(
+      yellowContract.connect(someone).burnFrom(user.address, burnAmount)
+    ).to.be.revertedWith(insufficientAllowanceError());
+    expect(await yellowContract.connect(user).approve(someone.address, burnAmount)).to.not.be
+      .undefined;
+    expect(await yellowContract.connect(someone).burnFrom(user.address, burnAmount)).to.not.be
+      .undefined;
+    await expect(
+      yellowContract.connect(someone).burnFrom(user.address, burnAmount)
+    ).to.be.revertedWith(insufficientAllowanceError());
     expect(await yellowContract.balanceOf(user.address)).to.equal(
       initialAmount.sub(burnAmount).sub(burnAmount)
     );
-    await expect(yellowContract.connect(user).burnFrom(user.address, burnAmount)).to.be.revertedWith(
-      insufficientAllowanceError()
-    );
+    await expect(
+      yellowContract.connect(user).burnFrom(user.address, burnAmount)
+    ).to.be.revertedWith(insufficientAllowanceError());
   });
 });
