@@ -1,8 +1,7 @@
-.openzeppelin/
-/abi/
-/artifacts/
-/cache/
-/coverage/
-node_modules/
-typechain/
-package-lock.json
+.openzeppelin
+abi
+artifacts
+cache
+coverage
+node_modules
+typechain
