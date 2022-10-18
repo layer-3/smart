@@ -3,9 +3,9 @@ import {Contract, Wallet} from 'ethers';
 import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
-import TESTVaultUpgradability1Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradability1.sol/TESTVaultUpgradability1.json';
-import TESTVaultUpgradability2Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradability2.sol/TESTVaultUpgradability2.json';
-import TESTVaultUpgradability3Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradability3.sol/TESTVaultUpgradability3.json';
+import TESTVaultUpgradability1Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradeability1.sol/TESTVaultUpgradeability1.json';
+import TESTVaultUpgradability2Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradeability2.sol/TESTVaultUpgradeability2.json';
+import TESTVaultUpgradability3Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradeability3.sol/TESTVaultUpgradeability3.json';
 import {
   ALREADY_INITIALIZED,
   ALREADY_MIGRATED,
@@ -24,7 +24,7 @@ const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
 const MNTR_ROLE = ethers.utils.id('MAINTAINER_ROLE');
 
-describe('Vault Upgradability Contracts', async () => {
+describe('Vault Upgradeability Contracts', async () => {
   let implAdmin: SignerWithAddress;
   let proxyAdmin: SignerWithAddress;
   let user: SignerWithAddress;
@@ -34,7 +34,7 @@ describe('Vault Upgradability Contracts', async () => {
   let VaultImpl1: Contract;
 
   beforeEach(async () => {
-    const VaultImpl1Factory = await ethers.getContractFactory('TESTVaultUpgradability1');
+    const VaultImpl1Factory = await ethers.getContractFactory('TESTVaultUpgradeability1');
     VaultImpl1 = await VaultImpl1Factory.connect(implAdmin).deploy();
     await VaultImpl1.deployed();
   });
@@ -337,11 +337,11 @@ describe('Vault Upgradability Contracts', async () => {
     let VaultImpl3Proxied: Contract;
 
     beforeEach(async () => {
-      const VaultImpl2Factory = await ethers.getContractFactory('TESTVaultUpgradability2');
+      const VaultImpl2Factory = await ethers.getContractFactory('TESTVaultUpgradeability2');
       VaultImpl2 = await VaultImpl2Factory.connect(implAdmin).deploy();
       await VaultImpl2.deployed();
 
-      const VaultImpl3Factory = await ethers.getContractFactory('TESTVaultUpgradability3');
+      const VaultImpl3Factory = await ethers.getContractFactory('TESTVaultUpgradeability3');
       VaultImpl3 = await VaultImpl3Factory.connect(implAdmin).deploy();
       await VaultImpl3.deployed();
 
