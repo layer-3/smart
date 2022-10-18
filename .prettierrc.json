@@ -9,7 +9,11 @@
     {
       "files": "*.sol",
       "options": {
-        "tabWidth": 4
+        "tabWidth": 4,
+        "useTabs": true,
+        "singleQuote": true,
+        "bracketSpacing": false,
+        "explicitTypes": "preserve"
       }
     }
   ]
