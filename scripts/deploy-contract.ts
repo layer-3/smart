@@ -10,7 +10,6 @@ async function main() {
 
   let args;
   if (process.env.CONTRACT_ARGS) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     args = process.env.CONTRACT_ARGS.split(',').map((v) => v.trim());
     console.log(`Args:`, args);
   }

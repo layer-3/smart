@@ -7,6 +7,6 @@ export function signEncoded(signer: Signer, encodedData: string): Promise<string
 export async function signSelf(participant: Signer): Promise<string> {
   return await signEncoded(
     participant,
-    utils.defaultAbiCoder.encode(['address'], [await participant.getAddress()])
+    utils.defaultAbiCoder.encode(['address'], [await participant.getAddress()]),
   );
 }

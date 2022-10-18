@@ -24,7 +24,7 @@ const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
 const MNTR_ROLE = ethers.utils.id('MAINTAINER_ROLE');
 
-describe('Vault Upgradeability Contracts', async () => {
+describe('Vault Upgradeability Contracts', () => {
   let implAdmin: SignerWithAddress;
   let proxyAdmin: SignerWithAddress;
   let user: SignerWithAddress;

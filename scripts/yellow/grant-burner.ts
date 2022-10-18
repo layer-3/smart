@@ -1,10 +1,15 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {ethers} from 'hardhat';
 
+import type {Yellow} from '../../typechain';
+
 async function main() {
-  const yellowAddress = process.env.YELLOW_ADDRESS!;
-  const adminPrivateKey = process.env.ADMIN_PRIVATE_KEY!;
-  const account = process.env.ACCOUNT!;
+  const yellowAddress = process.env.YELLOW_ADDRESS ?? undefined;
+  const adminPrivateKey = process.env.ADMIN_PRIVATE_KEY ?? undefined;
+  const account = process.env.ACCOUNT ?? undefined;
+
+  if (!yellowAddress || !adminPrivateKey || !account) {
+    throw new Error('Invalid arguments!');
+  }
 
   console.log('Yellow address:', yellowAddress);
   console.log('Admin private key:', adminPrivateKey);
@@ -13,8 +18,8 @@ async function main() {
   const admin = new ethers.Wallet(adminPrivateKey, ethers.provider);
 
   const yellowFactory = await ethers.getContractFactory('Yellow');
-  const yellowAttached = await yellowFactory.attach(yellowAddress);
-  const yellow = await yellowAttached.connect(admin);
+  const yellowAttached = yellowFactory.attach(yellowAddress);
+  const yellow = yellowAttached.connect(admin) as Yellow;
 
   try {
     await yellow.grantRole(ethers.utils.id('BURNER_ROLE'), account);

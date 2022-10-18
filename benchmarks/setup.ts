@@ -30,6 +30,7 @@ const reasonStringGenerators = (gasUsed: number, expectedGasUsed: number) => {
 // is called upon number
 Assertion.addMethod('equalGas', async function (expectedGasUsed: number) {
   // an object upon which this assertion is called
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const gasUsed: number = await this._obj;
 
   const {expectedDifferent, expectedEqual} = reasonStringGenerators(gasUsed, expectedGasUsed);
@@ -44,5 +45,6 @@ Assertion.addMethod('equalGas', async function (expectedGasUsed: number) {
 
 // is called upon TransactionResponse object
 Assertion.addMethod('consumeGas', async function (expectedGasUsed: number) {
-  await new Assertion(await gasUsed(this._obj)).to.equalGas(expectedGasUsed);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  new Assertion(await gasUsed(this._obj)).to.equalGas(expectedGasUsed);
 });

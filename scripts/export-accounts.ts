@@ -27,7 +27,7 @@ async function main() {
   const envMnemonic = process.env.MNEMONIC!;
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const envPassphrase = process.env.PASSPHRASE!;
-  const accounts_number = process.env.NUMBER || 20;
+  const accounts_number = process.env.NUMBER ?? 20;
 
   const mnemonic = envMnemonic || confMnemonic;
   const passphrase = envPassphrase || confPassphrase;

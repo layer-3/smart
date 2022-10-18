@@ -14,7 +14,7 @@ async function main() {
   // Fetch args
   const gnosisAddress = process.env.GNOSIS ?? undefined;
   if (!gnosisAddress || !isAddress(gnosisAddress)) {
-    throw new Error(`Incorrect gnosis address: ${gnosisAddress}`);
+    throw new Error(`Incorrect gnosis address: ${gnosisAddress ?? 'undefined'}`);
   }
   console.log('Gnosis address:', gnosisAddress, '\n');
 

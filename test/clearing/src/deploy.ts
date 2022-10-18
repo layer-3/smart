@@ -41,28 +41,28 @@ export async function deployAndLinkNextRegistry(
 interface DeployRegistryOptions {
   prevImpl?: YellowClearingBase;
   signer?: Signer;
-  prevCallback?: (PrevRegistry: YellowClearingBase) => void;
-  thisCallback?: (NextRegistry: YellowClearingBase) => void;
-  callback?: (PrevRegistry: YellowClearingBase, NextRegistry: YellowClearingBase) => void;
+  prevRegCallback?: (PrevRegistry: YellowClearingBase) => unknown;
+  thisRegCallback?: (NextRegistry: YellowClearingBase) => unknown;
+  callback?: (PrevRegistry: YellowClearingBase, NextRegistry: YellowClearingBase) => unknown;
 }
 
 async function _deployRegistry(
   version: number,
   options: DeployRegistryOptions,
 ): Promise<YellowClearingBase> {
-  const {prevImpl, signer, prevCallback, thisCallback, callback} = options;
+  const {prevImpl, signer, prevRegCallback, thisRegCallback, callback} = options;
 
   const prevImplAddress = prevImpl ? prevImpl.address : AddressZero;
   const RegistryFactory = await ethers.getContractFactory(`TESTYellowClearingV${version}`, signer);
   const NextRegistry = (await RegistryFactory.deploy(prevImplAddress)) as YellowClearingBase;
   await NextRegistry.deployed();
 
-  if (prevImpl && prevCallback) {
-    await prevCallback(prevImpl);
+  if (prevImpl && prevRegCallback) {
+    await prevRegCallback(prevImpl);
   }
 
-  if (thisCallback) {
-    await thisCallback(NextRegistry);
+  if (thisRegCallback) {
+    await thisRegCallback(NextRegistry);
   }
 
   if (prevImpl && callback) {
