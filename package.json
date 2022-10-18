@@ -2,18 +2,13 @@
   "name": "hardhat-project",
   "scripts": {
     "contracts:node": "npx hardhat node --no-deploy",
-    "contracts:deploy-localhost": "npx hardhat deploy --network localhost --export-all addresses.json && npx hardhat run scripts/nitro-protocol/postdeploy.ts && npm run contracts:export-accounts",
+    "contracts:deploy-localhost": "npx hardhat deploy --network localhost --export-all addresses.json",
     "contracts:export-accounts": "npx hardhat run scripts/export-accounts.ts",
-    "lint:check": "npm run eslint:check; npm run solhint:check",
-    "eslint:check": "npx eslint \"./\"",
-    "solhint:check": "npx solhint -w 0 './contracts/**/*.sol'",
-    "lint:fix": "npm run eslint:fix; npm run prettier:fix; npm run solhint:fix",
+    "lint:check": "npx eslint \"./\"",
+    "lint:fix": "npm run eslint:fix; npm run prettier:fix",
     "eslint:fix": "eslint '**/*.{js,ts}' --fix",
     "prettier:fix": "prettier '**/*.{json,sol,md}' --write",
-    "solhint:fix": "solhint 'contracts/**/*.sol' --fix",
-    "docs:solc-0.7.4": "solidity-docgen --solc-module solc-0.7.4 -t docs/templates -i contracts/nitro-protocol",
-    "docs:solc-0.8.16": "solidity-docgen --solc-module solc-0.8.16 -t docs/templates -i contracts -e contracts/nitro-protocol",
-    "docs": "npm run docs:solc-0.7.4 && npm run docs:solc-0.8.16 && doctoc ./docs/*.md --maxlevel 3"
+    "docs": "solidity-docgen --solc-module solc-0.8.16 -t docs/templates -i contracts -e contracts/nitro-protocol && doctoc ./docs/*.md --maxlevel 3"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.13",
