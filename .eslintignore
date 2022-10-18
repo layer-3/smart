@@ -1,4 +1,5 @@
-node_modules
+abi
 artifacts
 cache
-coverage
+node_modules
+typechain
