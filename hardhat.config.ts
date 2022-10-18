@@ -20,9 +20,6 @@ task('accounts', 'Prints the list of accounts', async (_, hre) => {
   }
 });
 
-const ACCOUNTS = process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [];
-const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY ?? '';
-
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
