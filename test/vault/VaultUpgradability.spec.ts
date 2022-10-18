@@ -1,6 +1,7 @@
-import { expect } from 'chai';
-import { Wallet } from 'ethers';
-import { ethers } from 'hardhat';
+import {expect} from 'chai';
+import {Contract, Wallet} from 'ethers';
+import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
+import {ethers} from 'hardhat';
 
 import TESTVaultUpgradability1Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradeability1.sol/TESTVaultUpgradeability1.json';
 import TESTVaultUpgradability2Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradeability2.sol/TESTVaultUpgradeability2.json';
@@ -83,23 +84,23 @@ describe('Vault Upgradeability Contracts', () => {
       await VaultImplAsImplAdmin.grantRole(MNTR_ROLE, someone.address);
       expect(await VaultImpl1.hasRole(MNTR_ROLE, someone.address)).to.be.true;
 
-      await expect(VaultImplAsSomeone.grantRole(MNTR_ROLE, someother.address)).to.be.revertedWith(
-        ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE),
-      );
+      await expect(
+        VaultImpl1.connect(someone).grantRole(MNTR_ROLE, someother.address),
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE));
 
-      await expect(VaultImplAsSomeone.grantRole(ADM_ROLE, someother.address)).to.be.revertedWith(
-        ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE),
-      );
+      await expect(
+        VaultImpl1.connect(someone).grantRole(ADM_ROLE, someother.address),
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE));
     });
 
     it('revert on someone granting any role', async () => {
-      await expect(VaultImplAsSomeone.grantRole(ADM_ROLE, someother.address)).to.be.revertedWith(
-        ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE),
-      );
+      await expect(
+        VaultImpl1.connect(someone).grantRole(ADM_ROLE, someother.address),
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE));
 
-      await expect(VaultImplAsSomeone.grantRole(MNTR_ROLE, someother.address)).to.be.revertedWith(
-        ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE),
-      );
+      await expect(
+        VaultImpl1.connect(someone).grantRole(MNTR_ROLE, someother.address),
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE));
     });
 
     // ======================
@@ -139,9 +140,9 @@ describe('Vault Upgradeability Contracts', () => {
     it('revert on someone set next implementation', async () => {
       expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
       const nextImplAddress = Wallet.createRandom().address;
-      await expect(VaultImplAsSomeone.setNextImplementation(nextImplAddress)).to.be.revertedWith(
-        NOT_MAINTAINER,
-      );
+      await expect(
+        VaultImpl1.connect(someone).setNextImplementation(nextImplAddress),
+      ).to.be.revertedWith(NOT_MAINTAINER);
     });
 
     it('revert on setting different next implementations twice', async () => {
@@ -152,7 +153,7 @@ describe('Vault Upgradeability Contracts', () => {
 
       const otherNextImplAddress = Wallet.createRandom().address;
       await expect(
-        VaultImplAsImplAdmin.setNextImplementation(otherNextImplAddress),
+        VaultImpl1.connect(implAdmin).setNextImplementation(otherNextImplAddress),
       ).to.be.revertedWith(NEXT_IMPL_IS_SET);
     });
 
@@ -161,24 +162,24 @@ describe('Vault Upgradeability Contracts', () => {
       const nextImplAddress = Wallet.createRandom().address;
       await VaultImplAsImplAdmin.setNextImplementation(nextImplAddress);
       expect(await VaultImpl1.getNextImplementation()).to.be.equal(nextImplAddress);
-      await expect(VaultImplAsImplAdmin.setNextImplementation(nextImplAddress)).to.be.revertedWith(
-        NEXT_IMPL_IS_SET,
-      );
+      await expect(
+        VaultImpl1.connect(implAdmin).setNextImplementation(nextImplAddress),
+      ).to.be.revertedWith(NEXT_IMPL_IS_SET);
     });
 
     /** @dev This test case it present to avoid emitting NextImplementationSet event */
     it('revert on setting next implementation to zero address', async () => {
       expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
       const nextImplZero = ethers.constants.AddressZero;
-      await expect(VaultImplAsImplAdmin.setNextImplementation(nextImplZero)).to.be.revertedWith(
-        INVALID_NEXT_IMPL,
-      );
+      await expect(
+        VaultImpl1.connect(implAdmin).setNextImplementation(nextImplZero),
+      ).to.be.revertedWith(INVALID_NEXT_IMPL);
     });
 
     it('revert on setting next implementation to itself', async () => {
       expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
       await expect(
-        VaultImplAsImplAdmin.setNextImplementation(VaultImpl1.address),
+        VaultImpl1.connect(implAdmin).setNextImplementation(VaultImpl1.address),
       ).to.be.revertedWith(INVALID_NEXT_IMPL);
     });
 
@@ -257,11 +258,6 @@ describe('Vault Upgradeability Contracts', () => {
       VaultImplProxied = new ethers.Contract(
         VaultProxy.address,
         TESTVaultUpgradability1Artifact.abi,
-      ) as VaultImplV1;
-
-      [VaultProxiedAsProxyAdmin, VaultProxiedAsImplAdmin, VaultProxiedAsSomeone] = connectGroup(
-        VaultImplProxied,
-        [proxyAdmin, implAdmin, someone],
       );
     });
 
@@ -288,12 +284,12 @@ describe('Vault Upgradeability Contracts', () => {
     });
 
     it('revert on someone granting roles', async () => {
-      await expect(VaultProxiedAsSomeone.grantRole(ADM_ROLE, someother.address)).to.be.revertedWith(
-        ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE),
-      );
+      await expect(
+        VaultImplProxied.connect(someone).grantRole(ADM_ROLE, someother.address),
+      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE));
 
       await expect(
-        VaultProxiedAsSomeone.grantRole(MNTR_ROLE, someother.address),
+        VaultImplProxied.connect(someone).grantRole(MNTR_ROLE, someother.address),
       ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, ADM_ROLE));
     });
 
@@ -308,7 +304,7 @@ describe('Vault Upgradeability Contracts', () => {
     // Not delegated
     // ======================
     it('revert on call `getNextImplementation` via proxy', async () => {
-      await expect(VaultProxiedAsSomeone.getNextImplementation()).to.be.revertedWith(
+      await expect(VaultImplProxied.connect(user).getNextImplementation()).to.be.revertedWith(
         MUST_NOT_THROUGH_DELEGATECALL,
       );
     });
@@ -316,7 +312,7 @@ describe('Vault Upgradeability Contracts', () => {
     it('revert on call `setNextImplementation` via proxy', async () => {
       const nextImplAddress = Wallet.createRandom().address;
       await expect(
-        VaultProxiedAsImplAdmin.setNextImplementation(nextImplAddress),
+        VaultImplProxied.connect(implAdmin).setNextImplementation(nextImplAddress),
       ).to.be.revertedWith(MUST_NOT_THROUGH_DELEGATECALL);
     });
 
@@ -389,32 +385,18 @@ describe('Vault Upgradeability Contracts', () => {
       VaultImpl1Proxied = new ethers.Contract(
         VaultProxy.address,
         TESTVaultUpgradability1Artifact.abi,
-      ) as TESTVaultUpgradeability1;
-
-      [
-        Vault1ProxiedAsProxyAdmin,
-        Vault1ProxiedAsImplAdmin,
-        Vault1ProxiedAsSomeone,
-        Vault1ProxiedAsUser,
-      ] = connectGroup(VaultImpl1Proxied, [proxyAdmin, implAdmin, someone, user]);
+      );
 
       // Defining early to be accessible further in the code
       VaultImpl2Proxied = new ethers.Contract(
         VaultProxy.address,
         TESTVaultUpgradability2Artifact.abi,
-      ) as TESTVaultUpgradeability2;
-
-      [Vault2ProxiedAsProxyAdmin, Vault2ProxiedAsImplAdmin, Vault2ProxiedAsUser] = connectGroup(
-        VaultImpl2Proxied,
-        [proxyAdmin, implAdmin, user],
       );
 
       VaultImpl3Proxied = new ethers.Contract(
         VaultProxy.address,
         TESTVaultUpgradability3Artifact.abi,
-      ) as TESTVaultUpgradeability3;
-
-      Vault3ProxiedAsUser = connect(VaultImpl3Proxied, user);
+      );
     });
 
     // ======================
@@ -438,11 +420,11 @@ describe('Vault Upgradeability Contracts', () => {
 
     it('revert on impl admin granting roles', async () => {
       await expect(
-        Vault1ProxiedAsImplAdmin.grantRole(ADM_ROLE, someone.address),
+        VaultImpl1Proxied.connect(implAdmin).grantRole(ADM_ROLE, someone.address),
       ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(implAdmin.address, ADM_ROLE));
 
       await expect(
-        Vault1ProxiedAsImplAdmin.grantRole(MNTR_ROLE, someone.address),
+        VaultImpl1Proxied.connect(implAdmin).grantRole(MNTR_ROLE, someone.address),
       ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(implAdmin.address, ADM_ROLE));
     });
 
@@ -467,8 +449,10 @@ describe('Vault Upgradeability Contracts', () => {
     });
 
     it('revert on call `initialize` when initialized', async () => {
-      expect(await Vault1ProxiedAsUser.initializedVersion()).to.be.equal(1);
-      await expect(Vault1ProxiedAsProxyAdmin.initialize()).to.be.revertedWith(ALREADY_INITIALIZED);
+      expect(await VaultImpl1Proxied.connect(user).initializedVersion()).to.be.equal(1);
+      await expect(VaultImpl1Proxied.connect(proxyAdmin).initialize()).to.be.revertedWith(
+        ALREADY_INITIALIZED,
+      );
     });
 
     it('initialize when 1 next impl available', async () => {
@@ -484,7 +468,7 @@ describe('Vault Upgradeability Contracts', () => {
       VaultImpl2Proxied = new ethers.Contract(
         VaultProxy.address,
         TESTVaultUpgradability2Artifact.abi,
-      ) as TESTVaultUpgradeability2;
+      );
 
       expect(await connect(VaultImpl2Proxied, user).initializedVersion()).to.be.equal(2);
     });
@@ -502,7 +486,7 @@ describe('Vault Upgradeability Contracts', () => {
       const VaultImpl3Proxied = new ethers.Contract(
         VaultProxy.address,
         TESTVaultUpgradability3Artifact.abi,
-      ) as TESTVaultUpgradeability3;
+      );
 
       expect(await connect(VaultImpl3Proxied, user).initializedVersion()).to.be.equal(3);
     });
@@ -550,7 +534,9 @@ describe('Vault Upgradeability Contracts', () => {
 
     it('revert on upgrade to zero address', async () => {
       expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
-      await expect(Vault1ProxiedAsProxyAdmin.upgrade()).to.be.revertedWith(NEXT_IMPL_ZERO);
+      await expect(VaultImpl1Proxied.connect(proxyAdmin).upgrade()).to.be.revertedWith(
+        NEXT_IMPL_ZERO,
+      );
     });
 
     it('revert on someone upgrading', async () => {
@@ -566,7 +552,9 @@ describe('Vault Upgradeability Contracts', () => {
 
       expect(await Vault2ProxiedAsUser.version()).to.be.equal(2);
 
-      await expect(Vault2ProxiedAsProxyAdmin.upgrade()).to.be.revertedWith(NEXT_IMPL_ZERO);
+      await expect(VaultImpl2Proxied.connect(proxyAdmin).upgrade()).to.be.revertedWith(
+        NEXT_IMPL_ZERO,
+      );
     });
 
     // ======================
@@ -596,16 +584,22 @@ describe('Vault Upgradeability Contracts', () => {
     });
 
     it('revert on call `applyUpgrade` after initialization', async () => {
-      await expect(Vault1ProxiedAsImplAdmin.applyUpgrade()).to.be.revertedWith(ALREADY_MIGRATED);
+      await expect(VaultImpl1Proxied.connect(implAdmin).applyUpgrade()).to.be.revertedWith(
+        ALREADY_MIGRATED,
+      );
     });
 
     it('revert on migrating called after migration', async () => {
-      await expect(Vault1ProxiedAsImplAdmin.applyUpgrade()).to.be.revertedWith(ALREADY_MIGRATED);
+      await expect(VaultImpl1Proxied.connect(implAdmin).applyUpgrade()).to.be.revertedWith(
+        ALREADY_MIGRATED,
+      );
 
       await VaultImplAsImplAdmin.setNextImplementation(VaultImpl2.address);
       await Vault1ProxiedAsProxyAdmin.upgrade();
 
-      await expect(Vault2ProxiedAsImplAdmin.applyUpgrade()).to.be.revertedWith(ALREADY_MIGRATED);
+      await expect(VaultImpl2Proxied.connect(implAdmin).applyUpgrade()).to.be.revertedWith(
+        ALREADY_MIGRATED,
+      );
     });
 
     // ======================

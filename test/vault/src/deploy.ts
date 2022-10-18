@@ -1,7 +1,9 @@
-import { Contract } from 'ethers';
-import { ethers } from 'hardhat';
+import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
+import {Contract} from 'ethers';
+import {ethers} from 'hardhat';
 
-import { randomSignerWithAddress } from '../../../src/signers';
+import {randomSignerWithAddress} from '../../../src/signers';
+import type {VaultImplBase, VaultImplV1, VaultProxyBase} from '../../../typechain';
 
 import type { VaultImplBase, VaultImplV1, VaultProxyBase } from '../../../typechain';
 import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -89,7 +91,7 @@ async function _deployVault(options: DeployVaultOptions): Promise<DeployVaultRet
     'VaultImplV1',
     VaultProxy.address,
     proxyAdmin,
-  );
+  )) as VaultImplV1;
 
   await ProxiedImpl.setup(broker.address, coSigner.address);
 

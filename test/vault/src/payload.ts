@@ -1,5 +1,7 @@
-import { utils } from 'ethers';
-import { ethers } from 'hardhat';
+import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
+import {utils} from 'ethers';
+import type {ParamType} from 'ethers/lib/utils';
+import {ethers} from 'hardhat';
 
 import { signEncoded } from '../../../src/signatures';
 
@@ -67,7 +69,10 @@ function expireAt(delta = 600_000): number {
   return Date.now() + delta;
 }
 
-export function generalPayload(destination: string, implAddress: string): PartialPayload {
+export async function generalPayload(
+  destination: string,
+  implAddress: string,
+): Promise<PartialPayload> {
   return {
     rid: randomRID(),
     expire: expireAt(),

@@ -1,7 +1,7 @@
 import { isAddress } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 
-import type { YellowClearingV1 } from '../../typechain';
+import type {YellowClearingV1} from '../../typechain';
 
 async function main(): Promise<void> {
   const provider = ethers.provider;

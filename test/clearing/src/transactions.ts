@@ -1,4 +1,4 @@
-import { signSelf } from '../../../src/signatures';
+import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 
 import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 

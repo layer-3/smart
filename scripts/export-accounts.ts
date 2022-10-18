@@ -1,10 +1,9 @@
 import { writeFileSync } from 'node:fs';
 
 import hre from 'hardhat';
-import { mnemonicToSeedSync } from 'ethereum-cryptography/bip39';
-import { HDKey } from 'ethereum-cryptography/hdkey';
-
-import type { HardhatNetworkConfig } from 'hardhat/types';
+import type {HardhatNetworkConfig} from 'hardhat/types';
+import {mnemonicToSeedSync} from 'ethereum-cryptography/bip39';
+import {HDKey} from 'ethereum-cryptography/hdkey';
 
 interface IAccount {
   privateKey: string;
@@ -64,7 +63,7 @@ async function main(): Promise<void> {
 
   writeFileSync(
     __dirname + '/../addresses/hardhat-accounts.json',
-    JSON.stringify(accounts, undefined, 2),
+    JSON.stringify(accounts, null, 2),
   );
 }
 
