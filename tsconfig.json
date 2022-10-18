@@ -1,13 +1,31 @@
+// tweaked node18-strictest-esm
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Node 18 + ESM + Strictest",
   "compilerOptions": {
-    "target": "es2018",
-    "module": "commonjs",
+    "lib": ["es2022"],
+    "module": "es2022",
+    "target": "es2022",
     "strict": true,
     "esModuleInterop": true,
-    "outDir": "dist",
-    "declaration": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    // "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    // "noPropertyAccessFromIndexSignature": true,
+    // "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "importsNotUsedAsValues": "error",
+    "checkJs": true,
+
     "resolveJsonModule": true
   },
-  "include": ["./scripts", "./test", "./src", "./benchmarks", "./typechain"],
+  "include": ["./scripts", "./test", "./src", "./benchmarks"],
   "files": ["./hardhat.config.ts"]
 }
