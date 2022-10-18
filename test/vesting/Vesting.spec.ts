@@ -1,12 +1,10 @@
-import { expect } from 'chai';
-import { BigNumber, ContractFactory, constants } from 'ethers';
-import { ethers, upgrades } from 'hardhat';
+import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
+import {expect} from 'chai';
+import {Contract, constants, ContractFactory, BigNumber} from 'ethers';
+import {ethers, upgrades} from 'hardhat';
 
-import { deployVesting } from './src/deploy';
-import { DAY, VESTING_PERIOD_DAYS, getWillEnd, getWillStart } from './src/time';
-
-import type { Vesting, VestingERC20, Vesting__factory } from '../../typechain';
-import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import {connectGroup} from '../../src/contracts';
+import type {Vesting, VestingERC20, Vesting__factory} from '../../typechain';
 
 describe('Vesting Contract', function () {
   // need to define for `before` hooks to work
@@ -19,20 +17,44 @@ describe('Vesting Contract', function () {
 
   let Token: VestingERC20;
 
-  before(async function () {
-    willStart = await getWillStart();
-    willEnd = getWillEnd(willStart);
+  let epoch: number;
+  let willStart: number;
+  let willEnd: number;
 
+  let owner: SignerWithAddress;
+  let user: SignerWithAddress;
+  let someone: SignerWithAddress;
+
+  const ADM_ROLE = ethers.constants.HashZero;
+
+  let Token: Contract & VestingERC20;
+
+  before(async function () {
     [owner, user, someone] = await ethers.getSigners();
 
     const TokenFactory = await ethers.getContractFactory('VestingERC20');
-    Token = (await TokenFactory.deploy('Yellow', 'YLW')) as VestingERC20;
+    Token = (await TokenFactory.deploy('Yellow', 'YLW')) as Contract & VestingERC20;
     await Token.deployed();
   });
 
-  beforeEach(async () => {
-    willStart = await getWillStart();
-    willEnd = getWillEnd(willStart);
+  before(function () {
+    epoch = Math.round(new Date().getTime() / 1000);
+    willStart = epoch + TIMESHIFT_SECONDS;
+
+    this.getWillStart = async () => {
+      const blockNumBefore = await ethers.provider.getBlockNumber();
+      const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+      const timestampBefore = blockBefore.timestamp;
+      console.log(timestampBefore);
+      return timestampBefore + TIMESHIFT_SECONDS;
+    };
+
+    this.getWillEnd = (willStart: number): number => {
+      return willStart + DAY * VESTING_PERIOD_DAYS;
+    };
+
+    // vesting period of 30 days
+    willEnd = this.getWillEnd(willStart);
   });
 
   describe('initializer', function () {
@@ -106,13 +128,13 @@ describe('Vesting Contract', function () {
   describe('upgradeable', function () {
     it('contract is upgradeable', async function () {
       const VestingFactoryV1 = await ethers.getContractFactory('Vesting');
-      const ContractV1: Vesting = (await upgrades.deployProxy(VestingFactoryV1, [
+      const ContractV1: Contract & Vesting = (await upgrades.deployProxy(VestingFactoryV1, [
         Token.address,
         willStart,
         VESTING_PERIOD_DAYS,
         0,
         1,
-      ])) as Vesting;
+      ])) as Contract & Vesting;
       await ContractV1.deployed();
 
       const [tokenAmount1, tokenAmount2] = [500, 1000];
@@ -120,7 +142,7 @@ describe('Vesting Contract', function () {
       await ContractV1.addInvestor(someone.address, tokenAmount2, 0);
       const toPayTokensV1 = await ContractV1.getToPayTokens();
 
-      const VestingFactoryV2 = await ethers.getContractFactory('TestVestingV2');
+      const VestingFactoryV2 = await ethers.getContractFactory('VestingV2Test');
       const ContractV2 = await upgrades.upgradeProxy(ContractV1.address, VestingFactoryV2);
 
       await ContractV2.deployed();
@@ -140,24 +162,52 @@ describe('Vesting Contract', function () {
   describe('main logic', function () {
     const cliffDays = 10;
 
-    let VestingContract: Vesting;
+    let VestingContract: Contract & Vesting;
+
+    let VestingAsUser: Contract & Vesting;
+
+    const createVestingContract = async (
+      willStart: number,
+      cliff = 0,
+      claimingInterval = 1,
+    ): Promise<Contract & Vesting> => {
+      const VestingFactory = await ethers.getContractFactory('Vesting');
+      const VestingContract = (await upgrades.deployProxy(VestingFactory, [
+        Token.address,
+        willStart,
+        VESTING_PERIOD_DAYS,
+        cliff,
+        claimingInterval,
+      ])) as Contract & Vesting;
+      await VestingContract.deployed();
+      return VestingContract;
+    };
 
     before(async function () {
-      VestingContract = await deployVesting(willStart, Token, cliffDays);
+      this.getWillStart = async (): Promise<number> => {
+        const blockNumBefore = await ethers.provider.getBlockNumber();
+        const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+        const epoch = blockBefore.timestamp;
+        return epoch + TIMESHIFT_SECONDS;
+      };
+
+      VestingContract = await createVestingContract(willStart, cliffDays);
+
+      [VestingAsUser] = connectGroup(VestingContract, [user]);
     });
 
     describe('roles', function () {
       it('revert on user adding investor', async function () {
-        await expect(
-          VestingContract.connect(user).addInvestor(someone.address, 1, 0),
-        ).to.be.revertedWith('Ownable: caller is not the owner');
+        await expect(VestingAsUser.addInvestor(someone.address, 1, 0)).to.be.revertedWith(
+          'Ownable: caller is not the owner',
+        );
       });
 
       it('revert on user removing investor', async function () {
         await VestingContract.addInvestor(someone.address, 1, 0);
-        await expect(
-          VestingContract.connect(user).removeInvestor(someone.address),
-        ).to.be.revertedWith('Ownable: caller is not the owner');
+        await expect(VestingAsUser.removeInvestor(someone.address)).to.be.revertedWith(
+          'Ownable: caller is not the owner',
+        );
 
         // cleanup
         await VestingContract.removeInvestor(someone.address);
@@ -166,8 +216,6 @@ describe('Vesting Contract', function () {
 
     describe('vesting properties', function () {
       it('Start time is correct', async function () {
-        // deploy separate instance to get correct `willStart`
-        const VestingContract = await deployVesting(willStart, Token);
         expect(await VestingContract.getStartTime()).to.equal(willStart);
       });
 
@@ -183,22 +231,23 @@ describe('Vesting Contract', function () {
         const [tokenAmount1, tokenAmount2] = [500, 1000];
         await VestingContract.addInvestor(user.address, tokenAmount1, 0);
         await VestingContract.addInvestor(someone.address, tokenAmount2, 0);
-
         expect(await VestingContract.getToPayTokens()).to.equal(tokenAmount1 + tokenAmount2);
       });
     });
 
     describe('investors (non time-related)', function () {
-      const tokenAmount = 1000;
-
       beforeEach(async function () {
-        VestingContract = await deployVesting(willStart, Token);
+        this.VestingContract = await this.createVestingContract(this.willStart);
+        this.tokenAmount = 1000;
+        const {Token, VestingContract, owner, user, tokenAmount} = this;
 
         await Token.connect(owner).mint(VestingContract.address, tokenAmount);
         await VestingContract.addInvestor(user.address, tokenAmount, 0);
       });
 
       it('revert on addInvestor address 0x0', async function () {
+        const {VestingContract} = this;
+
         const investor = constants.AddressZero; // 0x0 address
         const amount = 1;
         const iuPercent = 0;
@@ -209,6 +258,8 @@ describe('Vesting Contract', function () {
       });
 
       it('revert on addInvestor amount 0', async function () {
+        const {VestingContract, someone} = this;
+
         const investor = someone.address;
         const amount = 0; // zero amount
         const iuPercent = 0;
@@ -219,6 +270,8 @@ describe('Vesting Contract', function () {
       });
 
       it('revert on addInvestor iuPercent >= 100%', async function () {
+        const {VestingContract, someone} = this;
+
         const investor = someone.address;
         const amount = 1;
         const iuPercent = 10_100; // >= 100%
@@ -229,6 +282,8 @@ describe('Vesting Contract', function () {
       });
 
       it('revert on addInvestors arrays length mismatch', async function () {
+        const {VestingContract, user, someone} = this;
+
         const investors = [user.address, someone.address];
         const amounts = [100, 100, 100]; // amounts length mismatch
         const iuPercent = 0;
@@ -239,38 +294,41 @@ describe('Vesting Contract', function () {
       });
 
       it('locked amount after adding investor is correct', async function () {
-        const investorData = await VestingContract.getInvestorData(user.address);
-        const tokens = investorData[2];
+        const {VestingContract, user, tokenAmount} = this;
 
+        const [, , tokens] = await VestingContract.getInvestorData(user.address);
         expect(tokens.toNumber()).to.be.equal(tokenAmount);
       });
 
       it('investor is not present after their removal', async function () {
-        await VestingContract.removeInvestor(user.address);
-        const investorData = await VestingContract.getInvestorData(user.address);
-        const tokens = investorData[2];
+        const {VestingContract, user} = this;
 
+        await VestingContract.removeInvestor(user.address);
+        const [, , tokens] = await VestingContract.getInvestorData(user.address);
         expect(tokens.toNumber()).to.be.equal(0);
       });
 
       it('overwrite investor data if adding them second time', async function () {
+        const {VestingContract, user, tokenAmount} = this;
+
         // User has already been added as investor in beforeEach
         const investorData = await VestingContract.getInvestorData(user.address);
         const tokensBefore = investorData[2];
 
+        const [, , tokensBefore] = await VestingContract.getInvestorData(user.address);
         // precondition
         expect(tokensBefore.toNumber()).to.be.equal(tokenAmount);
 
         const newTokenAmount = tokenAmount + 10;
         await VestingContract.addInvestor(user.address, newTokenAmount, 0);
 
-        const overwrittenInvestorData = await VestingContract.getInvestorData(user.address);
-        const tokensAfter = overwrittenInvestorData[2];
-
+        const [, , tokensAfter] = await VestingContract.getInvestorData(user.address);
         expect(tokensAfter.toNumber()).to.be.equal(newTokenAmount);
       });
 
       it('revert when claiming locked tokens before start', async function () {
+        const {VestingContract, user} = this;
+
         await expect(VestingContract.connect(user).claimLockedTokens()).to.be.revertedWith(
           'claimLockedTokens: claiming before cliff date',
         );
@@ -283,17 +341,28 @@ describe('Vesting Contract', function () {
       let VestingContract: Vesting;
 
       beforeEach(async function () {
-        VestingContract = await deployVesting(willStart, Token);
+        const willStart = await this.getWillStart();
+        const willEnd = this.getWillEnd(willStart);
+
+        const VestingContract = await this.createVestingContract(willStart);
+        const {tokenAmount, Token, owner, user} = this;
         await Token.connect(owner).mint(VestingContract.address, tokenAmount);
         await VestingContract.addInvestor(user.address, tokenAmount, 0);
+
+        this.willStart = willStart;
+        this.willEnd = willEnd;
+        this.VestingContract = VestingContract;
       });
 
       afterEach(async function () {
+        const {Token, user, owner} = this;
         const balance = await Token.balanceOf(user.address);
         await Token.connect(owner).burnFrom(user.address, balance);
       });
 
       it('revert on adding investor after vesting start', async function () {
+        const {VestingContract, willStart, someone} = this;
+
         await ethers.provider.send('evm_mine', [willStart + 1]);
         await expect(VestingContract.addInvestor(someone.address, 1, 0)).to.be.revertedWith(
           'addInvestor: adding investor after vesting start',
@@ -301,24 +370,32 @@ describe('Vesting Contract', function () {
       });
 
       it('releasing amount is correct', async function () {
+        const {VestingContract, willStart, user} = this;
+
         const daysPassed = 1;
         await ethers.provider.send('evm_mine', [willStart + DAY * daysPassed + 1]);
         const toBeReleased = await VestingContract.getReleasableLockedTokens(user.address);
         expect(toBeReleased).to.be.equal(
-          Math.round((tokenAmount * daysPassed) / VESTING_PERIOD_DAYS),
+          Math.round((this.tokenAmount * daysPassed) / VESTING_PERIOD_DAYS),
         );
       });
 
       it('tokens released to user balance', async function () {
+        const {VestingContract, Token, willStart, user} = this;
+
         const daysPassed = 1;
         await ethers.provider.send('evm_mine', [willStart + DAY * daysPassed + 1]);
         expect(await Token.balanceOf(user.address)).to.be.equal(0);
         await VestingContract.connect(user).claimLockedTokens();
         const balance = await Token.balanceOf(user.address);
-        expect(balance).to.be.equal(Math.round((tokenAmount * daysPassed) / VESTING_PERIOD_DAYS));
+        expect(balance).to.be.equal(
+          Math.round((this.tokenAmount * daysPassed) / VESTING_PERIOD_DAYS),
+        );
       });
 
       it('revert when no releasable tokens available', async function () {
+        const {VestingContract, willStart, user} = this;
+
         // no days have passed since vesting period started
         await ethers.provider.send('evm_mine', [willStart + 1]);
         await expect(VestingContract.connect(user).claimLockedTokens()).to.be.revertedWith(
@@ -327,6 +404,8 @@ describe('Vesting Contract', function () {
       });
 
       it('revert on reclaiming tokens the same day', async function () {
+        const {VestingContract, willStart, user} = this;
+
         const daysPassed = 1;
         await ethers.provider.send('evm_mine', [willStart + DAY * daysPassed + 1]);
         // claim now
@@ -339,7 +418,7 @@ describe('Vesting Contract', function () {
 
       it("unadded investor can't release tokens", async function () {
         // creating new contract not to have an investor added
-        VestingContract = await deployVesting(willStart, Token);
+        const VestingContract = await createVestingContract(willStart);
         await ethers.provider.send('evm_mine', [willStart + 1]);
         await expect(VestingContract.connect(user).claimLockedTokens()).to.be.revertedWith(
           'claimLockedTokens: no available tokens',
@@ -347,6 +426,8 @@ describe('Vesting Contract', function () {
       });
 
       it("removed investor can't release tokens", async function () {
+        const {VestingContract, willStart, user, owner} = this;
+
         await VestingContract.connect(owner).removeInvestor(user.address);
         await ethers.provider.send('evm_mine', [willStart + 1]);
         await expect(VestingContract.connect(user).claimLockedTokens()).to.be.revertedWith(
@@ -360,22 +441,35 @@ describe('Vesting Contract', function () {
       const cliffDays = 10;
 
       afterEach(async function () {
+        const {Token, user, owner} = this;
         const balance = await Token.balanceOf(user.address);
         await Token.connect(owner).burnFrom(user.address, balance);
       });
 
       beforeEach(async function () {
-        VestingContract = await deployVesting(willStart, Token, cliffDays);
+        const willStart = await this.getWillStart();
+        const willEnd = this.getWillEnd(willStart);
+
+        const VestingContract = await this.createVestingContract(willStart, this.cliffDays);
+        const {tokenAmount, Token, owner, user} = this;
         await Token.connect(owner).mint(VestingContract.address, tokenAmount);
         await VestingContract.addInvestor(user.address, tokenAmount, 0);
+
+        this.willStart = willStart;
+        this.willEnd = willEnd;
+        this.VestingContract = VestingContract;
       });
 
       it('0 tokens are available during cliff', async function () {
+        const {VestingContract, user, willStart} = this;
+
         await ethers.provider.send('evm_mine', [willStart + 1]);
         expect(await VestingContract.getReleasableLockedTokens(user.address)).to.be.equal(0);
       });
 
       it('reverts on claiming locked tokens during cliff', async function () {
+        const {VestingContract, user, willStart} = this;
+
         await ethers.provider.send('evm_mine', [willStart + 1]);
         await expect(VestingContract.connect(user).claimLockedTokens()).to.be.revertedWith(
           'claimLockedTokens: claiming before cliff date',
@@ -383,6 +477,8 @@ describe('Vesting Contract', function () {
       });
 
       it('reverts on claiming right after cliff ends (no tokens)', async function () {
+        const {VestingContract, Token, user, willStart, cliffDays} = this;
+
         await ethers.provider.send('evm_mine', [willStart + DAY * cliffDays + 1]);
         expect(await Token.balanceOf(user.address)).to.be.equal(0);
         await expect(VestingContract.connect(user).claimLockedTokens()).to.be.revertedWith(
@@ -391,6 +487,7 @@ describe('Vesting Contract', function () {
       });
 
       it('receive correct amount after some time after cliff ends', async function () {
+        const {VestingContract, Token, user, willStart, tokenAmount, cliffDays} = this;
         const receiveDelayDays = cliffDays + 5;
 
         await ethers.provider.send('evm_mine', [willStart + DAY * receiveDelayDays + 1]);
@@ -404,6 +501,8 @@ describe('Vesting Contract', function () {
       });
 
       it('receive full amount after vesting ends', async function () {
+        const {VestingContract, Token, user, willEnd, tokenAmount} = this;
+
         await ethers.provider.send('evm_mine', [willEnd]);
         expect(await Token.balanceOf(user.address)).to.be.equal(0);
         await VestingContract.connect(user).claimLockedTokens();
@@ -415,15 +514,19 @@ describe('Vesting Contract', function () {
       const tokenAmount = 1000;
 
       afterEach(async function () {
+        const {Token, user, owner} = this;
         const balance = await Token.balanceOf(user.address);
         await Token.connect(owner).burnFrom(user.address, balance);
       });
 
       it('reverts on claim before set interval', async function () {
+        const willStart = await this.getWillStart();
+        const {createVestingContract, Token, owner, user, tokenAmount} = this;
+
         const cliffDays = 0;
         const claimingIntervalDays = 2;
 
-        const VestingContract = await deployVesting(
+        const VestingContract = await createVestingContract(
           willStart,
           Token,
           cliffDays,
@@ -440,11 +543,14 @@ describe('Vesting Contract', function () {
       });
 
       it('first claim only after set interval', async function () {
+        const willStart = await this.getWillStart();
+        const {createVestingContract, Token, owner, user, tokenAmount} = this;
+
         const cliffDays = 0;
         const claimingIntervalDays = 2;
         const claimDelayDays = 2;
 
-        const VestingContract = await deployVesting(
+        const VestingContract = await createVestingContract(
           willStart,
           Token,
           cliffDays,
@@ -470,23 +576,36 @@ describe('Vesting Contract', function () {
       const baseRate = 10_000;
 
       afterEach(async function () {
+        const {Token, user, owner} = this;
         const balance = await Token.balanceOf(user.address);
         await Token.connect(owner).burnFrom(user.address, balance);
       });
 
       beforeEach(async function () {
-        VestingContract = await deployVesting(willStart, Token);
+        const willStart = await this.getWillStart();
+        const willEnd = this.getWillEnd(willStart);
+
+        const VestingContract = await this.createVestingContract(willStart);
+        const {tokenAmount, Token, owner, user, iuPercent} = this;
         await Token.connect(owner).mint(VestingContract.address, tokenAmount);
         await VestingContract.addInvestor(user.address, tokenAmount, iuPercent);
+
+        this.willStart = willStart;
+        this.willEnd = willEnd;
+        this.VestingContract = VestingContract;
       });
 
       it('reverts on claiming iu tokens before cliff date', async function () {
+        const {VestingContract, user} = this;
+
         await expect(VestingContract.connect(user).claimIuTokens()).to.be.revertedWith(
           'claimIuTokens: claiming before cliff date',
         );
       });
 
       it('claimed amount is correct', async function () {
+        const {VestingContract, Token, user, willStart, tokenAmount, iuPercent, baseRate} = this;
+
         await ethers.provider.send('evm_mine', [willStart + 1]);
         await VestingContract.connect(user).claimIuTokens();
         expect(await Token.balanceOf(user.address)).to.be.equal(
@@ -495,6 +614,8 @@ describe('Vesting Contract', function () {
       });
 
       it('claimed amount is correct after vesting end', async function () {
+        const {VestingContract, Token, user, willEnd, tokenAmount, iuPercent, baseRate} = this;
+
         await ethers.provider.send('evm_mine', [willEnd + 1]);
         await VestingContract.connect(user).claimIuTokens();
         expect(await Token.balanceOf(user.address)).to.be.equal(
@@ -503,6 +624,8 @@ describe('Vesting Contract', function () {
       });
 
       it('reverts on claiming second time', async function () {
+        const {VestingContract, user, willStart} = this;
+
         await ethers.provider.send('evm_mine', [willStart + 1]);
         await VestingContract.connect(user).claimIuTokens();
         await expect(VestingContract.connect(user).claimIuTokens()).to.be.revertedWith(
@@ -511,6 +634,8 @@ describe('Vesting Contract', function () {
       });
 
       it('get investor data returns correct iu token amount', async function () {
+        const {VestingContract, user, willStart, tokenAmount, iuPercent, baseRate} = this;
+
         let [tgeTokens] = await VestingContract.getInvestorData(user.address);
         expect(tgeTokens.toNumber()).to.be.equal((tokenAmount * iuPercent) / baseRate);
 
@@ -545,17 +670,38 @@ describe('Vesting Contract', function () {
         willStart = await getWillStart();
         willEnd = getWillEnd(willStart);
 
-        VestingContract = await deployVesting(willStart, Token, cliffDays);
+        this.tokenAmount = 1000;
+        this.initialUnlockTockens = (this.tokenAmount * this.iuPercent) / this.baseRate;
+        this.lockedTokens = this.tokenAmount - this.initialUnlockTockens;
+        this.cliffDays = 10;
+
+        const willStart = await this.getWillStart();
+        const willEnd = this.getWillEnd(willStart);
+
+        const VestingContract = await this.createVestingContract(willStart, this.cliffDays);
+        const {tokenAmount, Token, owner, user, iuPercent} = this;
         await Token.connect(owner).mint(VestingContract.address, tokenAmount);
         await VestingContract.addInvestor(user.address, tokenAmount, iuPercent);
+
+        this.willStart = willStart;
+        this.willEnd = willEnd;
+        this.VestingContract = VestingContract;
+
+        this.iuClaimDelayDays = this.cliffDays;
+        this.firstClaimDelayDays = this.cliffDays + 10;
+        this.secondClaimDelayDays = this.cliffDays + 15;
       });
 
       it('zero balance before', async function () {
+        const {Token, user} = this;
+
         // before vesting starts
         expect(await Token.balanceOf(user.address)).to.be.equal(0);
       });
 
       it('claim initial unlocked tokens', async function () {
+        const {VestingContract, Token, user, willStart, iuClaimDelayDays, initialUnlockTockens} =
+          this;
         await ethers.provider.send('evm_mine', [willStart + DAY * iuClaimDelayDays + 1]);
         await VestingContract.connect(user).claimIuTokens();
 
@@ -563,6 +709,17 @@ describe('Vesting Contract', function () {
       });
 
       it('first locked claim', async function () {
+        const {
+          VestingContract,
+          Token,
+          user,
+          willStart,
+          firstClaimDelayDays,
+          cliffDays,
+          lockedTokens,
+          initialUnlockTockens,
+        } = this;
+
         await ethers.provider.send('evm_mine', [willStart + DAY * firstClaimDelayDays + 1]);
         await VestingContract.connect(user).claimLockedTokens();
 
@@ -576,6 +733,17 @@ describe('Vesting Contract', function () {
       });
 
       it('second locked claim', async function () {
+        const {
+          VestingContract,
+          Token,
+          user,
+          willStart,
+          secondClaimDelayDays,
+          cliffDays,
+          lockedTokens,
+          initialUnlockTockens,
+        } = this;
+
         await ethers.provider.send('evm_mine', [willStart + DAY * secondClaimDelayDays + 1]);
         await VestingContract.connect(user).claimLockedTokens();
 
@@ -589,6 +757,8 @@ describe('Vesting Contract', function () {
       });
 
       it('third (last) locked claim', async function () {
+        const {VestingContract, Token, user, willEnd, tokenAmount} = this;
+
         await ethers.provider.send('evm_mine', [willEnd + 1]);
         await VestingContract.connect(user).claimLockedTokens();
 

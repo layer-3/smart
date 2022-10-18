@@ -1,12 +1,11 @@
-import { expect } from 'chai';
-import { ethers, upgrades } from 'hardhat';
+import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
+import {expect} from 'chai';
+import type {Contract} from 'ethers';
+import {ethers, upgrades} from 'hardhat';
 
-import { connectGroup } from '../../src/contracts';
-import { ACCOUNT_MISSING_ROLE } from '../../src/revert-reasons';
-
-import type { Contract } from 'ethers';
-import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import type { Yellow } from '../../typechain';
+import {connectGroup} from '../../src/contracts';
+import {ACCOUNT_MISSING_ROLE} from '../../src/revert-reasons';
+import type {Yellow} from '../../typechain';
 
 const AdminRole = ethers.constants.HashZero;
 const MinterRole = ethers.utils.id('MINTER_ROLE');
@@ -20,11 +19,11 @@ describe('Yellow Contract', function () {
   let burner: SignerWithAddress;
   let someone: SignerWithAddress;
 
-  let YellowContract: Yellow;
-  let YellowAsOwner: Yellow;
-  let YellowAsMinter: Yellow;
-  let YellowAsSomeone: Yellow;
-  let YellowAsUser: Yellow;
+  let YellowContract: Contract & Yellow;
+  let YellowAsOwner: Contract & Yellow;
+  let YellowAsMinter: Contract & Yellow;
+  let YellowAsSomeone: Contract & Yellow;
+  let YellowAsUser: Contract & Yellow;
 
   beforeEach(async function () {
     [owner, user, minter, burner, someone] = await ethers.getSigners();
@@ -32,7 +31,7 @@ describe('Yellow Contract', function () {
     const YellowFactory = await ethers.getContractFactory('Yellow');
     YellowContract = (await upgrades.deployProxy(YellowFactory, ['Yellow', 'YLW', owner.address], {
       initializer: 'init(string, string, address)',
-    })) as Yellow;
+    })) as Contract & Yellow;
     await YellowContract.deployed();
 
     [YellowAsOwner, YellowAsMinter, YellowAsSomeone, YellowAsUser] = connectGroup(YellowContract, [
@@ -48,7 +47,7 @@ describe('Yellow Contract', function () {
     await YellowAsOwner.grantRole(BurnerRole, burner.address);
   });
 
-  function insufficientAllowanceError(): string {
+  function insufficientAllowanceError() {
     return `ERC20: insufficient allowance`;
   }
 

@@ -53,7 +53,7 @@ async function _deployRegistry(
   version: number,
   options: DeployRegistryOptions,
 ): Promise<YellowClearingBase> {
-  const { prevImpl, signer, prevRegCallback, thisRegCallback, callback } = options;
+  const {prevImpl, signer, prevRegCallback, thisRegCallback, callback} = options;
 
   const prevImplAddress = prevImpl ? prevImpl.address : AddressZero;
   const RegistryFactory = await ethers.getContractFactory(`TESTYellowClearingV${version}`, signer);

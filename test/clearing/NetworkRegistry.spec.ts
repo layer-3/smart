@@ -30,7 +30,7 @@ import {
   PARTICIPANT_REGISTERED,
   PARTICIPANT_STATUS_CHANGED,
 } from '../../src/event-names';
-import { connectGroup } from '../../src/contracts';
+import {connectGroup} from '../../src/contracts';
 
 import { deployAndLinkNextRegistry, deployNextRegistry, deployRegistry } from './src/deploy';
 import { MockData, Status, setParticipantStatus } from './src/participantData';
@@ -86,6 +86,10 @@ describe('Network Registry', () => {
   let RegistryAsSomeone: TESTYellowClearingV1;
   let RegistryAsAuditor: TESTYellowClearingV1;
   let RegistryAsValidator: TESTYellowClearingV1;
+
+  let RegistryAsSomeone: Contract & TESTYellowClearingV1;
+  let RegistryAsAuditor: Contract & TESTYellowClearingV1;
+  let RegistryAsValidator: Contract & TESTYellowClearingV1;
 
   beforeEach(async () => {
     RegistryV1 = await deployRegistry(1, registryAdmin);
@@ -145,9 +149,9 @@ describe('Network Registry', () => {
     });
 
     it('Revert if caller is missing required role', async () => {
-      await expect(
-        RegistryV1.connect(someone).setNextImplementation(RegistryV2.address),
-      ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE));
+      await expect(RegistryAsSomeone.setNextImplementation(RegistryV2.address)).to.be.revertedWith(
+        ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE),
+      );
     });
 
     it('Revert on next impl contract missing required role', async () => {
@@ -280,16 +284,12 @@ describe('Network Registry', () => {
   describe('registerParticipant', () => {
     it('Can register participant', async () => {
       await expect(
-        RegistryV1.connect(someone).registerParticipant(
-          ...(await registerParams(virtualParticipant)),
-        ),
+        RegistryAsSomeone.registerParticipant(...(await registerParams(virtualParticipant))),
       ).not.to.be.reverted;
     });
 
     it('Participant is marked Pending', async () => {
-      await RegistryV1.connect(someone).registerParticipant(
-        ...(await registerParams(virtualParticipant)),
-      );
+      await RegistryAsSomeone.registerParticipant(...(await registerParams(virtualParticipant)));
 
       expect((await RegistryV1.getParticipantData(virtualParticipant.address)).status).to.equal(
         Status.Pending,
@@ -310,15 +310,13 @@ describe('Network Registry', () => {
 
     it('Revert if participant already present', async () => {
       await expect(
-        RegistryV1.connect(someone).registerParticipant(...(await registerParams(activePartipant))),
+        RegistryAsSomeone.registerParticipant(...(await registerParams(activePartipant))),
       ).to.be.revertedWith(PARTICIPANT_ALREADY_REGISTERED);
     });
 
     it('Event emitted', async () => {
       await expect(
-        RegistryV1.connect(someone).registerParticipant(
-          ...(await registerParams(virtualParticipant)),
-        ),
+        RegistryAsSomeone.registerParticipant(...(await registerParams(virtualParticipant))),
       )
         .to.emit(RegistryV1, PARTICIPANT_REGISTERED)
         .withArgs(virtualParticipant.address);
@@ -327,7 +325,7 @@ describe('Network Registry', () => {
 
   describe('validateParticipant', () => {
     it('Successfuly validate participant', async () => {
-      await RegistryV1.connect(validator).validateParticipant(pendingParticipant.address);
+      await RegistryAsValidator.validateParticipant(pendingParticipant.address);
       expect((await RegistryV1.getParticipantData(pendingParticipant.address)).status).to.equal(
         Status.Active,
       );
@@ -335,19 +333,19 @@ describe('Network Registry', () => {
 
     it('Revert if caller is not validator', async () => {
       await expect(
-        RegistryV1.connect(someone).validateParticipant(pendingParticipant.address),
+        RegistryAsSomeone.validateParticipant(pendingParticipant.address),
       ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, VALIDATOR_ROLE));
     });
 
     it('Revert if participant is not present', async () => {
       await expect(
-        RegistryV1.connect(validator).validateParticipant(notPresentPartipant.address),
+        RegistryAsValidator.validateParticipant(notPresentPartipant.address),
       ).to.be.revertedWith(NO_PARTICIPANT);
     });
 
     it('Revert if status is not Pending', async () => {
       await expect(
-        RegistryV1.connect(validator).validateParticipant(activePartipant.address),
+        RegistryAsValidator.validateParticipant(activePartipant.address),
       ).to.be.revertedWith(INVALID_STATUS);
     });
 
@@ -360,7 +358,7 @@ describe('Network Registry', () => {
 
   describe('suspendParticipant', () => {
     it('Successfuly suspend participant', async () => {
-      await RegistryV1.connect(auditor).suspendParticipant(activePartipant.address);
+      await RegistryAsAuditor.suspendParticipant(activePartipant.address);
       expect((await RegistryV1.getParticipantData(activePartipant.address)).status).to.equal(
         Status.Suspended,
       );
@@ -368,25 +366,25 @@ describe('Network Registry', () => {
 
     it('Revert if caller is not autidor', async () => {
       await expect(
-        RegistryV1.connect(someone).suspendParticipant(activePartipant.address),
+        RegistryAsSomeone.suspendParticipant(activePartipant.address),
       ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, AUDITOR_ROLE));
     });
 
     it('Revert if participant is not present', async () => {
       await expect(
-        RegistryV1.connect(auditor).suspendParticipant(notPresentPartipant.address),
+        RegistryAsAuditor.suspendParticipant(notPresentPartipant.address),
       ).to.be.revertedWith(NO_PARTICIPANT);
     });
 
     it('Revert if status is None', async () => {
       await expect(
-        RegistryV1.connect(auditor).suspendParticipant(noneParticipant.address),
+        RegistryAsAuditor.suspendParticipant(noneParticipant.address),
       ).to.be.revertedWith(NO_PARTICIPANT);
     });
 
     it('Revert if status is Migrated', async () => {
       await expect(
-        RegistryV1.connect(auditor).suspendParticipant(migratedParticipant.address),
+        RegistryAsAuditor.suspendParticipant(migratedParticipant.address),
       ).to.be.revertedWith(INVALID_STATUS);
     });
 
@@ -399,7 +397,7 @@ describe('Network Registry', () => {
 
   describe('reinstateParticipant', () => {
     it('Successfuly reinstate participant', async () => {
-      await RegistryV1.connect(auditor).reinstateParticipant(suspendedParticipant.address);
+      await RegistryAsAuditor.reinstateParticipant(suspendedParticipant.address);
       expect((await RegistryV1.getParticipantData(suspendedParticipant.address)).status).to.equal(
         Status.Active,
       );
@@ -407,19 +405,19 @@ describe('Network Registry', () => {
 
     it('Revert if caller is not auditor', async () => {
       await expect(
-        RegistryV1.connect(someone).reinstateParticipant(suspendedParticipant.address),
+        RegistryAsSomeone.reinstateParticipant(suspendedParticipant.address),
       ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, AUDITOR_ROLE));
     });
 
     it('Revert if participant is not present', async () => {
       await expect(
-        RegistryV1.connect(auditor).reinstateParticipant(notPresentPartipant.address),
+        RegistryAsAuditor.reinstateParticipant(notPresentPartipant.address),
       ).to.be.revertedWith(NO_PARTICIPANT);
     });
 
     it('Revert if status is not Suspended', async () => {
       await expect(
-        RegistryV1.connect(auditor).reinstateParticipant(activePartipant.address),
+        RegistryAsAuditor.reinstateParticipant(activePartipant.address),
       ).to.be.revertedWith(INVALID_STATUS);
     });
 
@@ -438,7 +436,7 @@ describe('Network Registry', () => {
 
     it('Revert if caller is not maintainer', async () => {
       await expect(
-        RegistryV1.connect(someone).setParticipantData(someother.address, MockData(Status.Active)),
+        RegistryAsSomeone.setParticipantData(someother.address, MockData(Status.Active)),
       ).to.be.revertedWith(ACCOUNT_MISSING_ROLE(someone.address, MNTR_ROLE));
     });
 

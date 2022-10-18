@@ -1,8 +1,8 @@
-import { ethers } from 'hardhat';
+import {ethers} from 'hardhat';
 
-import type { Yellow } from '../../typechain';
+import type {Yellow} from '../../typechain';
 
-async function main(): Promise<void> {
+async function main() {
   const yellowAddress = process.env.YELLOW_ADDRESS ?? undefined;
   const adminPrivateKey = process.env.ADMIN_PRIVATE_KEY ?? undefined;
   const account = process.env.ACCOUNT ?? undefined;

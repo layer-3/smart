@@ -25,7 +25,7 @@ import {
   DEPOSITED,
   WITHDRAWN,
 } from '../../src/event-names';
-import { connect, connectGroup } from '../../src/contracts';
+import {connect, connectGroup} from '../../src/contracts';
 
 import { depositParams, setAddressParams, withdrawParams } from './src/transactions';
 import { PartialPayload, addAllocation, generalPayload } from './src/payload';
@@ -52,13 +52,13 @@ describe('Vault implementation V1', () => {
   let VaultProxy: TESTVaultProxy;
   let VaultImpl: VaultImplT;
 
-  let VaultImplAsProxyAdmin: VaultImplT;
-  let VaultImplAsSomeone: VaultImplT;
+  let VaultImplAsProxyAdmin: Contract & VaultImplT;
+  let VaultImplAsSomeone: Contract & VaultImplT;
 
-  let ERC20: TestERC20;
+  let ERC20: Contract & TestERC20;
 
-  let ERC20AsAdmin: TestERC20;
-  let ERC20AsSomeone: TestERC20;
+  let ERC20AsAdmin: Contract & TestERC20;
+  let ERC20AsSomeone: Contract & TestERC20;
 
   beforeEach(async () => {
     const VaultImplFactory = await ethers.getContractFactory('VaultImplV1');
@@ -78,6 +78,8 @@ describe('Vault implementation V1', () => {
 
     [VaultImplAsProxyAdmin, VaultImplAsSomeone] = connectGroup(VaultImpl, [proxyAdmin, someone]);
 
+    [VaultImplAsProxyAdmin, VaultImplAsSomeone] = connectGroup(VaultImpl, [proxyAdmin, someone]);
+
     const ERC20Factory = await ethers.getContractFactory(
       'contracts/yellow/test/TestERC20.sol:TestERC20',
     );
@@ -86,6 +88,8 @@ describe('Vault implementation V1', () => {
       'TOK',
       ethers.utils.parseEther('1000'),
     )) as Contract & TestERC20;
+
+    [ERC20AsAdmin, ERC20AsSomeone] = connectGroup(ERC20, [tokenAdmin, someone]);
   });
 
   before(async () => {
@@ -109,7 +113,7 @@ describe('Vault implementation V1', () => {
       ) {
         if (reason) {
           await expect(
-            VaultImpl.connect(caller).setup(brokerAddress, coSignerAddress),
+            connect(VaultImpl, caller).setup(brokerAddress, coSignerAddress),
           ).to.be.revertedWith(reason);
         } else {
           // must not revert
@@ -160,21 +164,21 @@ describe('Vault implementation V1', () => {
 
       it('can set broker address with broker sig', async () => {
         // must not revert
-        await VaultImpl.connect(someone).setBrokerAddress(
+        await VaultImplAsSomeone.setBrokerAddress(
           ...(await setAddressParams(broker1, broker2.address)),
         );
       });
 
       it('can set coSigner address with coSigner sig', async () => {
         // must not revert
-        await VaultImpl.connect(someone).setCoSignerAddress(
+        await VaultImplAsSomeone.setCoSignerAddress(
           ...(await setAddressParams(coSigner1, coSigner2.address)),
         );
       });
 
       it('revert on set broker address with not broker sig', async () => {
         await expect(
-          VaultImpl.connect(someone).setBrokerAddress(
+          VaultImplAsSomeone.setBrokerAddress(
             ...(await setAddressParams(someone, broker2.address)),
           ),
         ).to.be.revertedWith(INVALID_SIGNATURE);
@@ -182,7 +186,7 @@ describe('Vault implementation V1', () => {
 
       it('revert on set coSigner address with not coSigner sig', async () => {
         await expect(
-          VaultImpl.connect(someone).setCoSignerAddress(
+          VaultImplAsSomeone.setCoSignerAddress(
             ...(await setAddressParams(someone, coSigner2.address)),
           ),
         ).to.be.revertedWith(INVALID_SIGNATURE);
@@ -190,15 +194,13 @@ describe('Vault implementation V1', () => {
 
       it('revert on set broker address to zero address', async () => {
         await expect(
-          VaultImpl.connect(someone).setBrokerAddress(
-            ...(await setAddressParams(broker1, AddressZero)),
-          ),
+          VaultImplAsSomeone.setBrokerAddress(...(await setAddressParams(broker1, AddressZero))),
         ).to.be.revertedWith(INVALID_ADDRESS);
       });
 
       it('revert on set coSigner address to zero address', async () => {
         await expect(
-          VaultImpl.connect(someone).setCoSignerAddress(
+          VaultImplAsSomeone.setCoSignerAddress(
             ...(await setAddressParams(coSigner1, AddressZero)),
           ),
         ).to.be.revertedWith(INVALID_ADDRESS);
@@ -206,7 +208,7 @@ describe('Vault implementation V1', () => {
 
       // signer address events
       it('emit event on successful set broker address', async () => {
-        const tx = await VaultImpl.connect(someone).setBrokerAddress(
+        const tx = await VaultImplAsSomeone.setBrokerAddress(
           ...(await setAddressParams(broker1, broker2.address)),
         );
 
@@ -216,7 +218,7 @@ describe('Vault implementation V1', () => {
       });
 
       it('emit event on successful set broker address', async () => {
-        const tx = await VaultImpl.connect(someone).setCoSignerAddress(
+        const tx = await VaultImplAsSomeone.setCoSignerAddress(
           ...(await setAddressParams(coSigner1, coSigner2.address)),
         );
 
@@ -267,9 +269,7 @@ describe('Vault implementation V1', () => {
 
         payload = addAllocation(payload, ERC20.address, AMOUNT.toNumber());
 
-        await VaultImpl.connect(someone).deposit(
-          ...(await depositParams(payload, broker1, coSigner1)),
-        );
+        await VaultImplAsSomeone.deposit(...(await depositParams(payload, broker1, coSigner1)));
 
         expect(await ERC20.balanceOf(VaultImpl.address)).to.equal(AMOUNT);
         expect(await ERC20.balanceOf(someone.address)).to.equal(balanceBefore.sub(AMOUNT));
@@ -279,14 +279,13 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).deposit(
-            ...(await depositParams(payload, broker1, coSigner1)),
-            {value: AMOUNT.add(1)},
-          ),
+          VaultImplAsSomeone.deposit(...(await depositParams(payload, broker1, coSigner1)), {
+            value: AMOUNT.add(1),
+          }),
         ).to.be.revertedWith(INVALID_ETH_AMOUNT);
 
         await expect(
-          VaultImpl.connect(someone).deposit(...(await depositParams(payload, broker1, coSigner1))),
+          VaultImplAsSomeone.deposit(...(await depositParams(payload, broker1, coSigner1))),
         ).to.be.revertedWith(INVALID_ETH_AMOUNT);
       });
 
@@ -295,10 +294,9 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).deposit(
-            ...(await depositParams(payload, broker1, coSigner1)),
-            {value: AMOUNT},
-          ),
+          VaultImplAsSomeone.deposit(...(await depositParams(payload, broker1, coSigner1)), {
+            value: AMOUNT,
+          }),
         ).to.be.revertedWith(DESTINATION_ZERO_ADDRESS);
       });
 
@@ -306,38 +304,34 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).deposit(
-            ...(await withdrawParams(payload, broker1, coSigner1)),
-            {value: AMOUNT},
-          ),
+          VaultImplAsSomeone.deposit(...(await withdrawParams(payload, broker1, coSigner1)), {
+            value: AMOUNT,
+          }),
         ).to.be.revertedWith(INVALID_ACTION);
       });
 
       it('revert on request id already used', async () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.div(2).toNumber());
 
-        await VaultImpl.connect(someone).deposit(
-          ...(await depositParams(payload, broker1, coSigner1)),
-          {value: AMOUNT.div(2)},
-        );
+        await VaultImplAsSomeone.deposit(...(await depositParams(payload, broker1, coSigner1)), {
+          value: AMOUNT.div(2),
+        });
 
         await expect(
-          VaultImpl.connect(someone).deposit(
-            ...(await depositParams(payload, broker1, coSigner1)),
-            {value: AMOUNT.div(2)},
-          ),
+          VaultImplAsSomeone.deposit(...(await depositParams(payload, broker1, coSigner1)), {
+            value: AMOUNT.div(2),
+          }),
         ).to.be.revertedWith(SIGNATURE_ALREAD_USED);
 
         payload.rid = utils.formatBytes32String(Date.now().toString());
 
         await expect(
-          await VaultImpl.connect(someone).deposit(
-            ...(await depositParams(payload, broker1, coSigner1)),
-            {value: AMOUNT.div(2)},
-          ),
+          await VaultImplAsSomeone.deposit(...(await depositParams(payload, broker1, coSigner1)), {
+            value: AMOUNT.div(2),
+          }),
           // TODO: Update all tests to use ethers chai specific methods
         ).to.changeEtherBalances(
-          [VaultImpl.connect(someone), someone],
+          [VaultImplAsSomeone, someone],
           [AMOUNT.div(2), AMOUNT.div(2).mul(-1)],
         );
       });
@@ -347,10 +341,9 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).deposit(
-            ...(await depositParams(payload, broker1, coSigner1)),
-            {value: AMOUNT},
-          ),
+          VaultImplAsSomeone.deposit(...(await depositParams(payload, broker1, coSigner1)), {
+            value: AMOUNT,
+          }),
         ).to.be.revertedWith(REQUEST_EXPIRED);
       });
 
@@ -359,7 +352,7 @@ describe('Vault implementation V1', () => {
 
         const usedParams = await depositParams(payload, broker1, coSigner1);
 
-        await VaultImplAsSomeone.deposit(...usedParams, { value: AMOUNT });
+        await VaultImplAsSomeone.deposit(...usedParams, {value: AMOUNT});
 
         let otherPayload = generalPayload(someone.address, VaultImplAddress);
         otherPayload = addAllocation(otherPayload, AddressZero, AMOUNT.toNumber());
@@ -367,11 +360,11 @@ describe('Vault implementation V1', () => {
         const newParams = await depositParams(otherPayload, broker1, coSigner1);
 
         await expect(
-          VaultImpl.connect(someone).deposit(newParams[0], usedParams[1], newParams[2]),
+          VaultImplAsSomeone.deposit(newParams[0], usedParams[1], newParams[2]),
         ).to.be.revertedWith(SIGNATURE_ALREAD_USED);
 
         await expect(
-          VaultImpl.connect(someone).deposit(usedParams[0], newParams[1], usedParams[2]),
+          VaultImplAsSomeone.deposit(usedParams[0], newParams[1], usedParams[2]),
         ).to.be.revertedWith(SIGNATURE_ALREAD_USED);
       });
 
@@ -379,10 +372,9 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, 0);
 
         await expect(
-          VaultImpl.connect(someone).deposit(
-            ...(await depositParams(payload, broker1, coSigner1)),
-            {value: AMOUNT},
-          ),
+          VaultImplAsSomeone.deposit(...(await depositParams(payload, broker1, coSigner1)), {
+            value: AMOUNT,
+          }),
         ).to.be.revertedWith(AMOUNT_ZERO);
       });
 
@@ -391,10 +383,9 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).deposit(
-            ...(await depositParams(payload, broker1, coSigner1)),
-            {value: AMOUNT},
-          ),
+          VaultImplAsSomeone.deposit(...(await depositParams(payload, broker1, coSigner1)), {
+            value: AMOUNT,
+          }),
         ).to.be.revertedWith(INVALID_IMPL_ADDRESS);
       });
 
@@ -403,10 +394,9 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).deposit(
-            ...(await depositParams(payload, broker1, coSigner1)),
-            {value: AMOUNT},
-          ),
+          VaultImplAsSomeone.deposit(...(await depositParams(payload, broker1, coSigner1)), {
+            value: AMOUNT,
+          }),
         ).to.be.revertedWith(INVALID_CHAIN_ID);
       });
 
@@ -414,10 +404,9 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).deposit(
-            ...(await depositParams(payload, someone, coSigner1)),
-            {value: AMOUNT},
-          ),
+          VaultImplAsSomeone.deposit(...(await depositParams(payload, someone, coSigner1)), {
+            value: AMOUNT,
+          }),
         ).to.be.revertedWith(INVALID_SIGNATURE);
       });
 
@@ -435,12 +424,9 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).deposit(
-            ...(await depositParams(payload, coSigner1, broker1)),
-            {
-              value: AMOUNT,
-            },
-          ),
+          VaultImplAsSomeone.deposit(...(await depositParams(payload, coSigner1, broker1)), {
+            value: AMOUNT,
+          }),
         ).to.be.revertedWith(INVALID_SIGNATURE);
       });
 
@@ -489,15 +475,17 @@ describe('Vault implementation V1', () => {
 
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
-        const tx = await VaultImpl.connect(someone).withdraw(
+        const tx = await VaultImplAsSomeone.withdraw(
           ...(await withdrawParams(payload, broker1, coSigner1)),
         );
 
         const receipt = await tx.wait();
 
-        expect(await someone.getBalance()).to.equal(
-          balanceBefore.add(AMOUNT).sub(receipt.gasUsed.mul(tx.gasPrice)),
-        );
+        if (tx.gasPrice) {
+          expect(await someone.getBalance()).to.equal(
+            balanceBefore.add(AMOUNT).sub(receipt.gasUsed.mul(tx.gasPrice)),
+          );
+        }
       });
 
       it('can withdraw ERC20', async () => {
@@ -507,9 +495,7 @@ describe('Vault implementation V1', () => {
 
         payload = addAllocation(payload, ERC20.address, AMOUNT.toNumber());
 
-        await VaultImpl.connect(someone).withdraw(
-          ...(await withdrawParams(payload, broker1, coSigner1)),
-        );
+        await VaultImplAsSomeone.withdraw(...(await withdrawParams(payload, broker1, coSigner1)));
 
         expect(await ERC20.balanceOf(someone.address)).to.equal(balanceBefore.add(AMOUNT));
       });
@@ -519,9 +505,7 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).withdraw(
-            ...(await withdrawParams(payload, broker1, coSigner1)),
-          ),
+          VaultImplAsSomeone.withdraw(...(await withdrawParams(payload, broker1, coSigner1))),
         ).to.be.revertedWith(DESTINATION_ZERO_ADDRESS);
       });
 
@@ -529,33 +513,25 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).withdraw(
-            ...(await depositParams(payload, broker1, coSigner1)),
-          ),
+          VaultImplAsSomeone.withdraw(...(await depositParams(payload, broker1, coSigner1))),
         ).to.be.revertedWith(INVALID_ACTION);
       });
 
       it('revert on request id already used', async () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.div(2).toNumber());
 
-        await VaultImpl.connect(someone).withdraw(
-          ...(await withdrawParams(payload, broker1, coSigner1)),
-        );
+        await VaultImplAsSomeone.withdraw(...(await withdrawParams(payload, broker1, coSigner1)));
 
         await expect(
-          VaultImpl.connect(someone).withdraw(
-            ...(await withdrawParams(payload, broker1, coSigner1)),
-          ),
+          VaultImplAsSomeone.withdraw(...(await withdrawParams(payload, broker1, coSigner1))),
         ).to.be.revertedWith(SIGNATURE_ALREAD_USED);
 
         payload.rid = utils.formatBytes32String(Date.now().toString());
 
         await expect(
-          await VaultImpl.connect(someone).withdraw(
-            ...(await withdrawParams(payload, broker1, coSigner1)),
-          ),
+          await VaultImplAsSomeone.withdraw(...(await withdrawParams(payload, broker1, coSigner1))),
         ).to.changeEtherBalances(
-          [VaultImpl.connect(someone), someone],
+          [VaultImplAsSomeone, someone],
           [AMOUNT.div(2).mul(-1), AMOUNT.div(2)],
         );
       });
@@ -565,9 +541,7 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).withdraw(
-            ...(await withdrawParams(payload, broker1, coSigner1)),
-          ),
+          VaultImplAsSomeone.withdraw(...(await withdrawParams(payload, broker1, coSigner1))),
         ).to.be.revertedWith(REQUEST_EXPIRED);
       });
 
@@ -584,11 +558,11 @@ describe('Vault implementation V1', () => {
         const newParams = await withdrawParams(otherPayload, broker1, coSigner1);
 
         await expect(
-          VaultImpl.connect(someone).withdraw(newParams[0], usedParams[1], newParams[2]),
+          VaultImplAsSomeone.withdraw(newParams[0], usedParams[1], newParams[2]),
         ).to.be.revertedWith(SIGNATURE_ALREAD_USED);
 
         await expect(
-          VaultImpl.connect(someone).withdraw(usedParams[0], newParams[1], usedParams[2]),
+          VaultImplAsSomeone.withdraw(usedParams[0], newParams[1], usedParams[2]),
         ).to.be.revertedWith(SIGNATURE_ALREAD_USED);
       });
 
@@ -596,9 +570,7 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, 0);
 
         await expect(
-          VaultImpl.connect(someone).withdraw(
-            ...(await withdrawParams(payload, broker1, coSigner1)),
-          ),
+          VaultImplAsSomeone.withdraw(...(await withdrawParams(payload, broker1, coSigner1))),
         ).to.be.revertedWith(AMOUNT_ZERO);
       });
 
@@ -607,9 +579,7 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).withdraw(
-            ...(await withdrawParams(payload, broker1, coSigner1)),
-          ),
+          VaultImplAsSomeone.withdraw(...(await withdrawParams(payload, broker1, coSigner1))),
         ).to.be.revertedWith(INVALID_IMPL_ADDRESS);
       });
 
@@ -618,9 +588,7 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).withdraw(
-            ...(await withdrawParams(payload, broker1, coSigner1)),
-          ),
+          VaultImplAsSomeone.withdraw(...(await withdrawParams(payload, broker1, coSigner1))),
         ).to.be.revertedWith(INVALID_CHAIN_ID);
       });
 
@@ -628,9 +596,7 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).withdraw(
-            ...(await depositParams(payload, someone, coSigner1)),
-          ),
+          VaultImplAsSomeone.withdraw(...(await depositParams(payload, someone, coSigner1))),
         ).to.be.revertedWith(INVALID_SIGNATURE);
       });
 
@@ -638,7 +604,7 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).withdraw(...(await depositParams(payload, broker1, someone))),
+          VaultImplAsSomeone.withdraw(...(await depositParams(payload, broker1, someone))),
         ).to.be.revertedWith(INVALID_SIGNATURE);
       });
 
@@ -646,9 +612,7 @@ describe('Vault implementation V1', () => {
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
         await expect(
-          VaultImpl.connect(someone).withdraw(
-            ...(await withdrawParams(payload, coSigner1, broker1)),
-          ),
+          VaultImplAsSomeone.withdraw(...(await withdrawParams(payload, coSigner1, broker1))),
         ).to.be.revertedWith(INVALID_SIGNATURE);
       });
 
@@ -657,7 +621,7 @@ describe('Vault implementation V1', () => {
 
         payload = addAllocation(payload, AddressZero, AMOUNT.toNumber());
 
-        const tx = await VaultImpl.connect(someone).withdraw(
+        const tx = await VaultImplAsSomeone.withdraw(
           ...(await withdrawParams(payload, broker1, coSigner1)),
         );
 
