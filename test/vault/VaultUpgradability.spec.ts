@@ -34,7 +34,7 @@ const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
 const MNTR_ROLE = ethers.utils.id('MAINTAINER_ROLE');
 
-describe('Vault Upgradeability Contracts', () => {
+describe('Vault Upgradeability Contracts', async () => {
   let implAdmin: SignerWithAddress;
   let proxyAdmin: SignerWithAddress;
   let user: SignerWithAddress;
@@ -47,7 +47,7 @@ describe('Vault Upgradeability Contracts', () => {
 
   beforeEach(async () => {
     const VaultImpl1Factory = await ethers.getContractFactory('TESTVaultUpgradeability1');
-    VaultImpl1 = (await VaultImpl1Factory.connect(implAdmin).deploy()) as VaultImplV1;
+    VaultImpl1 = await VaultImpl1Factory.connect(implAdmin).deploy();
     await VaultImpl1.deployed();
 
     [VaultImplAsImplAdmin, VaultImplAsSomeone] = connectGroup(VaultImpl1, [implAdmin, someone]);
@@ -365,15 +365,11 @@ describe('Vault Upgradeability Contracts', () => {
 
     beforeEach(async () => {
       const VaultImpl2Factory = await ethers.getContractFactory('TESTVaultUpgradeability2');
-      VaultImpl2 = (await VaultImpl2Factory.connect(
-        implAdmin,
-      ).deploy()) as TESTVaultUpgradeability1;
+      VaultImpl2 = await VaultImpl2Factory.connect(implAdmin).deploy();
       await VaultImpl2.deployed();
 
       const VaultImpl3Factory = await ethers.getContractFactory('TESTVaultUpgradeability3');
-      VaultImpl3 = (await VaultImpl3Factory.connect(
-        implAdmin,
-      ).deploy()) as TESTVaultUpgradeability2;
+      VaultImpl3 = await VaultImpl3Factory.connect(implAdmin).deploy();
       await VaultImpl3.deployed();
 
       const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
