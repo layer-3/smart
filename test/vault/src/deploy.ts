@@ -1,9 +1,9 @@
-import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
+import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {Contract} from 'ethers';
 import {ethers} from 'hardhat';
 
 import {randomSignerWithAddress} from '../../../src/signers';
-import {VaultImplBase, VaultImplV1, VaultProxyBase} from '../../../typechain';
+import type {VaultImplBase, VaultImplV1, VaultProxyBase} from '../../../typechain';
 
 // TODO: add functions and use them in `VaultUpgradability.spec.ts` and `VaultImplV1.spec.ts`
 
@@ -36,7 +36,7 @@ interface DeployProxyReturns {
 }
 
 export async function deployVaultProxy(
-  implOrOptions: VaultImplBase | DeployProxyOptions
+  implOrOptions: VaultImplBase | DeployProxyOptions,
 ): Promise<DeployProxyReturns> {
   let impl;
   let admin;
@@ -51,7 +51,7 @@ export async function deployVaultProxy(
 
   const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
   const VaultProxy = (await VaultProxyFactory.connect(admin).deploy(
-    impl.address
+    impl.address,
   )) as VaultProxyBase;
   await VaultProxy.deployed();
   return {proxy: VaultProxy, admin};
@@ -87,7 +87,7 @@ async function _deployVault(options: DeployVaultOptions): Promise<DeployVaultRet
   const ProxiedImpl = (await ethers.getContractAt(
     'VaultImplV1',
     VaultProxy.address,
-    proxyAdmin
+    proxyAdmin,
   )) as VaultImplV1;
 
   await ProxiedImpl.setup(broker.address, coSigner.address);

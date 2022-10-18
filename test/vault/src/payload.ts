@@ -1,6 +1,6 @@
-import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
+import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {utils} from 'ethers';
-import {ParamType} from 'ethers/lib/utils';
+import type {ParamType} from 'ethers/lib/utils';
 import {ethers} from 'hardhat';
 
 import {signEncoded} from '../../../src/signatures';
@@ -49,7 +49,7 @@ export async function supplementPayload(pp: PartialPayloadWithAction): Promise<P
 export function addAllocation(
   payload: PartialPayload,
   asset: string,
-  amount: number
+  amount: number,
 ): PartialPayload {
   const newAlloc: Allocation = {asset, amount};
   payload.allocations ? payload.allocations.push(newAlloc) : (payload.allocations = [newAlloc]);
@@ -66,7 +66,7 @@ function expireAt(delta = 600_000): number {
 
 export async function generalPayload(
   destination: string,
-  implAddress: string
+  implAddress: string,
 ): Promise<PartialPayload> {
   return {
     rid: randomRID(),
@@ -101,14 +101,14 @@ export function encodePayload(payload: Payload): string {
         ],
       } as ParamType,
     ],
-    [payload]
+    [payload],
   );
 }
 
 export async function encodeAndSignPayload(
   payload: Payload,
   broker: SignerWithAddress,
-  coSigner: SignerWithAddress
+  coSigner: SignerWithAddress,
 ): Promise<[Payload, string, string]> {
   const encodedPayload = encodePayload(payload);
 

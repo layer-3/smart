@@ -1,7 +1,7 @@
-import {Signer} from 'ethers';
+import type {Signer} from 'ethers';
 import {ethers} from 'hardhat';
 
-import {YellowClearingBase} from '../../../typechain';
+import type {YellowClearingBase} from '../../../typechain';
 
 const AddressZero = ethers.constants.AddressZero;
 
@@ -12,7 +12,7 @@ export async function deployRegistry(version: number, signer?: Signer) {
 export async function deployNextRegistry(
   version: number,
   prevImpl: YellowClearingBase,
-  signer?: Signer
+  signer?: Signer,
 ) {
   return _deployRegistry(version, {prevImpl, signer});
 }
@@ -27,7 +27,7 @@ interface DeployRegistryOptions {
 export async function deployAndLinkNextRegistry(
   version: number,
   prevImpl: YellowClearingBase,
-  signer?: Signer
+  signer?: Signer,
 ) {
   return _deployRegistry(version, {
     prevImpl,
@@ -48,7 +48,7 @@ interface DeployRegistryOptions {
 
 async function _deployRegistry(
   version: number,
-  options: DeployRegistryOptions
+  options: DeployRegistryOptions,
 ): Promise<YellowClearingBase> {
   const {prevImpl, signer, prevCallback, thisCallback, callback} = options;
 

@@ -1,7 +1,7 @@
 import {writeFileSync} from 'fs';
 
 import hre from 'hardhat';
-import {HardhatNetworkConfig} from 'hardhat/types';
+import type {HardhatNetworkConfig} from 'hardhat/types';
 import {mnemonicToSeedSync} from 'ethereum-cryptography/bip39';
 import {HDKey} from 'ethereum-cryptography/hdkey';
 
@@ -63,7 +63,7 @@ async function main() {
 
   writeFileSync(
     __dirname + '/../addresses/hardhat-accounts.json',
-    JSON.stringify(accounts, null, 2)
+    JSON.stringify(accounts, null, 2),
   );
 }
 
