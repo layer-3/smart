@@ -66,8 +66,6 @@
     "import/no-unassigned-import": ["error"],
     "import/no-default-export": ["error"],
 
-    "array-func/prefer-array-from": "off",
-
-    "prettier/prettier": "warn"
+    "array-func/prefer-array-from": "off"
   }
 }
