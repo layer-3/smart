@@ -1,6 +1,7 @@
-node_modules
+.openzeppelin
+abi
 artifacts
 cache
-coverage*
-gasReporterOutput.json
-.openzeppelin
+coverage
+node_modules
+typechain

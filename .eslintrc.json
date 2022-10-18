@@ -17,17 +17,14 @@
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "plugin:@typescript-eslint/strict",
 
-    "plugin:prettier/recommended"
+    "plugin:prettier/recommended",
+
+    "prettier"
   ],
 
   "parser": "@typescript-eslint/parser",
 
-  "plugins": [
-    "@typescript-eslint",
-    "prettier",
-    // Enforce certain rules on how imports are handled
-    "import"
-  ],
+  "plugins": ["@typescript-eslint", "import", "prettier"],
 
   "settings": {
     "import/extensions": [".ts"],
