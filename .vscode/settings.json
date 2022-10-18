@@ -81,5 +81,6 @@
   // Spell checker
   "cSpell.enableFiletypes": ["javascript", "typescript", "solidity", "json", "markdown"],
   "cSpell.includeRegExpList": ["CStyleComment"],
-  "cSpell.userWords": ["delegatecall", "keccak", "proxied", "reentrancy", "solhint", "struct"]
+  "cSpell.userWords": ["delegatecall", "keccak", "proxied", "reentrancy", "solhint", "struct"],
+  "cSpell.words": ["Structs"]
 }

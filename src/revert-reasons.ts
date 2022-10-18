@@ -2,7 +2,7 @@ import {utils} from 'ethers';
 
 const hexify = utils.hexlify;
 
-// upgradability
+// upgradeability
 export const NOT_ADMIN = 'Caller not maintainer';
 export const NOT_MAINTAINER = 'Caller not maintainer';
 export const NEXT_IMPL_IS_SET = 'nextImplementation is already set';

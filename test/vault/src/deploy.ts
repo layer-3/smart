@@ -5,7 +5,7 @@ import {ethers} from 'hardhat';
 import {randomSignerWithAddress} from '../../../src/signers';
 import type {VaultImplBase, VaultImplV1, VaultProxyBase} from '../../../typechain';
 
-// TODO: add functions and use them in `VaultUpgradability.spec.ts` and `VaultImplV1.spec.ts`
+// TODO: add functions and use them in `VaultUpgradeability.spec.ts` and `VaultImplV1.spec.ts`
 
 interface DeployImplOptions {
   admin?: SignerWithAddress;
@@ -18,7 +18,7 @@ interface DeployImplReturns {
 
 export async function deployVaultImpl(options: DeployImplOptions): Promise<DeployImplReturns> {
   const admin = options.admin ?? (await randomSignerWithAddress());
-  // TODO: add option to deploy `TESTVaultUpgradability`
+  // TODO: add option to deploy `TESTVaultUpgradeability`
   const VaultImpl1Factory = await ethers.getContractFactory('VaultImplV1');
   const VaultImpl1 = (await VaultImpl1Factory.connect(admin).deploy()) as VaultImplBase;
   await VaultImpl1.deployed();

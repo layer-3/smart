@@ -153,7 +153,7 @@ describe('Vault Upgradability Contracts', async () => {
       ).to.be.revertedWith(NEXT_IMPL_IS_SET);
     });
 
-    /** @dev This testcase it present to avoid emitting NextImplementationSet event */
+    /** @dev This test case it present to avoid emitting NextImplementationSet event */
     it('revert on setting next implementation to zero address', async () => {
       expect(await VaultImpl1.getNextImplementation()).to.be.equal(AddressZero);
       const nextImplZero = ethers.constants.AddressZero;
@@ -326,7 +326,7 @@ describe('Vault Upgradability Contracts', async () => {
   });
 
   // =*=*=*=*=*=*=*=*=*=*=*=*=*=*=
-  // Vault upgradability
+  // Vault upgradeability
   // =*=*=*=*=*=*=*=*=*=*=*=*=*=*=
   describe('Vault upgradability', () => {
     let VaultImpl2: Contract;

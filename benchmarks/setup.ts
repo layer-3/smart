@@ -16,7 +16,7 @@ const reasonStringGenerators = (gasUsed: number, expectedGasUsed: number) => {
 
   const expectedDifferent = (gasUsed: number, expectedGasUsed: number) => {
     return `${setWhite}expected to consume ${formatNum(
-      expectedGasUsed
+      expectedGasUsed,
     )} gas, but actually consumed ${formatNum(gasUsed)} gas (${diffStr}, ${diffPercent}).`;
   };
 
@@ -29,7 +29,7 @@ const reasonStringGenerators = (gasUsed: number, expectedGasUsed: number) => {
 
 // is called upon number
 Assertion.addMethod('equalGas', async function (expectedGasUsed: number) {
-  // an object upon which this assetion is called
+  // an object upon which this assertion is called
   const gasUsed: number = await this._obj;
 
   const {expectedDifferent, expectedEqual} = reasonStringGenerators(gasUsed, expectedGasUsed);
@@ -38,7 +38,7 @@ Assertion.addMethod('equalGas', async function (expectedGasUsed: number) {
     gasUsed === expectedGasUsed,
     expectedDifferent(gasUsed, expectedGasUsed),
     expectedEqual(expectedGasUsed),
-    expectedGasUsed
+    expectedGasUsed,
   );
 });
 
