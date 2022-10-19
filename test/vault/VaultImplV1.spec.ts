@@ -233,7 +233,7 @@ describe('Vault implementation V1', () => {
       let payload: PartialPayload;
 
       beforeEach(async () => {
-        payload = await generalPayload(someone.address, VaultImplAddress);
+        payload = generalPayload(someone.address, VaultImplAddress);
 
         await VaultImplAsProxyAdmin.setup(broker1.address, coSigner1.address);
       });
@@ -350,7 +350,7 @@ describe('Vault implementation V1', () => {
 
         await VaultImplAsSomeone.deposit(...usedParams, {value: AMOUNT});
 
-        let otherPayload = await generalPayload(someone.address, VaultImplAddress);
+        let otherPayload = generalPayload(someone.address, VaultImplAddress);
         otherPayload = addAllocation(otherPayload, AddressZero, AMOUNT.toNumber());
 
         const newParams = await depositParams(otherPayload, broker1, coSigner1);
@@ -453,11 +453,11 @@ describe('Vault implementation V1', () => {
       let payload: PartialPayload;
 
       beforeEach(async () => {
-        payload = await generalPayload(someone.address, VaultImplAddress);
+        payload = generalPayload(someone.address, VaultImplAddress);
 
         await VaultImplAsProxyAdmin.setup(broker1.address, coSigner1.address);
 
-        let depositPayload = await generalPayload(someone.address, VaultImplAddress);
+        let depositPayload = generalPayload(someone.address, VaultImplAddress);
         depositPayload = addAllocation(depositPayload, AddressZero, AMOUNT.toNumber());
 
         await VaultImplAsSomeone.deposit(
@@ -548,7 +548,7 @@ describe('Vault implementation V1', () => {
 
         await VaultImplAsSomeone.withdraw(...usedParams);
 
-        let otherPayload = await generalPayload(someone.address, VaultImplAddress);
+        let otherPayload = generalPayload(someone.address, VaultImplAddress);
         otherPayload = addAllocation(otherPayload, AddressZero, AMOUNT.toNumber());
 
         const newParams = await withdrawParams(otherPayload, broker1, coSigner1);

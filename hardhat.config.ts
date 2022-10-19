@@ -20,6 +20,9 @@ task('accounts', 'Prints the list of accounts', async (_, hre) => {
   }
 });
 
+const ACCOUNTS = process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [];
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY ?? '';
+
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
@@ -46,26 +49,26 @@ const config: HardhatUserConfig = {
   },
   networks: {
     ethereum: {
-      url: process.env.ETHEREUM_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.ETHEREUM_URL ?? '',
+      accounts: ACCOUNTS,
     },
     goerli: {
-      url: process.env.GOERLI_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.GOERLI_URL ?? '',
+      accounts: ACCOUNTS,
     },
     polygon: {
-      url: process.env.POLYGON_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.POLYGON_URL ?? '',
+      accounts: ACCOUNTS,
     },
     mumbai: {
-      url: process.env.MUMBAI_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.MUMBAI_URL ?? '',
+      accounts: ACCOUNTS,
     },
     generic: {
-      url: process.env.GENERIC_URL || '',
-      chainId: parseInt(process.env.GENERIC_CHAIN_ID || '0'),
+      url: process.env.GENERIC_URL ?? '',
+      chainId: parseInt(process.env.GENERIC_CHAIN_ID ?? '0'),
       gasPrice: process.env.GENERIC_GAS_PRICE ? parseInt(process.env.GENERIC_GAS_PRICE) : 'auto',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      accounts: ACCOUNTS,
     },
   },
   gasReporter: {
@@ -74,10 +77,10 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      mainnet: process.env.ETHERSCAN_API_KEY!,
-      goerli: process.env.ETHERSCAN_API_KEY!,
-      polygon: process.env.ETHERSCAN_API_KEY!,
-      polygonMumbai: process.env.ETHERSCAN_API_KEY!,
+      mainnet: ETHERSCAN_API_KEY,
+      goerli: ETHERSCAN_API_KEY,
+      polygon: ETHERSCAN_API_KEY,
+      polygonMumbai: ETHERSCAN_API_KEY,
     },
   },
 };
