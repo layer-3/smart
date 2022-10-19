@@ -54,7 +54,7 @@ export function addAllocation(
   asset: string,
   amount: number,
 ): PartialPayload {
-  const newAlloc: Allocation = { asset, amount };
+  const newAlloc: Allocation = {asset, amount};
   payload.allocations.length === 0
     ? payload.allocations.push(newAlloc)
     : (payload.allocations = [newAlloc]);
@@ -69,10 +69,7 @@ function expireAt(delta = 600_000): number {
   return Date.now() + delta;
 }
 
-export async function generalPayload(
-  destination: string,
-  implAddress: string,
-): Promise<PartialPayload> {
+export function generalPayload(destination: string, implAddress: string): PartialPayload {
   return {
     rid: randomRID(),
     expire: expireAt(),
