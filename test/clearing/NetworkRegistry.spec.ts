@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {Contract, utils} from 'ethers';
+import {utils} from 'ethers';
 import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
@@ -74,11 +74,11 @@ describe('Network Registry', () => {
     ] = await ethers.getSigners();
   });
 
-  let RegistryV1: Contract & TESTYellowClearingV1;
+  let RegistryV1: TESTYellowClearingV1;
 
-  let RegistryAsSomeone: Contract & TESTYellowClearingV1;
-  let RegistryAsAuditor: Contract & TESTYellowClearingV1;
-  let RegistryAsValidator: Contract & TESTYellowClearingV1;
+  let RegistryAsSomeone: TESTYellowClearingV1;
+  let RegistryAsAuditor: TESTYellowClearingV1;
+  let RegistryAsValidator: TESTYellowClearingV1;
 
   beforeEach(async () => {
     RegistryV1 = await deployRegistry(1, registryAdmin);
@@ -126,7 +126,7 @@ describe('Network Registry', () => {
   });
 
   describe('setNextImplementation', () => {
-    let RegistryV2: Contract & TESTYellowClearingV2;
+    let RegistryV2: TESTYellowClearingV2;
 
     beforeEach(async () => {
       RegistryV2 = (await deployNextRegistry(2, RegistryV1, registryAdmin)) as TESTYellowClearingV2;
@@ -457,8 +457,8 @@ describe('Network Registry', () => {
   });
 
   describe('migrateParticipant', () => {
-    let RegistryV2: Contract & TESTYellowClearingV2;
-    let RegistryV3: Contract & TESTYellowClearingV3;
+    let RegistryV2: TESTYellowClearingV2;
+    let RegistryV3: TESTYellowClearingV3;
 
     beforeEach(async () => {
       RegistryV2 = (await deployAndLinkNextRegistry(

@@ -46,16 +46,16 @@ describe('Vault implementation V1', () => {
   let coSigner2: SignerWithAddress;
 
   let VaultImplAddress: string;
-  let VaultProxy: Contract & TESTVaultProxy;
-  let VaultImpl: Contract & VaultImplT;
+  let VaultProxy: TESTVaultProxy;
+  let VaultImpl: VaultImplT;
 
-  let VaultImplAsProxyAdmin: Contract & VaultImplT;
-  let VaultImplAsSomeone: Contract & VaultImplT;
+  let VaultImplAsProxyAdmin: VaultImplT;
+  let VaultImplAsSomeone: VaultImplT;
 
-  let ERC20: Contract & TestERC20;
+  let ERC20: TestERC20;
 
-  let ERC20AsAdmin: Contract & TestERC20;
-  let ERC20AsSomeone: Contract & TestERC20;
+  let ERC20AsAdmin: TestERC20;
+  let ERC20AsSomeone: TestERC20;
 
   beforeEach(async () => {
     const VaultImplFactory = await ethers.getContractFactory('VaultImplV1');
@@ -67,7 +67,7 @@ describe('Vault implementation V1', () => {
     const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
     VaultProxy = (await VaultProxyFactory.connect(proxyAdmin).deploy(
       VaultImplDirect.address,
-    )) as Contract & TESTVaultProxy;
+    )) as TESTVaultProxy;
     await VaultProxy.deployed();
 
     // proxied implementation
@@ -83,7 +83,7 @@ describe('Vault implementation V1', () => {
       'TestToken',
       'TOK',
       ethers.utils.parseEther('1000'),
-    )) as Contract & TestERC20;
+    )) as TestERC20;
 
     [ERC20AsAdmin, ERC20AsSomeone] = connectGroup(ERC20, [tokenAdmin, someone]);
   });
