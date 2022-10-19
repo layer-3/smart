@@ -19,11 +19,11 @@ describe('Yellow Contract', function () {
   let burner: SignerWithAddress;
   let someone: SignerWithAddress;
 
-  let YellowContract: Contract & Yellow;
-  let YellowAsOwner: Contract & Yellow;
-  let YellowAsMinter: Contract & Yellow;
-  let YellowAsSomeone: Contract & Yellow;
-  let YellowAsUser: Contract & Yellow;
+  let YellowContract: Yellow;
+  let YellowAsOwner: Yellow;
+  let YellowAsMinter: Yellow;
+  let YellowAsSomeone: Yellow;
+  let YellowAsUser: Yellow;
 
   beforeEach(async function () {
     [owner, user, minter, burner, someone] = await ethers.getSigners();
@@ -31,7 +31,7 @@ describe('Yellow Contract', function () {
     const YellowFactory = await ethers.getContractFactory('Yellow');
     YellowContract = (await upgrades.deployProxy(YellowFactory, ['Yellow', 'YLW', owner.address], {
       initializer: 'init(string, string, address)',
-    })) as Contract & Yellow;
+    })) as Yellow;
     await YellowContract.deployed();
 
     [YellowAsOwner, YellowAsMinter, YellowAsSomeone, YellowAsUser] = connectGroup(YellowContract, [
