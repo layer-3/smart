@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {Contract, utils} from 'ethers';
+import {utils} from 'ethers';
 import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
@@ -86,10 +86,6 @@ describe('Network Registry', () => {
   let RegistryAsSomeone: TESTYellowClearingV1;
   let RegistryAsAuditor: TESTYellowClearingV1;
   let RegistryAsValidator: TESTYellowClearingV1;
-
-  let RegistryAsSomeone: Contract & TESTYellowClearingV1;
-  let RegistryAsAuditor: Contract & TESTYellowClearingV1;
-  let RegistryAsValidator: Contract & TESTYellowClearingV1;
 
   beforeEach(async () => {
     RegistryV1 = await deployRegistry(1, registryAdmin);

@@ -39,13 +39,13 @@ describe('Vault Upgradeability Contracts', () => {
   let someone: SignerWithAddress;
   let someother: SignerWithAddress;
 
-  let VaultImpl1: Contract & VaultImplV1;
-  let VaultImplAsImplAdmin: Contract & VaultImplV1;
-  let VaultImplAsSomeone: Contract & VaultImplV1;
+  let VaultImpl1: VaultImplV1;
+  let VaultImplAsImplAdmin: VaultImplV1;
+  let VaultImplAsSomeone: VaultImplV1;
 
   beforeEach(async () => {
     const VaultImpl1Factory = await ethers.getContractFactory('TESTVaultUpgradeability1');
-    VaultImpl1 = (await VaultImpl1Factory.connect(implAdmin).deploy()) as Contract & VaultImplV1;
+    VaultImpl1 = (await VaultImpl1Factory.connect(implAdmin).deploy()) as VaultImplV1;
     await VaultImpl1.deployed();
 
     [VaultImplAsImplAdmin, VaultImplAsSomeone] = connectGroup(VaultImpl1, [implAdmin, someone]);
@@ -239,24 +239,24 @@ describe('Vault Upgradeability Contracts', () => {
   // Proxy
   // =*=*=*=*=*=*=*=*=*=*=*=*=*=*=
   describe('Proxy', () => {
-    let VaultProxy: Contract & VaultProxy;
-    let VaultImplProxied: Contract & VaultImplV1;
+    let VaultProxy: VaultProxy;
+    let VaultImplProxied: VaultImplV1;
 
-    let VaultProxiedAsProxyAdmin: Contract & VaultImplV1;
-    let VaultProxiedAsImplAdmin: Contract & VaultImplV1;
-    let VaultProxiedAsSomeone: Contract & VaultImplV1;
+    let VaultProxiedAsProxyAdmin: VaultImplV1;
+    let VaultProxiedAsImplAdmin: VaultImplV1;
+    let VaultProxiedAsSomeone: VaultImplV1;
 
     beforeEach(async () => {
       const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
       VaultProxy = (await VaultProxyFactory.connect(proxyAdmin).deploy(
         VaultImpl1.address,
-      )) as Contract & VaultProxy;
+      )) as VaultProxy;
       await VaultProxy.deployed();
 
       VaultImplProxied = new ethers.Contract(
         VaultProxy.address,
         TESTVaultUpgradability1Artifact.abi,
-      ) as Contract & VaultImplV1;
+      ) as VaultImplV1;
 
       [VaultProxiedAsProxyAdmin, VaultProxiedAsImplAdmin, VaultProxiedAsSomeone] = connectGroup(
         VaultImplProxied,
@@ -348,23 +348,23 @@ describe('Vault Upgradeability Contracts', () => {
   // Vault upgradeability
   // =*=*=*=*=*=*=*=*=*=*=*=*=*=*=
   describe('Vault upgradability', () => {
-    let VaultImpl2: Contract & TESTVaultUpgradeability1;
-    let VaultImpl3: Contract & TESTVaultUpgradeability2;
-    let VaultProxy: Contract & TESTVaultUpgradeability3;
-    let VaultImpl1Proxied: Contract & TESTVaultUpgradeability1;
-    let VaultImpl2Proxied: Contract & TESTVaultUpgradeability2;
-    let VaultImpl3Proxied: Contract & TESTVaultUpgradeability3;
+    let VaultImpl2: TESTVaultUpgradeability1;
+    let VaultImpl3: TESTVaultUpgradeability2;
+    let VaultProxy: TESTVaultUpgradeability3;
+    let VaultImpl1Proxied: TESTVaultUpgradeability1;
+    let VaultImpl2Proxied: TESTVaultUpgradeability2;
+    let VaultImpl3Proxied: TESTVaultUpgradeability3;
 
-    let Vault1ProxiedAsProxyAdmin: Contract & TESTVaultUpgradeability1;
-    let Vault1ProxiedAsImplAdmin: Contract & TESTVaultUpgradeability1;
-    let Vault1ProxiedAsSomeone: Contract & TESTVaultUpgradeability1;
-    let Vault1ProxiedAsUser: Contract & TESTVaultUpgradeability1;
+    let Vault1ProxiedAsProxyAdmin: TESTVaultUpgradeability1;
+    let Vault1ProxiedAsImplAdmin: TESTVaultUpgradeability1;
+    let Vault1ProxiedAsSomeone: TESTVaultUpgradeability1;
+    let Vault1ProxiedAsUser: TESTVaultUpgradeability1;
 
-    let Vault2ProxiedAsProxyAdmin: Contract & TESTVaultUpgradeability2;
-    let Vault2ProxiedAsImplAdmin: Contract & TESTVaultUpgradeability2;
-    let Vault2ProxiedAsUser: Contract & TESTVaultUpgradeability2;
+    let Vault2ProxiedAsProxyAdmin: TESTVaultUpgradeability2;
+    let Vault2ProxiedAsImplAdmin: TESTVaultUpgradeability2;
+    let Vault2ProxiedAsUser: TESTVaultUpgradeability2;
 
-    let Vault3ProxiedAsUser: Contract & TESTVaultUpgradeability3;
+    let Vault3ProxiedAsUser: TESTVaultUpgradeability3;
 
     beforeEach(async () => {
       const VaultImpl2Factory = await ethers.getContractFactory('TESTVaultUpgradeability2');
@@ -380,13 +380,13 @@ describe('Vault Upgradeability Contracts', () => {
       const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
       VaultProxy = (await VaultProxyFactory.connect(proxyAdmin).deploy(
         VaultImpl1.address,
-      )) as Contract & TESTVaultUpgradeability3;
+      )) as TESTVaultUpgradeability3;
       await VaultProxy.deployed();
 
       VaultImpl1Proxied = new ethers.Contract(
         VaultProxy.address,
         TESTVaultUpgradability1Artifact.abi,
-      ) as Contract & TESTVaultUpgradeability1;
+      ) as TESTVaultUpgradeability1;
 
       [
         Vault1ProxiedAsProxyAdmin,
@@ -399,7 +399,7 @@ describe('Vault Upgradeability Contracts', () => {
       VaultImpl2Proxied = new ethers.Contract(
         VaultProxy.address,
         TESTVaultUpgradability2Artifact.abi,
-      ) as Contract & TESTVaultUpgradeability2;
+      ) as TESTVaultUpgradeability2;
 
       [Vault2ProxiedAsProxyAdmin, Vault2ProxiedAsImplAdmin, Vault2ProxiedAsUser] = connectGroup(
         VaultImpl2Proxied,
@@ -409,7 +409,7 @@ describe('Vault Upgradeability Contracts', () => {
       VaultImpl3Proxied = new ethers.Contract(
         VaultProxy.address,
         TESTVaultUpgradability3Artifact.abi,
-      ) as Contract & TESTVaultUpgradeability3;
+      ) as TESTVaultUpgradeability3;
 
       Vault3ProxiedAsUser = connect(VaultImpl3Proxied, user);
     });
@@ -474,14 +474,14 @@ describe('Vault Upgradeability Contracts', () => {
       const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
       VaultProxy = (await VaultProxyFactory.connect(proxyAdmin).deploy(
         VaultImpl1.address,
-      )) as Contract & TESTVaultUpgradeability1;
+      )) as TESTVaultUpgradeability1;
       await VaultProxy.deployed();
 
       // overwrite value set in `beforeAll` hook
       VaultImpl2Proxied = new ethers.Contract(
         VaultProxy.address,
         TESTVaultUpgradability2Artifact.abi,
-      ) as Contract & TESTVaultUpgradeability2;
+      ) as TESTVaultUpgradeability2;
 
       expect(await connect(VaultImpl2Proxied, user).initializedVersion()).to.be.equal(2);
     });
@@ -493,13 +493,13 @@ describe('Vault Upgradeability Contracts', () => {
       const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
       VaultProxy = (await VaultProxyFactory.connect(proxyAdmin).deploy(
         VaultImpl1.address,
-      )) as Contract & TESTVaultUpgradeability1;
+      )) as TESTVaultUpgradeability1;
       await VaultProxy.deployed();
 
       const VaultImpl3Proxied = new ethers.Contract(
         VaultProxy.address,
         TESTVaultUpgradability3Artifact.abi,
-      ) as Contract & TESTVaultUpgradeability3;
+      ) as TESTVaultUpgradeability3;
 
       expect(await connect(VaultImpl3Proxied, user).initializedVersion()).to.be.equal(3);
     });
