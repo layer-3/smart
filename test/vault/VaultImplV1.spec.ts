@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {Contract, providers, utils} from 'ethers';
+import {providers, utils} from 'ethers';
 import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
@@ -71,8 +71,7 @@ describe('Vault implementation V1', () => {
     await VaultProxy.deployed();
 
     // proxied implementation
-    VaultImpl = new ethers.Contract(VaultProxy.address, VaultImplArtifact.abi) as Contract &
-      VaultImplT;
+    VaultImpl = new ethers.Contract(VaultProxy.address, VaultImplArtifact.abi) as VaultImplT;
 
     [VaultImplAsProxyAdmin, VaultImplAsSomeone] = connectGroup(VaultImpl, [proxyAdmin, someone]);
 
