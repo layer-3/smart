@@ -84,7 +84,7 @@ async function _deployVault(options: DeployVaultOptions): Promise<DeployVaultRet
   const coSigner = options.coSigner ?? (await randomSignerWithAddress());
 
   const VaultProxy = (await deployVaultProxy({admin: proxyAdmin, impl: VaultImpl})).proxy;
-  const ProxiedImpl: Contract & VaultImplV1 = await ethers.getContractAt(
+  const ProxiedImpl: VaultImplV1 = await ethers.getContractAt(
     'VaultImplV1',
     VaultProxy.address,
     proxyAdmin,

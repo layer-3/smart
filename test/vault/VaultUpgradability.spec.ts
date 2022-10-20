@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {Contract, Wallet} from 'ethers';
+import {Wallet} from 'ethers';
 import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ethers} from 'hardhat';
 
@@ -368,13 +368,15 @@ describe('Vault Upgradeability Contracts', () => {
 
     beforeEach(async () => {
       const VaultImpl2Factory = await ethers.getContractFactory('TESTVaultUpgradeability2');
-      VaultImpl2 = (await VaultImpl2Factory.connect(implAdmin).deploy()) as Contract &
-        TESTVaultUpgradeability1;
+      VaultImpl2 = (await VaultImpl2Factory.connect(
+        implAdmin,
+      ).deploy()) as TESTVaultUpgradeability1;
       await VaultImpl2.deployed();
 
       const VaultImpl3Factory = await ethers.getContractFactory('TESTVaultUpgradeability3');
-      VaultImpl3 = (await VaultImpl3Factory.connect(implAdmin).deploy()) as Contract &
-        TESTVaultUpgradeability2;
+      VaultImpl3 = (await VaultImpl3Factory.connect(
+        implAdmin,
+      ).deploy()) as TESTVaultUpgradeability2;
       await VaultImpl3.deployed();
 
       const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
