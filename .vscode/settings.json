@@ -5,7 +5,6 @@
   },
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
-  "editor.tabCompletion": "on",
 
   // Files
   "files.insertFinalNewline": true,
@@ -72,11 +71,6 @@
       "isWholeLine": false
     }
   ],
-
-  // DocWriter
-  "docwriter.hotkey.mac": "⌥ + .",
-  "docwriter.hotkey.windows": "Alt + .",
-  "docwriter.hotkey.linux": "Alt + .",
 
   // Spell checker
   "cSpell.enableFiletypes": ["javascript", "typescript", "solidity", "json", "markdown"],
