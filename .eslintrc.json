@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/eslintrc",
   "env": {
     "node": true,
     "es2021": true
@@ -7,19 +8,19 @@
   "extends": [
     "eslint:recommended",
 
-    "plugin:array-func/recommended",
-    "plugin:eslint-comments/recommended",
-    "plugin:import/errors",
-    "plugin:import/warnings",
-    "plugin:import/typescript",
-
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "plugin:@typescript-eslint/strict",
 
-    "plugin:prettier/recommended",
+    "plugin:sonarjs/recommended",
+    "plugin:unicorn/recommended",
 
-    "prettier"
+    "plugin:import/recommended",
+
+    "plugin:array-func/recommended",
+    "plugin:eslint-comments/recommended",
+    "plugin:optimize-regex/recommended",
+    "plugin:promise/recommended"
   ],
 
   "parser": "@typescript-eslint/parser",
@@ -29,10 +30,21 @@
     "project": ["./tsconfig.json"]
   },
 
-  "plugins": ["@typescript-eslint", "import", "prettier"],
+  "plugins": ["unused-imports", "no-constructor-bind"],
 
   "rules": {
+    "no-useless-rename": "error",
+    "sort-imports": ["error", {"ignoreDeclarationSort": true}],
     "no-self-compare": "error",
+
+    "@typescript-eslint/no-unsafe-call": "off",
+    "@typescript-eslint/no-unsafe-member-access": "off",
+    "@typescript-eslint/explicit-function-return-type": [
+      "error",
+      {
+        "allowExpressions": true
+      }
+    ],
 
     "array-func/prefer-array-from": "off",
 
@@ -47,13 +59,49 @@
     "import/order": [
       "error",
       {
-        "groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
+        "groups": [
+          "builtin",
+          "external",
+          "internal",
+          "parent",
+          "sibling",
+          "index",
+          "object",
+          "type"
+        ],
         "newlines-between": "always"
       }
     ],
     "import/newline-after-import": ["error"],
 
-    "typescript-eslint/no-unsafe-call": "off",
-    "typescript-eslint/no-unsafe-member-access": "off"
-  }
+    "no-constructor-bind/no-constructor-bind": "error",
+    "no-constructor-bind/no-constructor-state": "error",
+
+    "unused-imports/no-unused-imports": "error",
+    "unused-imports/no-unused-vars": [
+      "error",
+      {
+        "vars": "all",
+        "varsIgnorePattern": "^__",
+        "args": "after-used",
+        "argsIgnorePattern": "^__"
+      }
+    ]
+  },
+
+  "overrides": [
+    {
+      "files": ["*"],
+
+      "extends": ["prettier"],
+
+      "env": {
+        "es2022": true
+      },
+
+      "parserOptions": {
+        "ecmaVersion": "latest"
+      }
+    }
+  ]
 }
