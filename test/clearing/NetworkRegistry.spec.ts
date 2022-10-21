@@ -371,6 +371,12 @@ describe('Network Registry', () => {
       ).to.be.revertedWith(NO_PARTICIPANT);
     });
 
+    it('Revert if status is Suspended', async () => {
+      await expect(
+        RegistryAsAuditor.suspendParticipant(suspendedParticipant.address),
+      ).to.be.revertedWith(INVALID_STATUS);
+    });
+
     it('Revert if status is Migrated', async () => {
       await expect(
         RegistryAsAuditor.suspendParticipant(migratedParticipant.address),
