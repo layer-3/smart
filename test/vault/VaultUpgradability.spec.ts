@@ -523,6 +523,10 @@ describe('Vault Upgradeability Contracts', () => {
       await Vault1ProxiedAsSomeone.upgrade();
     });
 
+    it('revert on someone upgrading', async () => {
+      await expect(Vault1ProxiedAsSomeone.upgrade()).to.be.revertedWith(NOT_MAINTAINER);
+    });
+
     it('upgrade when 1 next contract available', async () => {
       // v1
       // Note: connecting user (3rd party address) to avoid any address collisions
