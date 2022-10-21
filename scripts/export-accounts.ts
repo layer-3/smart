@@ -1,6 +1,4 @@
 import { writeFileSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import hre from 'hardhat';
 import { mnemonicToSeedSync } from 'ethereum-cryptography/bip39';
@@ -65,14 +63,12 @@ async function main(): Promise<void> {
   }
 
   writeFileSync(
-    path.dirname(fileURLToPath(import.meta.url)) + '/../addresses/hardhat-accounts.json',
+    __dirname + '/../addresses/hardhat-accounts.json',
     JSON.stringify(accounts, undefined, 2),
   );
 }
 
-try {
-  await main();
-} catch (error) {
+main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
-}
+});

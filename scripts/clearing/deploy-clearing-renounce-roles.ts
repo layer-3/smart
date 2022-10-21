@@ -46,9 +46,7 @@ async function main(): Promise<void> {
   console.log(`Renounced 'DEFAULT_ADMIN_ROLE' from gnosis (${deployer.address})`);
 }
 
-try {
-  await main();
-} catch (error) {
+main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
-}
+});

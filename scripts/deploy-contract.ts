@@ -33,9 +33,7 @@ async function main(): Promise<void> {
   console.log(`Deployed to:`, contract.address);
 }
 
-try {
-  await main();
-} catch (error) {
+main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
-}
+});

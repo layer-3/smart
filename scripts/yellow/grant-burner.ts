@@ -30,9 +30,7 @@ async function main(): Promise<void> {
   console.log(`Granted BURNER_ROLE to user with address ${account}'`);
 }
 
-try {
-  await main();
-} catch (error) {
+main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
-}
+});
