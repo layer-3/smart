@@ -2,7 +2,6 @@
   "singleQuote": true,
   "trailingComma": "all",
   "arrowParens": "always",
-  "bracketSpacing": false,
   "printWidth": 100,
   "tabWidth": 2,
   "overrides": [
@@ -12,7 +11,6 @@
         "tabWidth": 4,
         "useTabs": true,
         "singleQuote": true,
-        "bracketSpacing": false,
         "explicitTypes": "preserve"
       }
     }
