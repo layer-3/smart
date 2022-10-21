@@ -59,16 +59,8 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade, AccessCont
 	// ======================
 
 	/**
-	 * @notice Grant DEFAULT_ADMIN_ROLE and MAINTAINER_ROLE to the caller. Can only be called by a Proxy.
-	 * @dev Grant DEFAULT_ADMIN_ROLE and MAINTAINER_ROLE to the caller. Can only be called by a Proxy.
-	 */
-	function setupDeployerRoles() public onlyProxy {
-		_setupDeployerRoles();
-	}
-
-	/**
-	 * @notice Grant DEFAULT_ADMIN_ROLE and MAINTAINER_ROLE to the caller. Can only be called by a Proxy. Internal method.
-	 * @dev Grant DEFAULT_ADMIN_ROLE and MAINTAINER_ROLE to the caller. Can only be called by a Proxy. Internal method.
+	 * @notice Grant DEFAULT_ADMIN_ROLE and MAINTAINER_ROLE to the caller. Internal method.
+	 * @dev Grant DEFAULT_ADMIN_ROLE and MAINTAINER_ROLE to the caller. Internal method.
 	 */
 	function _setupDeployerRoles() internal {
 		AccessControl._grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -149,6 +141,7 @@ abstract contract VaultImplBase is IERC1822Proxiable, ERC1967Upgrade, AccessCont
 		require(__initialized == false, 'Already initialized');
 		__initialized = true;
 		__migrated = true;
+		_setupDeployerRoles();
 		_initialize();
 	}
 

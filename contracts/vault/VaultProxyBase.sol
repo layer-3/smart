@@ -3,7 +3,6 @@ pragma solidity 0.8.16;
 
 import '@openzeppelin/contracts/proxy/Proxy.sol';
 import '@openzeppelin/contracts/proxy/ERC1967/ERC1967Upgrade.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
 import './VaultImplBase.sol';
 
 /**
@@ -12,7 +11,7 @@ import './VaultImplBase.sol';
  */
 abstract contract VaultProxyBase is Proxy, ERC1967Upgrade {
 	/**
-	 * @notice Set the address of the latest version of implementation contract, provided the first implementation contract in the versions chain. Call `initialize` on that address. Grant admin role to deployer.
+	 * @notice Set the address of the latest version of implementation contract, provided the first implementation contract in the versions chain. Call `initialize` on that address. Grant admin and maintainer role to deployer.
 	 * @dev Recursively retrieve `nextImplementation` address starting with `startImplementation` supplied.
 	 */
 	constructor(VaultImplBase startImplementation) {
@@ -34,12 +33,6 @@ abstract contract VaultProxyBase is Proxy, ERC1967Upgrade {
 			address(newImplementation),
 			abi.encodeWithSelector(bytes4(keccak256('initialize()'))),
 			true
-		);
-
-		Address.functionDelegateCall(
-			address(newImplementation),
-			abi.encodeWithSelector(bytes4(keccak256('setupDeployerRoles()'))),
-			'Deployer roles not set up'
 		);
 	}
 
