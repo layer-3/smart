@@ -8,7 +8,7 @@ import '../VaultImplBase.sol';
  * @dev Use for TEST PURPOSES ONLY. !!! Contains security vulnerability !!!
  */
 contract TESTVaultProxy is VaultProxyBase {
-    constructor(VaultImplBase startImplementation) VaultProxyBase(startImplementation) {}
-    // SECURITY VULNERABILITY HERE ^^^
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	constructor(VaultImplBase startImplementation) VaultProxyBase(startImplementation) {}
+	// SECURITY VULNERABILITY HERE ^^^
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }
