@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import {HardhatUserConfig, task} from 'hardhat/config';
+import { HardhatUserConfig, task } from 'hardhat/config';
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
@@ -66,8 +66,10 @@ const config: HardhatUserConfig = {
     },
     generic: {
       url: process.env.GENERIC_URL ?? '',
-      chainId: parseInt(process.env.GENERIC_CHAIN_ID ?? '0'),
-      gasPrice: process.env.GENERIC_GAS_PRICE ? parseInt(process.env.GENERIC_GAS_PRICE) : 'auto',
+      chainId: Number.parseInt(process.env.GENERIC_CHAIN_ID ?? '0'),
+      gasPrice: process.env.GENERIC_GAS_PRICE
+        ? Number.parseInt(process.env.GENERIC_GAS_PRICE)
+        : 'auto',
       accounts: ACCOUNTS,
     },
   },

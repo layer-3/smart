@@ -1,24 +1,25 @@
-import {expect} from 'chai';
-import {Wallet} from 'ethers';
-import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {ethers} from 'hardhat';
+import { expect } from 'chai';
+import { Wallet } from 'ethers';
+import { ethers } from 'hardhat';
 
 import TESTVaultUpgradability1Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradeability1.sol/TESTVaultUpgradeability1.json';
 import TESTVaultUpgradability2Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradeability2.sol/TESTVaultUpgradeability2.json';
 import TESTVaultUpgradability3Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradeability3.sol/TESTVaultUpgradeability3.json';
 import {
+  ACCOUNT_MISSING_ROLE,
   ALREADY_INITIALIZED,
   ALREADY_MIGRATED,
+  INVALID_NEXT_IMPL,
   MUST_NOT_THROUGH_DELEGATECALL,
   MUST_THROUGH_DELEGATECALL,
   NEXT_IMPL_IS_SET,
   NEXT_IMPL_ZERO,
   NOT_ADMIN,
   NOT_MAINTAINER,
-  INVALID_NEXT_IMPL,
-  ACCOUNT_MISSING_ROLE,
 } from '../../src/revert-reasons';
-import {NEXT_IMPL_SET, ROLE_GRANTED, UPGRADED} from '../../src/event-names';
+import { NEXT_IMPL_SET, ROLE_GRANTED, UPGRADED } from '../../src/event-names';
+import { connect, connectGroup } from '../../src/contracts';
+
 import type {
   TESTVaultUpgradeability1,
   TESTVaultUpgradeability2,
@@ -26,7 +27,7 @@ import type {
   VaultImplV1,
   VaultProxy,
 } from '../../typechain';
-import {connect, connectGroup} from '../../src/contracts';
+import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
@@ -210,7 +211,7 @@ describe('Vault Upgradeability Contracts', () => {
       // workaround ts undefined checks
       if (event?.args != undefined) {
         expect(event.event).to.be.equal(ROLE_GRANTED);
-        const {role, account, sender} = event.args;
+        const { role, account, sender } = event.args;
         expect(role).to.be.equal(ADM_ROLE);
         expect(sender).to.be.equal(implAdmin.address);
         expect(account).to.be.equal(someone.address);
@@ -229,7 +230,7 @@ describe('Vault Upgradeability Contracts', () => {
       // workaround ts undefined checks
       if (event?.args != undefined) {
         expect(event.event).to.be.equal(NEXT_IMPL_SET);
-        const {nextImplementation} = event.args;
+        const { nextImplementation } = event.args;
         expect(nextImplementation).to.be.equal(nextImplAddress);
       }
     });
@@ -336,7 +337,7 @@ describe('Vault Upgradeability Contracts', () => {
       // workaround ts undefined checks
       if (event?.args != undefined) {
         expect(event.event).to.be.equal(ROLE_GRANTED);
-        const {role, account, sender} = event.args;
+        const { role, account, sender } = event.args;
         expect(role).to.be.equal(ADM_ROLE);
         expect(account).to.be.equal(someone.address);
         expect(sender).to.be.equal(proxyAdmin.address);
@@ -622,7 +623,7 @@ describe('Vault Upgradeability Contracts', () => {
       // workaround ts undefined checks
       if (event?.args != undefined) {
         expect(event.event).to.be.equal(UPGRADED);
-        const {implementation} = event.args;
+        const { implementation } = event.args;
         expect(implementation).to.be.equal(VaultImpl2.address);
       }
     });

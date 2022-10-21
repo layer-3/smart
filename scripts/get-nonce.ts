@@ -1,6 +1,6 @@
-import {ethers} from 'hardhat';
+import { ethers } from 'hardhat';
 
-async function main() {
+async function main(): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const address = process.env.ADDRESS!;
   console.log(`address:`, address);
@@ -10,10 +10,12 @@ async function main() {
     ethers.provider.getTransactionCount(address, 'pending'),
   ]);
 
-  console.log(`nonce:`, {latest, pending});
+  console.log(`nonce:`, { latest, pending });
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exitCode = 1;
-});
+}

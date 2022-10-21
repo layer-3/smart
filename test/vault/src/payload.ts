@@ -1,9 +1,10 @@
-import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {utils} from 'ethers';
-import type {ParamType} from 'ethers/lib/utils';
-import {ethers} from 'hardhat';
+import { utils } from 'ethers';
+import { ethers } from 'hardhat';
 
-import {signEncoded} from '../../../src/signatures';
+import { signEncoded } from '../../../src/signatures';
+
+import type { ParamType } from 'ethers/lib/utils';
+import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 // keccak256('YELLOW_VAULT_DEPOSIT_ACTION');
 export const DEPOSIT_ACTION = '0xa2d4613c2e2e0782566f63085acedcb19fbd37900464a8316040997ccd6e9fea';
@@ -51,7 +52,7 @@ export function addAllocation(
   asset: string,
   amount: number,
 ): PartialPayload {
-  const newAlloc: Allocation = {asset, amount};
+  const newAlloc: Allocation = { asset, amount };
   payload.allocations.length === 0
     ? payload.allocations.push(newAlloc)
     : (payload.allocations = [newAlloc]);
@@ -73,7 +74,7 @@ export function generalPayload(destination: string, implAddress: string): Partia
     destination,
     allocations: [],
     implAddress,
-    chainId: 31337, // local hardhat node
+    chainId: 31_337, // local hardhat node
   };
 }
 
@@ -83,20 +84,20 @@ export function encodePayload(payload: Payload): string {
       {
         type: 'tuple',
         components: [
-          {name: 'action', type: 'bytes32'},
-          {name: 'rid', type: 'bytes32'},
-          {name: 'expire', type: 'uint64'},
-          {name: 'destination', type: 'address'},
+          { name: 'action', type: 'bytes32' },
+          { name: 'rid', type: 'bytes32' },
+          { name: 'expire', type: 'uint64' },
+          { name: 'destination', type: 'address' },
           {
             name: 'allocations',
             type: 'tuple[]',
             components: [
-              {name: 'asset', type: 'address'},
-              {name: 'amount', type: 'uint256'},
+              { name: 'asset', type: 'address' },
+              { name: 'amount', type: 'uint256' },
             ],
           } as ParamType,
-          {name: 'implAddress', type: 'address'},
-          {name: 'chainId', type: 'uint256'},
+          { name: 'implAddress', type: 'address' },
+          { name: 'chainId', type: 'uint256' },
         ],
       } as ParamType,
     ],

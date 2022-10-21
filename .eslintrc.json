@@ -1,5 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/eslintrc",
+
   "env": {
     "node": true,
     "es2021": true
@@ -34,7 +35,7 @@
 
   "rules": {
     "no-useless-rename": "error",
-    "sort-imports": ["error", {"ignoreDeclarationSort": true}],
+    "sort-imports": ["error", { "ignoreDeclarationSort": true }],
     "no-self-compare": "error",
 
     "@typescript-eslint/no-unsafe-call": "off",
@@ -77,6 +78,12 @@
     "no-constructor-bind/no-constructor-bind": "error",
     "no-constructor-bind/no-constructor-state": "error",
 
+    "sonarjs/no-duplicate-string": 0,
+
+    "unicorn/filename-case": 0,
+    "unicorn/prefer-ternary": 0,
+    "unicorn/prevent-abbreviations": 0,
+
     "unused-imports/no-unused-imports": "error",
     "unused-imports/no-unused-vars": [
       "error",
@@ -102,6 +109,31 @@
       "parserOptions": {
         "ecmaVersion": "latest"
       }
+    },
+
+    // tweaking for more convenient tests
+    {
+      "files": ["./test/**/*.ts"],
+
+      "rules": {
+        "unicorn/consistent-function-scoping": 0
+      }
+    },
+
+    {
+      "files": ["./test/**/src/*.ts", "./src/**/*.ts"],
+
+      "rules": {
+        "unicorn/no-await-expression-member": 0
+      }
     }
-  ]
+  ],
+
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".ts"]
+      }
+    }
+  }
 }

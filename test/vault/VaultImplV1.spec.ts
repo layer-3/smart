@@ -1,23 +1,21 @@
-import {expect} from 'chai';
-import {providers, utils} from 'ethers';
-import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {ethers} from 'hardhat';
+import { expect } from 'chai';
+import { providers, utils } from 'ethers';
+import { ethers } from 'hardhat';
 
 import VaultImplArtifact from '../../artifacts/contracts/vault/VaultImplV1.sol/VaultImplV1.json';
-import type {VaultImplV1 as VaultImplT, TESTVaultProxy, TestERC20} from '../../typechain';
 import {
   ACCOUNT_MISSING_ROLE,
-  INVALID_ADDRESS,
-  INVALID_SIGNATURE,
-  VAULT_ALREADY_SETUP,
-  INVALID_ETH_AMOUNT,
+  AMOUNT_ZERO,
   DESTINATION_ZERO_ADDRESS,
   INVALID_ACTION,
+  INVALID_ADDRESS,
+  INVALID_CHAIN_ID,
+  INVALID_ETH_AMOUNT,
+  INVALID_IMPL_ADDRESS,
+  INVALID_SIGNATURE,
   REQUEST_EXPIRED,
   SIGNATURE_ALREAD_USED,
-  AMOUNT_ZERO,
-  INVALID_IMPL_ADDRESS,
-  INVALID_CHAIN_ID,
+  VAULT_ALREADY_SETUP,
 } from '../../src/revert-reasons';
 import {
   BROKER_ADDRESS_SET,
@@ -25,10 +23,13 @@ import {
   DEPOSITED,
   WITHDRAWN,
 } from '../../src/event-names';
-import {connect, connectGroup} from '../../src/contracts';
+import { connect, connectGroup } from '../../src/contracts';
 
-import {depositParams, setAddressParams, withdrawParams} from './src/transactions';
-import {addAllocation, generalPayload, PartialPayload} from './src/payload';
+import { depositParams, setAddressParams, withdrawParams } from './src/transactions';
+import { PartialPayload, addAllocation, generalPayload } from './src/payload';
+
+import type { TESTVaultProxy, TestERC20, VaultImplV1 as VaultImplT } from '../../typechain';
+import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;
@@ -104,8 +105,8 @@ describe('Vault implementation V1', () => {
         caller: SignerWithAddress,
         brokerAddress: string,
         coSignerAddress: string,
-        reason: string | undefined,
-      ) {
+        reason?: string,
+      ): Promise<void> {
         if (reason) {
           await expect(
             connect(VaultImpl, caller).setup(brokerAddress, coSignerAddress),
@@ -122,7 +123,7 @@ describe('Vault implementation V1', () => {
       });
 
       it('accept when proxy admin setup', async () =>
-        await setup(proxyAdmin, broker1.address, coSigner1.address, undefined));
+        await setup(proxyAdmin, broker1.address, coSigner1.address));
 
       it('revert on setup broker to zero address', async () =>
         await setup(proxyAdmin, AddressZero, coSigner1.address, INVALID_ADDRESS));
@@ -244,7 +245,7 @@ describe('Vault implementation V1', () => {
 
         const tx = await VaultImplAsSomeone.deposit(
           ...(await depositParams(payload, broker1, coSigner1)),
-          {value: AMOUNT},
+          { value: AMOUNT },
         );
 
         const receipt = await tx.wait();
@@ -347,7 +348,7 @@ describe('Vault implementation V1', () => {
 
         const usedParams = await depositParams(payload, broker1, coSigner1);
 
-        await VaultImplAsSomeone.deposit(...usedParams, {value: AMOUNT});
+        await VaultImplAsSomeone.deposit(...usedParams, { value: AMOUNT });
 
         let otherPayload = generalPayload(someone.address, VaultImplAddress);
         otherPayload = addAllocation(otherPayload, AddressZero, AMOUNT.toNumber());
@@ -432,7 +433,7 @@ describe('Vault implementation V1', () => {
 
         const tx = await VaultImplAsSomeone.deposit(
           ...(await depositParams(payload, broker1, coSigner1)),
-          {value: AMOUNT},
+          { value: AMOUNT },
         );
 
         const receipt = await tx.wait();
@@ -461,7 +462,7 @@ describe('Vault implementation V1', () => {
 
         await VaultImplAsSomeone.deposit(
           ...(await depositParams(depositPayload, broker1, coSigner1)),
-          {value: AMOUNT},
+          { value: AMOUNT },
         );
       });
 

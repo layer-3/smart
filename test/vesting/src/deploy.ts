@@ -1,8 +1,8 @@
-import {ethers, upgrades} from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 
-import type {Vesting, VestingERC20} from '../../../typechain';
+import { VESTING_PERIOD_DAYS } from './time';
 
-import {VESTING_PERIOD_DAYS} from './time';
+import type { Vesting, VestingERC20 } from '../../../typechain';
 
 export async function deployVesting(
   willStart: number,

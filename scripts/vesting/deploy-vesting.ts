@@ -1,8 +1,8 @@
-import {ethers, upgrades} from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 
 // Usage:
 // CONTRACT_ARGS=args,separated,by,commas npx hardhat run scripts/deploy-vesting --network <network name from hardhat.config.ts>
-async function main() {
+async function main(): Promise<void> {
   const vestingName = 'Test Vesting';
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const args = process.env.CONTRACT_ARGS!.split(',').map((v) => v.trim());
@@ -26,7 +26,9 @@ async function main() {
   console.log(`${vestingName} deployed to:`, vestingContract.address);
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exitCode = 1;
-});
+}

@@ -1,12 +1,14 @@
-import {ethers} from 'hardhat';
+import { ethers } from 'hardhat';
 
-async function main() {
+async function main(): Promise<void> {
   const provider = ethers.provider;
-  console.log('Current network:', (await provider.getNetwork()).name);
+  const network = await provider.getNetwork();
+  console.log('Current network:', network.name);
 
   const [deployer] = await ethers.getSigners();
   console.log('Deployer address:', deployer.address);
-  console.log('Deployer balance:', (await deployer.getBalance()).toString());
+  const balanceBigNum = await deployer.getBalance();
+  console.log('Deployer balance:', balanceBigNum.toString());
 
   let args;
   if (process.env.CONTRACT_ARGS) {
@@ -24,14 +26,16 @@ async function main() {
     contract = await factory.deploy();
   }
 
-  const {...deployTransaction} = contract.deployTransaction;
+  const { ...deployTransaction } = contract.deployTransaction;
   console.log('Transaction:', deployTransaction);
   await contract.deployed();
 
   console.log(`Deployed to:`, contract.address);
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exitCode = 1;
-});
+}

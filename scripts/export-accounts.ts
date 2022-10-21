@@ -1,16 +1,19 @@
-import {writeFileSync} from 'fs';
+import { writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import hre from 'hardhat';
-import type {HardhatNetworkConfig} from 'hardhat/types';
-import {mnemonicToSeedSync} from 'ethereum-cryptography/bip39';
-import {HDKey} from 'ethereum-cryptography/hdkey';
+import { mnemonicToSeedSync } from 'ethereum-cryptography/bip39';
+import { HDKey } from 'ethereum-cryptography/hdkey';
+
+import type { HardhatNetworkConfig } from 'hardhat/types';
 
 interface IAccount {
   privateKey: string;
   address: string;
 }
 
-async function main() {
+async function main(): Promise<void> {
   const networkConfig: HardhatNetworkConfig = hre.config.networks.hardhat;
 
   const log = process.env.log !== undefined || false;
@@ -56,18 +59,20 @@ async function main() {
 
     if (log) {
       console.log(`child ${i} private key:`, privateKey);
-      console.log(`child ${i} address: `, address);
+      console.log(`child ${i} address:`, address);
     }
-    accounts.push({privateKey, address});
+    accounts.push({ privateKey, address });
   }
 
   writeFileSync(
-    __dirname + '/../addresses/hardhat-accounts.json',
-    JSON.stringify(accounts, null, 2),
+    path.dirname(fileURLToPath(import.meta.url)) + '/../addresses/hardhat-accounts.json',
+    JSON.stringify(accounts, undefined, 2),
   );
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exitCode = 1;
-});
+}

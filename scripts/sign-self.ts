@@ -1,16 +1,19 @@
-import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import type {Signer} from 'ethers';
-import {ethers} from 'hardhat';
+import { ethers } from 'hardhat';
 
-import {signSelf} from '../src/signatures';
+import { signSelf } from '../src/signatures';
 
-async function main() {
+import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import type { Signer } from 'ethers';
+
+async function main(): Promise<void> {
   const provider = ethers.provider;
-  console.log('Current network:', (await provider.getNetwork()).name);
+  const network = await provider.getNetwork();
+  console.log('Current network:', network.name);
 
   const [deployer] = await ethers.getSigners();
   console.log('Deployer address:', deployer.address);
-  console.log('Deployer balance:', (await deployer.getBalance()).toString());
+  const balanceBigNum = await deployer.getBalance();
+  console.log('Deployer balance:', balanceBigNum.toString());
 
   let signer: Signer | SignerWithAddress = deployer;
 
@@ -22,7 +25,9 @@ async function main() {
   console.log(await signSelf(signer));
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exitCode = 1;
-});
+}

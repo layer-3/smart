@@ -1,11 +1,12 @@
-import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {expect} from 'chai';
-import type {Contract} from 'ethers';
-import {ethers, upgrades} from 'hardhat';
+import { expect } from 'chai';
+import { ethers, upgrades } from 'hardhat';
 
-import {connectGroup} from '../../src/contracts';
-import {ACCOUNT_MISSING_ROLE} from '../../src/revert-reasons';
-import type {Yellow} from '../../typechain';
+import { connectGroup } from '../../src/contracts';
+import { ACCOUNT_MISSING_ROLE } from '../../src/revert-reasons';
+
+import type { Contract } from 'ethers';
+import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import type { Yellow } from '../../typechain';
 
 const AdminRole = ethers.constants.HashZero;
 const MinterRole = ethers.utils.id('MINTER_ROLE');
@@ -47,7 +48,7 @@ describe('Yellow Contract', function () {
     await YellowAsOwner.grantRole(BurnerRole, burner.address);
   });
 
-  function insufficientAllowanceError() {
+  function insufficientAllowanceError(): string {
     return `ERC20: insufficient allowance`;
   }
 
