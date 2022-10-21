@@ -17,9 +17,7 @@ async function main(): Promise<void> {
   console.log(`${contractName} upgraded on:`, v2Contract.address);
 }
 
-try {
-  await main();
-} catch (error) {
+main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
-}
+});
