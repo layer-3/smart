@@ -158,8 +158,8 @@ abstract contract YellowClearingBase is AccessControl {
 		require(_recoverAddressSigner(participant, signature) == participant, 'Invalid signer');
 
 		_participantData[participant] = ParticipantData({
-			status: ParticipantStatus.Pending,
-			registrationTime: uint64(block.timestamp)
+			registrationTime: uint64(block.timestamp),
+			status: ParticipantStatus.Pending
 		});
 
 		emit ParticipantRegistered(participant);
@@ -195,7 +195,9 @@ abstract contract YellowClearingBase is AccessControl {
 
 		ParticipantStatus status = _participantData[participant].status;
 		require(
-			status != ParticipantStatus.None && status != ParticipantStatus.Migrated,
+			status != ParticipantStatus.None &&
+				status != ParticipantStatus.Suspended &&
+				status != ParticipantStatus.Migrated,
 			'Invalid status'
 		);
 
@@ -258,9 +260,9 @@ abstract contract YellowClearingBase is AccessControl {
 	function migrateParticipant(address participant, bytes calldata signature) external {
 		require(address(_nextImplementation) != address(0), 'Next implementation is not set');
 
-		require(_recoverAddressSigner(participant, signature) == participant, 'Invalid signer');
-
 		require(hasParticipant(participant), 'Participant does not exist');
+
+		require(_recoverAddressSigner(participant, signature) == participant, 'Invalid signer');
 
 		// Get previous participant data
 		ParticipantData memory currentData = _participantData[participant];
@@ -269,14 +271,14 @@ abstract contract YellowClearingBase is AccessControl {
 		// Migrate data, emit ParticipantMigratedTo
 		_nextImplementation.migrateParticipantData(participant, currentData);
 
-		// Emit event
-		emit ParticipantMigratedFrom(participant, _self);
-
 		// Mark participant as migrated on this implementation
 		_participantData[participant] = ParticipantData({
-			status: ParticipantStatus.Migrated,
-			registrationTime: currentData.registrationTime
+			registrationTime: currentData.registrationTime,
+			status: ParticipantStatus.Migrated
 		});
+
+		// Emit event
+		emit ParticipantMigratedFrom(participant, _self);
 	}
 
 	/**
