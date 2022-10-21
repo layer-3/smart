@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import {HardhatUserConfig, task} from 'hardhat/config';
+import { HardhatUserConfig, task } from 'hardhat/config';
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
@@ -12,9 +12,7 @@ import 'hardhat-deploy';
 
 dotenv.config();
 
-// This is a sample Hardhat task. To learn how to create your own go to
-// https://hardhat.org/guides/create-task.html
-task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
+task('accounts', 'Prints the list of accounts', async (_, hre) => {
   const accounts = await hre.ethers.getSigners();
 
   for (const account of accounts) {
@@ -22,8 +20,8 @@ task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   }
 });
 
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
+const ACCOUNTS = process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [];
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY ?? '';
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -37,26 +35,7 @@ const config: HardhatUserConfig = {
           },
         },
       },
-      {
-        // This configuration is defined to support nitro-protocol contracts which use solidity 0.7.4.
-        version: '0.7.4',
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
     ],
-    overrides: {
-      // This configuration is a workaround for a nitro-protocol example contract which doesn't compile with the optimizer on.
-      'contracts/nitro-protocol/examples/EmbeddedApplication.sol': {
-        version: '0.7.4',
-        settings: {
-          optimizer: {enabled: false},
-        },
-      },
-    },
   },
   namedAccounts: {
     deployer: {
@@ -69,32 +48,29 @@ const config: HardhatUserConfig = {
     deployments: 'hardhat-deployments',
   },
   networks: {
-    hardhat: {
-      accounts: {
-        mnemonic: 'blue yellow soon open speed web then enable rich work success matrix',
-      },
-    },
     ethereum: {
-      url: process.env.ETHEREUM_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.ETHEREUM_URL ?? '',
+      accounts: ACCOUNTS,
     },
     goerli: {
-      url: process.env.GOERLI_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.GOERLI_URL ?? '',
+      accounts: ACCOUNTS,
     },
     polygon: {
-      url: process.env.POLYGON_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.POLYGON_URL ?? '',
+      accounts: ACCOUNTS,
     },
     mumbai: {
-      url: process.env.MUMBAI_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.MUMBAI_URL ?? '',
+      accounts: ACCOUNTS,
     },
     generic: {
-      url: process.env.GENERIC_URL || '',
-      chainId: parseInt(process.env.GENERIC_CHAIN_ID || '0'),
-      gasPrice: process.env.GENERIC_GAS_PRICE ? parseInt(process.env.GENERIC_GAS_PRICE) : 'auto',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.GENERIC_URL ?? '',
+      chainId: Number.parseInt(process.env.GENERIC_CHAIN_ID ?? '0'),
+      gasPrice: process.env.GENERIC_GAS_PRICE
+        ? Number.parseInt(process.env.GENERIC_GAS_PRICE)
+        : 'auto',
+      accounts: ACCOUNTS,
     },
   },
   gasReporter: {
@@ -103,8 +79,10 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      mainnet: process.env.ETHERSCAN_API_KEY,
-      goerli: process.env.ETHERSCAN_API_KEY,
+      mainnet: ETHERSCAN_API_KEY,
+      goerli: ETHERSCAN_API_KEY,
+      polygon: ETHERSCAN_API_KEY,
+      polygonMumbai: ETHERSCAN_API_KEY,
     },
   },
 };

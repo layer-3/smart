@@ -1,4 +1,7 @@
-node_modules
+.openzeppelin
+abi
 artifacts
 cache
 coverage
+node_modules
+typechain

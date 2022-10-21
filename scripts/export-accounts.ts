@@ -1,16 +1,17 @@
-import {writeFileSync} from 'fs';
+import { writeFileSync } from 'node:fs';
 
 import hre from 'hardhat';
-import {HardhatNetworkConfig} from 'hardhat/types';
-import {mnemonicToSeedSync} from 'ethereum-cryptography/bip39';
-import {HDKey} from 'ethereum-cryptography/hdkey';
+import { mnemonicToSeedSync } from 'ethereum-cryptography/bip39';
+import { HDKey } from 'ethereum-cryptography/hdkey';
+
+import type { HardhatNetworkConfig } from 'hardhat/types';
 
 interface IAccount {
   privateKey: string;
   address: string;
 }
 
-async function main() {
+async function main(): Promise<void> {
   const networkConfig: HardhatNetworkConfig = hre.config.networks.hardhat;
 
   const log = process.env.log !== undefined || false;
@@ -27,7 +28,7 @@ async function main() {
   const envMnemonic = process.env.MNEMONIC!;
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const envPassphrase = process.env.PASSPHRASE!;
-  const accounts_number = process.env.NUMBER || 20;
+  const accounts_number = process.env.NUMBER ?? 20;
 
   const mnemonic = envMnemonic || confMnemonic;
   const passphrase = envPassphrase || confPassphrase;
@@ -56,12 +57,15 @@ async function main() {
 
     if (log) {
       console.log(`child ${i} private key:`, privateKey);
-      console.log(`child ${i} address: `, address);
+      console.log(`child ${i} address:`, address);
     }
-    accounts.push({privateKey, address});
+    accounts.push({ privateKey, address });
   }
 
-  writeFileSync(__dirname + '/../deployments/accounts.json', JSON.stringify(accounts, null, 2));
+  writeFileSync(
+    __dirname + '/../addresses/hardhat-accounts.json',
+    JSON.stringify(accounts, undefined, 2),
+  );
 }
 
 main().catch((error) => {

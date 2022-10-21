@@ -1,16 +1,17 @@
-import {ethers} from 'hardhat';
+import { ethers } from 'hardhat';
 
-async function main() {
+async function main(): Promise<void> {
   const provider = ethers.provider;
-  console.log('Current network:', (await provider.getNetwork()).name);
+  const network = await provider.getNetwork();
+  console.log('Current network:', network.name);
 
   const [deployer] = await ethers.getSigners();
   console.log('Deployer address:', deployer.address);
-  console.log('Deployer balance:', (await deployer.getBalance()).toString());
+  const balanceBigNum = await deployer.getBalance();
+  console.log('Deployer balance:', balanceBigNum.toString());
 
   let args;
   if (process.env.CONTRACT_ARGS) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     args = process.env.CONTRACT_ARGS.split(',').map((v) => v.trim());
     console.log(`Args:`, args);
   }
@@ -25,7 +26,7 @@ async function main() {
     contract = await factory.deploy();
   }
 
-  const {...deployTransaction} = contract.deployTransaction;
+  const { ...deployTransaction } = contract.deployTransaction;
   console.log('Transaction:', deployTransaction);
   await contract.deployed();
 
