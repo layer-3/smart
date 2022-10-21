@@ -7,9 +7,9 @@ import '../YellowClearingBase.sol';
  * @dev Use for TEST PURPOSES ONLY. !!! Contains security vulnerability !!!
  */
 contract TESTYellowClearingV1 is YellowClearingBase {
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // SECURITY VULNERABILITY HERE \/ \/ \/
-    constructor(YellowClearingBase previousImplementation)
-        YellowClearingBase(previousImplementation)
-    {}
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// SECURITY VULNERABILITY HERE \/ \/ \/
+	constructor(YellowClearingBase previousImplementation)
+		YellowClearingBase(previousImplementation)
+	{}
 }

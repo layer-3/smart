@@ -1,6 +1,6 @@
-import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
+import { signSelf } from '../../../src/signatures';
 
-import {signSelf} from '../../../src/signatures';
+import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export type registerParams = [string, string];
 

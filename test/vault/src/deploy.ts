@@ -1,11 +1,12 @@
-import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {Contract} from 'ethers';
-import {ethers} from 'hardhat';
+import { Contract } from 'ethers';
+import { ethers } from 'hardhat';
 
-import {randomSignerWithAddress} from '../../../src/signers';
-import {VaultImplBase, VaultImplV1, VaultProxyBase} from '../../../typechain';
+import { randomSignerWithAddress } from '../../../src/signers';
 
-// TODO: add functions and use them in `VaultUpgradability.spec.ts` and `VaultImplV1.spec.ts`
+import type { VaultImplBase, VaultImplV1, VaultProxyBase } from '../../../typechain';
+import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+
+// TODO: add functions and use them in `VaultUpgradeability.spec.ts` and `VaultImplV1.spec.ts`
 
 interface DeployImplOptions {
   admin?: SignerWithAddress;
@@ -18,11 +19,11 @@ interface DeployImplReturns {
 
 export async function deployVaultImpl(options: DeployImplOptions): Promise<DeployImplReturns> {
   const admin = options.admin ?? (await randomSignerWithAddress());
-  // TODO: add option to deploy `TESTVaultUpgradability`
+  // TODO: add option to deploy `TESTVaultUpgradeability`
   const VaultImpl1Factory = await ethers.getContractFactory('VaultImplV1');
   const VaultImpl1 = (await VaultImpl1Factory.connect(admin).deploy()) as VaultImplBase;
   await VaultImpl1.deployed();
-  return {impl: VaultImpl1, admin};
+  return { impl: VaultImpl1, admin };
 }
 
 interface DeployProxyOptions {
@@ -36,7 +37,7 @@ interface DeployProxyReturns {
 }
 
 export async function deployVaultProxy(
-  implOrOptions: VaultImplBase | DeployProxyOptions
+  implOrOptions: VaultImplBase | DeployProxyOptions,
 ): Promise<DeployProxyReturns> {
   let impl;
   let admin;
@@ -51,10 +52,10 @@ export async function deployVaultProxy(
 
   const VaultProxyFactory = await ethers.getContractFactory('TESTVaultProxy');
   const VaultProxy = (await VaultProxyFactory.connect(admin).deploy(
-    impl.address
+    impl.address,
   )) as VaultProxyBase;
   await VaultProxy.deployed();
-  return {proxy: VaultProxy, admin};
+  return { proxy: VaultProxy, admin };
 }
 
 interface DeployVaultOptions {
@@ -83,12 +84,12 @@ async function _deployVault(options: DeployVaultOptions): Promise<DeployVaultRet
   const broker = options.broker ?? (await randomSignerWithAddress());
   const coSigner = options.coSigner ?? (await randomSignerWithAddress());
 
-  const VaultProxy = (await deployVaultProxy({admin: proxyAdmin, impl: VaultImpl})).proxy;
-  const ProxiedImpl = (await ethers.getContractAt(
+  const VaultProxy = (await deployVaultProxy({ admin: proxyAdmin, impl: VaultImpl })).proxy;
+  const ProxiedImpl: VaultImplV1 = await ethers.getContractAt(
     'VaultImplV1',
     VaultProxy.address,
-    proxyAdmin
-  )) as VaultImplV1;
+    proxyAdmin,
+  );
 
   await ProxiedImpl.setup(broker.address, coSigner.address);
 

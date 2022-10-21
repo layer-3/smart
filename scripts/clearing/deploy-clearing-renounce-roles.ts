@@ -1,27 +1,29 @@
-import {isAddress} from 'ethers/lib/utils';
-import {ethers} from 'hardhat';
+import { isAddress } from 'ethers/lib/utils';
+import { ethers } from 'hardhat';
 
-import {YellowClearingV1} from '../../typechain';
+import type { YellowClearingV1 } from '../../typechain';
 
-async function main() {
+async function main(): Promise<void> {
   const provider = ethers.provider;
-  console.log('Current network:', (await provider.getNetwork()).name);
+  const network = await provider.getNetwork();
+  console.log('Current network:', network.name);
 
   const [deployer] = await ethers.getSigners();
   console.log('Deployer address:', deployer.address);
-  console.log('Deployer balance:', (await deployer.getBalance()).toString());
+  const balanceBigNum = await deployer.getBalance();
+  console.log('Deployer balance:', balanceBigNum.toString());
 
   // Fetch args
   const gnosisAddress = process.env.GNOSIS ?? undefined;
   if (!gnosisAddress || !isAddress(gnosisAddress)) {
-    throw new Error(`Incorrect gnosis address: ${gnosisAddress}`);
+    throw new Error(`Incorrect gnosis address: ${gnosisAddress ?? 'undefined'}`);
   }
   console.log('Gnosis address:', gnosisAddress, '\n');
 
   // Deploy Clearing
   const ClearingFactory = await ethers.getContractFactory('YellowClearingV1');
   const Clearing = (await ClearingFactory.deploy()) as YellowClearingV1;
-  const {...deployTransaction} = Clearing.deployTransaction;
+  const { ...deployTransaction } = Clearing.deployTransaction;
   console.log('Transaction hash:', deployTransaction.hash);
   await Clearing.deployed();
 

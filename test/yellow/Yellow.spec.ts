@@ -1,129 +1,130 @@
-/* eslint no-unused-expressions: 0 */
+import { expect } from 'chai';
+import { ethers, upgrades } from 'hardhat';
 
-import {expect} from 'chai';
-import {ethers, upgrades} from 'hardhat';
+import { connectGroup } from '../../src/contracts';
+import { ACCOUNT_MISSING_ROLE } from '../../src/revert-reasons';
+
+import type { Contract } from 'ethers';
+import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import type { Yellow } from '../../typechain';
+
+const AdminRole = ethers.constants.HashZero;
+const MinterRole = ethers.utils.id('MINTER_ROLE');
+const BurnerRole = ethers.utils.id('BURNER_ROLE');
+const maxTotalSupply = ethers.utils.parseEther('10000000000');
 
 describe('Yellow Contract', function () {
-  beforeEach(async function () {
-    const [owner, user, minter, burner, someone] = await ethers.getSigners();
-    this.owner = owner;
-    this.user = user;
-    this.minter = minter;
-    this.burner = burner;
-    this.someone = someone;
-    this.AdminRole = ethers.constants.HashZero;
-    this.MinterRole = ethers.utils.id('MINTER_ROLE');
-    this.BurnerRole = ethers.utils.id('BURNER_ROLE');
-    this.maxTotalSupply = ethers.utils.parseEther('10000000000');
+  let owner: SignerWithAddress;
+  let user: SignerWithAddress;
+  let minter: SignerWithAddress;
+  let burner: SignerWithAddress;
+  let someone: SignerWithAddress;
 
-    const yellowFactory = await ethers.getContractFactory('Yellow');
-    const yellowContract = await upgrades.deployProxy(
-      yellowFactory,
-      ['Yellow', 'YLW', owner.address],
-      {
-        initializer: 'init(string, string, address)',
-      }
-    );
-    await yellowContract.deployed();
-    this.yellowContract = yellowContract;
+  let YellowContract: Yellow;
+  let YellowAsOwner: Yellow;
+  let YellowAsMinter: Yellow;
+  let YellowAsSomeone: Yellow;
+  let YellowAsUser: Yellow;
+
+  beforeEach(async function () {
+    [owner, user, minter, burner, someone] = await ethers.getSigners();
+
+    const YellowFactory = await ethers.getContractFactory('Yellow');
+    YellowContract = (await upgrades.deployProxy(YellowFactory, ['Yellow', 'YLW', owner.address], {
+      initializer: 'init(string, string, address)',
+    })) as Yellow;
+    await YellowContract.deployed();
+
+    [YellowAsOwner, YellowAsMinter, YellowAsSomeone, YellowAsUser] = connectGroup(YellowContract, [
+      owner,
+      minter,
+      someone,
+      user,
+    ]);
 
     // add minter
-    await yellowContract.connect(owner).grantRole(this.MinterRole, minter.address);
+    await YellowAsOwner.grantRole(MinterRole, minter.address);
     // add burner
-    await yellowContract.connect(owner).grantRole(this.BurnerRole, burner.address);
+    await YellowAsOwner.grantRole(BurnerRole, burner.address);
   });
 
-  function accessControlError(account: any, role: string) {
-    return `AccessControl: account ${account.address.toLowerCase()} is missing role ${role}`;
-  }
-
-  function insufficientAllowanceError() {
+  function insufficientAllowanceError(): string {
     return `ERC20: insufficient allowance`;
   }
 
   it('contract is upgradable', async function () {
-    const {yellowContract} = this;
-
-    const v2Factory = await ethers.getContractFactory('YellowTest');
-    const v2Contract = await upgrades.upgradeProxy(yellowContract.address, v2Factory);
+    const v2Factory = await ethers.getContractFactory('TestYellowV2');
+    const v2Contract: Contract = await upgrades.upgradeProxy(YellowContract.address, v2Factory);
     await v2Contract.deployed();
 
-    expect(v2Contract.address).to.equal(yellowContract.address);
+    expect(v2Contract.address).to.equal(YellowContract.address);
     expect(v2Contract.AVAILABLE_AFTER_UPGRADE).to.not.undefined;
+    // TODO: remove eslint disable
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     expect(await v2Contract.AVAILABLE_AFTER_UPGRADE()).to.equal(true);
   });
 
   it('has right admin', async function () {
-    const {owner, user, minter, burner, yellowContract, AdminRole} = this;
-    expect(await yellowContract.hasRole(AdminRole, owner.address)).to.equal(true);
-    expect(await yellowContract.hasRole(AdminRole, user.address)).to.equal(false);
-    expect(await yellowContract.hasRole(AdminRole, minter.address)).to.equal(false);
-    expect(await yellowContract.hasRole(AdminRole, burner.address)).to.equal(false);
+    expect(await YellowContract.hasRole(AdminRole, owner.address)).to.equal(true);
+    expect(await YellowContract.hasRole(AdminRole, user.address)).to.equal(false);
+    expect(await YellowContract.hasRole(AdminRole, minter.address)).to.equal(false);
+    expect(await YellowContract.hasRole(AdminRole, burner.address)).to.equal(false);
   });
 
   it('has right minter', async function () {
-    const {owner, user, minter, burner, yellowContract, MinterRole} = this;
-    expect(await yellowContract.hasRole(MinterRole, owner.address)).to.equal(true);
-    expect(await yellowContract.hasRole(MinterRole, minter.address)).to.equal(true);
-    expect(await yellowContract.hasRole(MinterRole, user.address)).to.equal(false);
-    expect(await yellowContract.hasRole(MinterRole, burner.address)).to.equal(false);
+    expect(await YellowContract.hasRole(MinterRole, owner.address)).to.equal(true);
+    expect(await YellowContract.hasRole(MinterRole, minter.address)).to.equal(true);
+    expect(await YellowContract.hasRole(MinterRole, user.address)).to.equal(false);
+    expect(await YellowContract.hasRole(MinterRole, burner.address)).to.equal(false);
   });
 
   it('only minter can mint', async function () {
-    const {owner, user, minter, someone, yellowContract, MinterRole} = this;
     const amount = ethers.utils.parseEther('100');
 
-    expect(await yellowContract.connect(owner).mint(someone.address, amount)).to.not.be.undefined;
-    expect(await yellowContract.balanceOf(someone.address)).to.equal(amount);
+    expect(await YellowAsOwner.mint(someone.address, amount)).to.not.be.undefined;
+    expect(await YellowContract.balanceOf(someone.address)).to.equal(amount);
 
-    expect(await yellowContract.connect(minter).mint(someone.address, amount)).to.not.be.undefined;
-    expect(await yellowContract.balanceOf(someone.address)).to.equal(amount.mul(2));
+    expect(await YellowAsOwner.mint(someone.address, amount)).to.not.be.undefined;
+    expect(await YellowContract.balanceOf(someone.address)).to.equal(amount.mul(2));
 
-    await expect(yellowContract.connect(user).mint(someone.address, amount)).to.be.revertedWith(
-      accessControlError(user, MinterRole)
+    await expect(YellowAsSomeone.mint(someone.address, amount)).to.be.revertedWith(
+      ACCOUNT_MISSING_ROLE(someone.address, MinterRole),
     );
   });
 
   it('can not mint exceed max total supply', async function () {
-    const {minter, someone, yellowContract, maxTotalSupply} = this;
     const amount = maxTotalSupply.mul('1000');
 
-    await expect(yellowContract.connect(minter).mint(someone.address, amount)).to.be.revertedWith(
-      `ERC20Capped: cap exceeded`
+    await expect(YellowAsMinter.mint(someone.address, amount)).to.be.revertedWith(
+      `ERC20Capped: cap exceeded`,
     );
   });
 
   it('anyone can burn and only burner can burnFrom', async function () {
-    const {owner, user, burner, someone, yellowContract} = this;
     const initialAmount = ethers.utils.parseEther('100');
     const burnAmount = ethers.utils.parseEther('10');
-    expect(await yellowContract.connect(owner).mint(someone.address, initialAmount)).to.not.be
-      .undefined;
-    expect(await yellowContract.connect(owner).mint(burner.address, initialAmount)).to.not.be
-      .undefined;
-    expect(await yellowContract.connect(owner).mint(user.address, initialAmount)).to.not.be
-      .undefined;
+    expect(await YellowAsOwner.mint(someone.address, initialAmount)).to.not.be.undefined;
+    expect(await YellowAsOwner.mint(burner.address, initialAmount)).to.not.be.undefined;
+    expect(await YellowAsOwner.mint(user.address, initialAmount)).to.not.be.undefined;
 
     // burn
-    expect(await yellowContract.connect(user).burn(burnAmount)).to.not.be.undefined;
-    expect(await yellowContract.balanceOf(user.address)).to.equal(initialAmount.sub(burnAmount));
+    expect(await YellowAsUser.burn(burnAmount)).to.not.be.undefined;
+    expect(await YellowContract.balanceOf(user.address)).to.equal(initialAmount.sub(burnAmount));
 
     // burnFrom
-    await expect(
-      yellowContract.connect(someone).burnFrom(user.address, burnAmount)
-    ).to.be.revertedWith(insufficientAllowanceError());
-    expect(await yellowContract.connect(user).approve(someone.address, burnAmount)).to.not.be
-      .undefined;
-    expect(await yellowContract.connect(someone).burnFrom(user.address, burnAmount)).to.not.be
-      .undefined;
-    await expect(
-      yellowContract.connect(someone).burnFrom(user.address, burnAmount)
-    ).to.be.revertedWith(insufficientAllowanceError());
-    expect(await yellowContract.balanceOf(user.address)).to.equal(
-      initialAmount.sub(burnAmount).sub(burnAmount)
+    await expect(YellowAsSomeone.burnFrom(user.address, burnAmount)).to.be.revertedWith(
+      insufficientAllowanceError(),
     );
-    await expect(
-      yellowContract.connect(user).burnFrom(user.address, burnAmount)
-    ).to.be.revertedWith(insufficientAllowanceError());
+    expect(await YellowAsUser.approve(someone.address, burnAmount)).to.not.be.undefined;
+    expect(await YellowAsSomeone.burnFrom(user.address, burnAmount)).to.not.be.undefined;
+    await expect(YellowAsSomeone.burnFrom(user.address, burnAmount)).to.be.revertedWith(
+      insufficientAllowanceError(),
+    );
+    expect(await YellowContract.balanceOf(user.address)).to.equal(
+      initialAmount.sub(burnAmount).sub(burnAmount),
+    );
+    await expect(YellowAsUser.burnFrom(user.address, burnAmount)).to.be.revertedWith(
+      insufficientAllowanceError(),
+    );
   });
 });

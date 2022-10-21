@@ -1,9 +1,10 @@
-import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {utils} from 'ethers';
-import {ParamType} from 'ethers/lib/utils';
-import {ethers} from 'hardhat';
+import { utils } from 'ethers';
+import { ethers } from 'hardhat';
 
-import {signEncoded} from '../../../src/signatures';
+import { signEncoded } from '../../../src/signatures';
+
+import type { ParamType } from 'ethers/lib/utils';
+import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 // keccak256('YELLOW_VAULT_DEPOSIT_ACTION');
 export const DEPOSIT_ACTION = '0xa2d4613c2e2e0782566f63085acedcb19fbd37900464a8316040997ccd6e9fea';
@@ -49,10 +50,12 @@ export async function supplementPayload(pp: PartialPayloadWithAction): Promise<P
 export function addAllocation(
   payload: PartialPayload,
   asset: string,
-  amount: number
+  amount: number,
 ): PartialPayload {
-  const newAlloc: Allocation = {asset, amount};
-  payload.allocations ? payload.allocations.push(newAlloc) : (payload.allocations = [newAlloc]);
+  const newAlloc: Allocation = { asset, amount };
+  payload.allocations.length === 0
+    ? payload.allocations.push(newAlloc)
+    : (payload.allocations = [newAlloc]);
   return payload;
 }
 
@@ -64,17 +67,14 @@ function expireAt(delta = 600_000): number {
   return Date.now() + delta;
 }
 
-export async function generalPayload(
-  destination: string,
-  implAddress: string
-): Promise<PartialPayload> {
+export function generalPayload(destination: string, implAddress: string): PartialPayload {
   return {
     rid: randomRID(),
     expire: expireAt(),
     destination,
     allocations: [],
     implAddress,
-    chainId: 31337, // local hardhat node
+    chainId: 31_337, // local hardhat node
   };
 }
 
@@ -84,31 +84,31 @@ export function encodePayload(payload: Payload): string {
       {
         type: 'tuple',
         components: [
-          {name: 'action', type: 'bytes32'},
-          {name: 'rid', type: 'bytes32'},
-          {name: 'expire', type: 'uint64'},
-          {name: 'destination', type: 'address'},
+          { name: 'action', type: 'bytes32' },
+          { name: 'rid', type: 'bytes32' },
+          { name: 'expire', type: 'uint64' },
+          { name: 'destination', type: 'address' },
           {
             name: 'allocations',
             type: 'tuple[]',
             components: [
-              {name: 'asset', type: 'address'},
-              {name: 'amount', type: 'uint256'},
+              { name: 'asset', type: 'address' },
+              { name: 'amount', type: 'uint256' },
             ],
           } as ParamType,
-          {name: 'implAddress', type: 'address'},
-          {name: 'chainId', type: 'uint256'},
+          { name: 'implAddress', type: 'address' },
+          { name: 'chainId', type: 'uint256' },
         ],
       } as ParamType,
     ],
-    [payload]
+    [payload],
   );
 }
 
 export async function encodeAndSignPayload(
   payload: Payload,
   broker: SignerWithAddress,
-  coSigner: SignerWithAddress
+  coSigner: SignerWithAddress,
 ): Promise<[Payload, string, string]> {
   const encodedPayload = encodePayload(payload);
 

@@ -1,6 +1,6 @@
-import {ethers, upgrades} from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 
-async function main() {
+async function main(): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const contractName = process.env.CONTRACT_FACTORY!;
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

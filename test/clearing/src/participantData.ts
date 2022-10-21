@@ -1,7 +1,7 @@
-import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {BigNumber} from 'ethers';
+import { BigNumber } from 'ethers';
 
-import {YellowClearingBase} from '../../../typechain';
+import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import type { YellowClearingBase } from '../../../typechain';
 
 export enum Status {
   None,
@@ -12,7 +12,12 @@ export enum Status {
   Migrated,
 }
 
-export function MockData(status: Status) {
+export interface ParticipantData {
+  registrationTime: number;
+  status: BigNumber;
+}
+
+export function MockData(status: Status): ParticipantData {
   return {
     registrationTime: Date.now(),
     status: BigNumber.from(status),
@@ -22,7 +27,7 @@ export function MockData(status: Status) {
 export async function setParticipantStatus(
   registry: YellowClearingBase,
   participant: SignerWithAddress,
-  status: Status
-) {
+  status: Status,
+): Promise<void> {
   await registry.setParticipantData(participant.address, MockData(status));
 }

@@ -1,4 +1,4 @@
-// upgradability
+// upgradeability
 export const NEXT_IMPL_SET = 'NextImplementationSet';
 export const UPGRADED = 'Upgraded';
 export const ROLE_GRANTED = 'RoleGranted';
