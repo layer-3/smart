@@ -1,7 +1,7 @@
 import { isAddress } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 
-import type {VaultImplV1} from '../../typechain';
+import type { VaultImplV1 } from '../../typechain';
 
 async function main(): Promise<void> {
   const provider = ethers.provider;
@@ -46,7 +46,9 @@ async function main(): Promise<void> {
   console.log(`Renounced 'DEFAULT_ADMIN_ROLE' from gnosis (${deployer.address})`);
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exitCode = 1;
-});
+}

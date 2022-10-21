@@ -1,7 +1,6 @@
-import {expect} from 'chai';
-import {Wallet} from 'ethers';
-import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {ethers} from 'hardhat';
+import { expect } from 'chai';
+import { Wallet } from 'ethers';
+import { ethers } from 'hardhat';
 
 import TESTVaultUpgradability1Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradeability1.sol/TESTVaultUpgradeability1.json';
 import TESTVaultUpgradability2Artifact from '../../artifacts/contracts/vault/test/TESTVaultUpgradeability2.sol/TESTVaultUpgradeability2.json';
@@ -18,7 +17,9 @@ import {
   NOT_ADMIN,
   NOT_MAINTAINER,
 } from '../../src/revert-reasons';
-import {NEXT_IMPL_SET, ROLE_GRANTED, UPGRADED} from '../../src/event-names';
+import { NEXT_IMPL_SET, ROLE_GRANTED, UPGRADED } from '../../src/event-names';
+import { connect, connectGroup } from '../../src/contracts';
+
 import type {
   TESTVaultUpgradeability1,
   TESTVaultUpgradeability2,
@@ -26,7 +27,7 @@ import type {
   VaultImplV1,
   VaultProxy,
 } from '../../typechain';
-import {connect, connectGroup} from '../../src/contracts';
+import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const AddressZero = ethers.constants.AddressZero;
 const ADM_ROLE = ethers.constants.HashZero;

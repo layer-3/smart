@@ -1,6 +1,4 @@
-import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import type {Signer} from 'ethers';
-import {ethers} from 'hardhat';
+import { ethers } from 'hardhat';
 
 import { signSelf } from '../src/signatures';
 
@@ -27,7 +25,9 @@ async function main(): Promise<void> {
   console.log(await signSelf(signer));
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exitCode = 1;
-});
+}

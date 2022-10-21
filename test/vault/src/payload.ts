@@ -1,7 +1,5 @@
-import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {utils} from 'ethers';
-import type {ParamType} from 'ethers/lib/utils';
-import {ethers} from 'hardhat';
+import { utils } from 'ethers';
+import { ethers } from 'hardhat';
 
 import { signEncoded } from '../../../src/signatures';
 
@@ -54,7 +52,7 @@ export function addAllocation(
   asset: string,
   amount: number,
 ): PartialPayload {
-  const newAlloc: Allocation = {asset, amount};
+  const newAlloc: Allocation = { asset, amount };
   payload.allocations.length === 0
     ? payload.allocations.push(newAlloc)
     : (payload.allocations = [newAlloc]);

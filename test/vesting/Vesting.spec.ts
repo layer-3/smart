@@ -1,12 +1,12 @@
-import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {expect} from 'chai';
-import {constants, ContractFactory, BigNumber} from 'ethers';
-import {ethers, upgrades} from 'hardhat';
+import { expect } from 'chai';
+import { BigNumber, ContractFactory, constants } from 'ethers';
+import { ethers, upgrades } from 'hardhat';
 
-import type {Vesting, VestingERC20, Vesting__factory} from '../../typechain';
+import { deployVesting } from './src/deploy';
+import { DAY, VESTING_PERIOD_DAYS, getWillEnd, getWillStart } from './src/time';
 
-import {deployVesting} from './src/deploy';
-import {DAY, getWillEnd, getWillStart, VESTING_PERIOD_DAYS} from './src/time';
+import type { Vesting, VestingERC20, Vesting__factory } from '../../typechain';
+import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 describe('Vesting Contract', function () {
   // need to define for `before` hooks to work
@@ -239,13 +239,17 @@ describe('Vesting Contract', function () {
       });
 
       it('locked amount after adding investor is correct', async function () {
-        const [, , tokens] = await VestingContract.getInvestorData(user.address);
+        const investorData = await VestingContract.getInvestorData(user.address);
+        const tokens = investorData[2];
+
         expect(tokens.toNumber()).to.be.equal(tokenAmount);
       });
 
       it('investor is not present after their removal', async function () {
         await VestingContract.removeInvestor(user.address);
-        const [, , tokens] = await VestingContract.getInvestorData(user.address);
+        const investorData = await VestingContract.getInvestorData(user.address);
+        const tokens = investorData[2];
+
         expect(tokens.toNumber()).to.be.equal(0);
       });
 
@@ -254,14 +258,15 @@ describe('Vesting Contract', function () {
         const investorData = await VestingContract.getInvestorData(user.address);
         const tokensBefore = investorData[2];
 
-        const [, , tokensBefore] = await VestingContract.getInvestorData(user.address);
         // precondition
         expect(tokensBefore.toNumber()).to.be.equal(tokenAmount);
 
         const newTokenAmount = tokenAmount + 10;
         await VestingContract.addInvestor(user.address, newTokenAmount, 0);
 
-        const [, , tokensAfter] = await VestingContract.getInvestorData(user.address);
+        const overwrittenInvestorData = await VestingContract.getInvestorData(user.address);
+        const tokensAfter = overwrittenInvestorData[2];
+
         expect(tokensAfter.toNumber()).to.be.equal(newTokenAmount);
       });
 
@@ -462,7 +467,7 @@ describe('Vesting Contract', function () {
       // 1000 = 10.00%
       const iuPercent = 1250;
       // 10000 = 100.00%
-      const baseRate = 10000;
+      const baseRate = 10_000;
 
       afterEach(async function () {
         const balance = await Token.balanceOf(user.address);
@@ -525,7 +530,7 @@ describe('Vesting Contract', function () {
       // 1000 = 10.00%
       const iuPercent = 2000;
       // 10000 = 100.00%
-      const baseRate = 10000;
+      const baseRate = 10_000;
 
       const tokenAmount = 1000;
       const initialUnlockTockens = (tokenAmount * iuPercent) / baseRate;

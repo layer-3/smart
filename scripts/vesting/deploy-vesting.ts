@@ -26,7 +26,9 @@ async function main(): Promise<void> {
   console.log(`${vestingName} deployed to:`, vestingContract.address);
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exitCode = 1;
-});
+}

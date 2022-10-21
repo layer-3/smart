@@ -1,5 +1,4 @@
-import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {utils, Signer} from 'ethers';
+import { Signer, utils } from 'ethers';
 
 import { signEncoded } from '../../../src/signatures';
 

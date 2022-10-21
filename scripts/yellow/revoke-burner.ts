@@ -1,8 +1,8 @@
-import {ethers} from 'hardhat';
+import { ethers } from 'hardhat';
 
-import type {Yellow} from '../../typechain';
+import type { Yellow } from '../../typechain';
 
-async function main() {
+async function main(): Promise<void> {
   const yellowAddress = process.env.YELLOW_ADDRESS ?? undefined;
   const adminPrivateKey = process.env.ADMIN_PRIVATE_KEY ?? undefined;
   const account = process.env.ACCOUNT ?? undefined;
@@ -30,7 +30,9 @@ async function main() {
   console.log(`BURNER_ROLE revoked from user with address ${account}'`);
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exitCode = 1;
-});
+}

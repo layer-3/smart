@@ -1,7 +1,7 @@
-import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {BigNumber} from 'ethers';
+import { BigNumber } from 'ethers';
 
-import type {YellowClearingBase} from '../../../typechain';
+import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import type { YellowClearingBase } from '../../../typechain';
 
 export enum Status {
   None,
@@ -28,6 +28,6 @@ export async function setParticipantStatus(
   registry: YellowClearingBase,
   participant: SignerWithAddress,
   status: Status,
-) {
+): Promise<void> {
   await registry.setParticipantData(participant.address, MockData(status));
 }

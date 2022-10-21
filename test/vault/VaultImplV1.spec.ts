@@ -1,10 +1,8 @@
-import {expect} from 'chai';
-import {providers, utils} from 'ethers';
-import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
-import {ethers} from 'hardhat';
+import { expect } from 'chai';
+import { providers, utils } from 'ethers';
+import { ethers } from 'hardhat';
 
 import VaultImplArtifact from '../../artifacts/contracts/vault/VaultImplV1.sol/VaultImplV1.json';
-import type {VaultImplV1 as VaultImplT, TESTVaultProxy, TestERC20} from '../../typechain';
 import {
   ACCOUNT_MISSING_ROLE,
   AMOUNT_ZERO,
@@ -25,7 +23,7 @@ import {
   DEPOSITED,
   WITHDRAWN,
 } from '../../src/event-names';
-import {connect, connectGroup} from '../../src/contracts';
+import { connect, connectGroup } from '../../src/contracts';
 
 import { depositParams, setAddressParams, withdrawParams } from './src/transactions';
 import { PartialPayload, addAllocation, generalPayload } from './src/payload';
@@ -107,8 +105,8 @@ describe('Vault implementation V1', () => {
         caller: SignerWithAddress,
         brokerAddress: string,
         coSignerAddress: string,
-        reason: string | undefined,
-      ) {
+        reason?: string,
+      ): Promise<void> {
         if (reason) {
           await expect(
             connect(VaultImpl, caller).setup(brokerAddress, coSignerAddress),
@@ -247,7 +245,7 @@ describe('Vault implementation V1', () => {
 
         const tx = await VaultImplAsSomeone.deposit(
           ...(await depositParams(payload, broker1, coSigner1)),
-          {value: AMOUNT},
+          { value: AMOUNT },
         );
 
         const receipt = await tx.wait();
@@ -350,7 +348,7 @@ describe('Vault implementation V1', () => {
 
         const usedParams = await depositParams(payload, broker1, coSigner1);
 
-        await VaultImplAsSomeone.deposit(...usedParams, {value: AMOUNT});
+        await VaultImplAsSomeone.deposit(...usedParams, { value: AMOUNT });
 
         let otherPayload = generalPayload(someone.address, VaultImplAddress);
         otherPayload = addAllocation(otherPayload, AddressZero, AMOUNT.toNumber());
@@ -435,7 +433,7 @@ describe('Vault implementation V1', () => {
 
         const tx = await VaultImplAsSomeone.deposit(
           ...(await depositParams(payload, broker1, coSigner1)),
-          {value: AMOUNT},
+          { value: AMOUNT },
         );
 
         const receipt = await tx.wait();
@@ -464,7 +462,7 @@ describe('Vault implementation V1', () => {
 
         await VaultImplAsSomeone.deposit(
           ...(await depositParams(depositPayload, broker1, coSigner1)),
-          {value: AMOUNT},
+          { value: AMOUNT },
         );
       });
 
