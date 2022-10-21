@@ -1,18 +1,18 @@
-node_modules
+node_modules/
 .env
-coverage
+coverage/
 coverage.json
-typechain
+typechain/
 
 # Misc
 .DS_Store
 
 # Hardhat files
-/abi
-cache
-/artifacts
+/abi/
+cache/
+/artifacts/
 /.openzeppelin/unknown-*.json
-/hardhat-deployments
+/hardhat-deployments/
 
 # Output of kaidump command
 kaigara-data.yaml
