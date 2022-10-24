@@ -34,8 +34,8 @@ abstract contract YellowClearingBase is AccessControl {
 		uint64 registrationTime;
 	}
 
-	// Participant interaction payload
-	struct InteractionPayload {
+	// Participant identity payload
+	struct IdentityPayload {
 		YellowClearingBase YellowClearing;
 		address participant;
 		uint64 nonce;
@@ -177,15 +177,15 @@ abstract contract YellowClearingBase is AccessControl {
 	}
 
 	/**
-	 * @notice Return interaction payload structure for a supplied participant. Used to ease interaction with this contract.
-	 * @dev Return interaction payload structure for a supplied participant. Used to ease interaction with this contract.
-	 * @param participant Address of participant to get interaction payload for.
-	 * @return InteractionPayload Interaction payload structure for a supplied participant.
+	 * @notice Return identity payload structure for a supplied participant. Used to ease interaction with this contract.
+	 * @dev Return identity payload structure for a supplied participant. Used to ease interaction with this contract.
+	 * @param participant Address of participant to get identity payload for.
+	 * @return IdentityPayload Identity payload structure for a supplied participant.
 	 */
-	function getInteractionPayload(address participant)
+	function getIdentityPayload(address participant)
 		external
 		view
-		returns (InteractionPayload memory)
+		returns (IdentityPayload memory)
 	{
 		uint64 nonce;
 
@@ -196,7 +196,7 @@ abstract contract YellowClearingBase is AccessControl {
 		}
 
 		return
-			InteractionPayload({
+			IdentityPayload({
 				YellowClearing: YellowClearingBase(_self),
 				participant: participant,
 				nonce: nonce
@@ -211,19 +211,19 @@ abstract contract YellowClearingBase is AccessControl {
 	 * @notice Register participant by adding it to the registry with Pending status. Emit `ParticipantRegistered` event.
 	 * @dev Participant must not be present in this or any previous or subsequent implementations.
 	 * @param participant Virtual (no address, only public key exist) address of participant to add.
-	 * @param signature Participant interaction payload signed by this same participant.
+	 * @param signature Participant identity payload signed by this same participant.
 	 */
 	function registerParticipant(address participant, bytes calldata signature) external {
 		requireParticipantNotPresentRecursive(participant);
 
-		InteractionPayload memory interactionPayload = InteractionPayload({
+		IdentityPayload memory identityPayload = IdentityPayload({
 			YellowClearing: YellowClearingBase(_self),
 			participant: participant,
 			nonce: 0
 		});
 
 		require(
-			_recoverInteractionSigner(interactionPayload, signature) == participant,
+			_recoverIdentitySigner(identityPayload, signature) == participant,
 			'Invalid signer'
 		);
 
@@ -326,21 +326,21 @@ abstract contract YellowClearingBase is AccessControl {
 	 * @notice Migrate participant to the newest implementation present in upgrades chain. Emit `ParticipantMigratedFrom` and `ParticipantMigratedTo` events.
 	 * @dev NextImplementation must have been set. Participant must not have been migrated.
 	 * @param participant Address of participant to migrate.
-	 * @param signature Participant interaction payload signed by that participant.
+	 * @param signature Participant identity payload signed by that participant.
 	 */
 	function migrateParticipant(address participant, bytes calldata signature) external {
 		require(address(_nextImplementation) != address(0), 'Next implementation is not set');
 
 		_requireParticipantPresent(participant);
 
-		InteractionPayload memory interactionPayload = InteractionPayload({
+		IdentityPayload memory identityPayload = IdentityPayload({
 			YellowClearing: YellowClearingBase(_self),
 			participant: participant,
 			nonce: _participantData[participant].nonce + 1
 		});
 
 		require(
-			_recoverInteractionSigner(interactionPayload, signature) == participant,
+			_recoverIdentitySigner(identityPayload, signature) == participant,
 			'Invalid signer'
 		);
 
@@ -407,18 +407,18 @@ abstract contract YellowClearingBase is AccessControl {
 	}
 
 	/**
-	 * @notice Recover signer of interaction payload.
-	 * @dev Recover signer of interaction payload.
-	 * @param interactionPayload Interaction payload that has been signed.
-	 * @param signature Signed interaction payload.
+	 * @notice Recover signer of identity payload.
+	 * @dev Recover signer of identity payload.
+	 * @param identityPayload Identity payload that has been signed.
+	 * @param signature Signed identity payload.
 	 * @return address Address of the signer.
 	 */
-	function _recoverInteractionSigner(
-		InteractionPayload memory interactionPayload,
-		bytes memory signature
-	) internal pure returns (address) {
-		return
-			keccak256(abi.encode(interactionPayload)).toEthSignedMessageHash().recover(signature);
+	function _recoverIdentitySigner(IdentityPayload memory identityPayload, bytes memory signature)
+		internal
+		pure
+		returns (address)
+	{
+		return keccak256(abi.encode(identityPayload)).toEthSignedMessageHash().recover(signature);
 	}
 
 	/**

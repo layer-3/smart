@@ -30,7 +30,7 @@ import { randomSignerWithAddress } from '../../src/signers';
 import { deployAndLinkNextRegistry, deployNextRegistry, deployRegistry } from './src/deploy';
 import { MockData, Status, setParticipantStatus } from './src/participantData';
 import { migrateParams, registerParams, registerParamsFromPayload } from './src/transactions';
-import { getInteractionPayload, signInteractionPayload } from './src/interactionPayload';
+import { getIdentityPayload, signIdentityPayload } from './src/identityPayload';
 
 import type {
   TESTYellowClearingV1,
@@ -393,9 +393,9 @@ describe('Network Registry', () => {
     });
   });
 
-  describe('getInteractionPayload', () => {
+  describe('getIdentityPayload', () => {
     it('Payload is correct for present participant', async () => {
-      const payload = await RegistryAsSomeone.getInteractionPayload(activePartipant.address);
+      const payload = await RegistryAsSomeone.getIdentityPayload(activePartipant.address);
 
       expect(payload.YellowClearing).to.equal(RegistryV1.address);
       expect(payload.participant).to.equal(activePartipant.address);
@@ -405,7 +405,7 @@ describe('Network Registry', () => {
     });
 
     it('Payload is correct for absent participant', async () => {
-      const payload = await RegistryAsSomeone.getInteractionPayload(notPresentPartipant.address);
+      const payload = await RegistryAsSomeone.getIdentityPayload(notPresentPartipant.address);
 
       expect(payload.YellowClearing).to.equal(RegistryV1.address);
       expect(payload.participant).to.equal(notPresentPartipant.address);
@@ -430,20 +430,20 @@ describe('Network Registry', () => {
     });
 
     it('Revert on signer not participant', async () => {
-      const IP = await getInteractionPayload(RegistryV1, virtualParticipant);
+      const IP = await getIdentityPayload(RegistryV1, virtualParticipant);
 
       await expect(
         RegistryAsSomeone.registerParticipant(
           virtualParticipant.address,
-          await signInteractionPayload(IP, someone),
+          await signIdentityPayload(IP, someone),
         ),
       ).to.be.revertedWith(INVALID_SIGNER);
     });
 
     it('Revert on wrong signed data', async () => {
-      const correctInteractionPayload = await getInteractionPayload(RegistryV1, virtualParticipant);
+      const correctIdentityPayload = await getIdentityPayload(RegistryV1, virtualParticipant);
 
-      const wrongContractAddressIP = correctInteractionPayload;
+      const wrongContractAddressIP = correctIdentityPayload;
       wrongContractAddressIP.YellowClearing = someone.address;
       await expect(
         RegistryAsSomeone.registerParticipant(
@@ -451,7 +451,7 @@ describe('Network Registry', () => {
         ),
       ).to.be.revertedWith(INVALID_SIGNER);
 
-      const wrongParticipantAddressIP = correctInteractionPayload;
+      const wrongParticipantAddressIP = correctIdentityPayload;
       wrongParticipantAddressIP.participant = someone.address;
       await expect(
         RegistryAsSomeone.registerParticipant(
@@ -459,7 +459,7 @@ describe('Network Registry', () => {
         ),
       ).to.be.revertedWith(INVALID_SIGNER);
 
-      const wrongNonceIP = correctInteractionPayload;
+      const wrongNonceIP = correctIdentityPayload;
       wrongNonceIP.nonce += 10;
       await expect(
         RegistryAsSomeone.registerParticipant(
@@ -479,14 +479,14 @@ describe('Network Registry', () => {
     it('Revert if participant is present in prev impl', async () => {
       const nextRegistry = await deployAndLinkNextRegistry(RegistryV1);
 
-      const interactionPayload = await getInteractionPayload(RegistryV1, virtualParticipant);
-      interactionPayload.YellowClearing = nextRegistry.address;
+      const identityPayload = await getIdentityPayload(RegistryV1, virtualParticipant);
+      identityPayload.YellowClearing = nextRegistry.address;
 
       await expect(
         nextRegistry
           .connect(someone)
           .registerParticipant(
-            ...(await registerParamsFromPayload(activePartipant, interactionPayload)),
+            ...(await registerParamsFromPayload(activePartipant, identityPayload)),
           ),
       ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
     });
@@ -497,12 +497,12 @@ describe('Network Registry', () => {
       const v2ActiveParticipant = await randomSignerWithAddress();
       await setParticipantStatus(nextRegistry, v2ActiveParticipant, Status.Active);
 
-      const interactionPayload = await getInteractionPayload(nextRegistry, v2ActiveParticipant);
-      interactionPayload.YellowClearing = RegistryV1.address;
+      const identityPayload = await getIdentityPayload(nextRegistry, v2ActiveParticipant);
+      identityPayload.YellowClearing = RegistryV1.address;
 
       await expect(
         RegistryAsSomeone.registerParticipant(
-          ...(await registerParamsFromPayload(v2ActiveParticipant, interactionPayload)),
+          ...(await registerParamsFromPayload(v2ActiveParticipant, identityPayload)),
         ),
       ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
     });

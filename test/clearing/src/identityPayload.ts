@@ -6,23 +6,23 @@ import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import type { BigNumber } from 'ethers';
 import type { YellowClearingBase } from '../../../typechain';
 
-export interface InteractionPayloadBN {
+export interface identityPayloadBN {
   YellowClearing: string;
   participant: string;
   nonce: BigNumber;
 }
 
-export interface InteractionPayload {
+export interface identityPayload {
   YellowClearing: string;
   participant: string;
   nonce: number;
 }
 
-export async function getInteractionPayload(
+export async function getIdentityPayload(
   registry: YellowClearingBase,
   participant: SignerWithAddress,
-): Promise<InteractionPayload> {
-  const IPBN = await registry.getInteractionPayload(participant.address);
+): Promise<identityPayload> {
+  const IPBN = await registry.getIdentityPayload(participant.address);
 
   return {
     YellowClearing: IPBN.YellowClearing,
@@ -31,8 +31,8 @@ export async function getInteractionPayload(
   };
 }
 
-export async function signInteractionPayload(
-  interactionPayload: InteractionPayload,
+export async function signIdentityPayload(
+  identityPayload: identityPayload,
   signer: SignerWithAddress,
 ): Promise<string> {
   const encodedIP = defaultAbiCoder.encode(
@@ -46,18 +46,18 @@ export async function signInteractionPayload(
         ],
       } as ParamType,
     ],
-    [interactionPayload],
+    [identityPayload],
   );
   return await signEncoded(signer, encodedIP);
 }
 
-type InteractionParams = [string, string];
+type IdentityParams = [string, string];
 
-export async function getAndSignInteractionPayload(
+export async function getAndSignIdentityPayload(
   registry: YellowClearingBase,
   participant: SignerWithAddress,
-): Promise<InteractionParams> {
-  const interactionPayload = await getInteractionPayload(registry, participant);
-  const sig = await signInteractionPayload(interactionPayload, participant);
+): Promise<IdentityParams> {
+  const identityPayload = await getIdentityPayload(registry, participant);
+  const sig = await signIdentityPayload(identityPayload, participant);
   return [participant.address, sig];
 }

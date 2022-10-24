@@ -1,8 +1,4 @@
-import {
-  InteractionPayload,
-  getAndSignInteractionPayload,
-  signInteractionPayload,
-} from './interactionPayload';
+import { getAndSignIdentityPayload, identityPayload, signIdentityPayload } from './identityPayload';
 
 import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import type { YellowClearingBase } from '../../../typechain';
@@ -13,14 +9,14 @@ export async function registerParams(
   registry: YellowClearingBase,
   participant: SignerWithAddress,
 ): Promise<RegisterParams> {
-  return await getAndSignInteractionPayload(registry, participant);
+  return await getAndSignIdentityPayload(registry, participant);
 }
 
 export async function registerParamsFromPayload(
   participant: SignerWithAddress,
-  interactionPayload: InteractionPayload,
+  identityPayload: identityPayload,
 ): Promise<RegisterParams> {
-  return [participant.address, await signInteractionPayload(interactionPayload, participant)];
+  return [participant.address, await signIdentityPayload(identityPayload, participant)];
 }
 
 export type MigrateParams = [string, string];
@@ -29,5 +25,5 @@ export async function migrateParams(
   registry: YellowClearingBase,
   participant: SignerWithAddress,
 ): Promise<MigrateParams> {
-  return await getAndSignInteractionPayload(registry, participant);
+  return await getAndSignIdentityPayload(registry, participant);
 }
