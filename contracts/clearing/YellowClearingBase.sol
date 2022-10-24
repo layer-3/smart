@@ -68,8 +68,8 @@ abstract contract YellowClearingBase is AccessControl {
 
 		_prevImplementation = previousImplementation;
 
-		if (address(previousImplementation) != address(0)) {
-			_grantRole(PREVIOUS_IMPLEMENTATION_ROLE, address(previousImplementation));
+		if (address(_prevImplementation) != address(0)) {
+			_grantRole(PREVIOUS_IMPLEMENTATION_ROLE, address(_prevImplementation));
 		}
 	}
 
