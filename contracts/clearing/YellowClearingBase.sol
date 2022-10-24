@@ -182,11 +182,7 @@ abstract contract YellowClearingBase is AccessControl {
 	 * @param participant Address of participant to get identity payload for.
 	 * @return IdentityPayload Identity payload structure for a supplied participant.
 	 */
-	function getIdentityPayload(address participant)
-		external
-		view
-		returns (IdentityPayload memory)
-	{
+	function getIdentityPayload(address participant) public view returns (IdentityPayload memory) {
 		uint64 nonce;
 
 		if (!hasParticipant(participant)) {
@@ -216,11 +212,7 @@ abstract contract YellowClearingBase is AccessControl {
 	function registerParticipant(address participant, bytes calldata signature) external {
 		requireParticipantNotPresentRecursive(participant);
 
-		IdentityPayload memory identityPayload = IdentityPayload({
-			YellowClearing: YellowClearingBase(_self),
-			participant: participant,
-			nonce: 0
-		});
+		IdentityPayload memory identityPayload = getIdentityPayload(participant);
 
 		require(
 			_recoverIdentitySigner(identityPayload, signature) == participant,
@@ -229,7 +221,7 @@ abstract contract YellowClearingBase is AccessControl {
 
 		_participantData[participant] = ParticipantData({
 			status: ParticipantStatus.Pending,
-			nonce: 0,
+			nonce: identityPayload.nonce,
 			registrationTime: uint64(block.timestamp)
 		});
 
@@ -333,11 +325,7 @@ abstract contract YellowClearingBase is AccessControl {
 
 		_requireParticipantPresent(participant);
 
-		IdentityPayload memory identityPayload = IdentityPayload({
-			YellowClearing: YellowClearingBase(_self),
-			participant: participant,
-			nonce: _participantData[participant].nonce + 1
-		});
+		IdentityPayload memory identityPayload = getIdentityPayload(participant);
 
 		require(
 			_recoverIdentitySigner(identityPayload, signature) == participant,
@@ -348,17 +336,18 @@ abstract contract YellowClearingBase is AccessControl {
 		ParticipantData memory currentData = _participantData[participant];
 		require(currentData.status != ParticipantStatus.Migrated, 'Participant already migrated');
 
-		// Update nonce to resemble migration
-		currentData.nonce++;
+		// Update data to resemble migration
+		ParticipantData memory updatedData = currentData;
+		updatedData.nonce = identityPayload.nonce;
 
 		// Migrate data, emit ParticipantMigratedTo
-		_nextImplementation.migrateParticipantData(participant, currentData);
+		_nextImplementation.migrateParticipantData(participant, updatedData);
 
 		// Mark participant as migrated on this implementation
 		_participantData[participant] = ParticipantData({
 			status: ParticipantStatus.Migrated,
-			nonce: currentData.nonce,
-			registrationTime: currentData.registrationTime
+			nonce: updatedData.nonce,
+			registrationTime: updatedData.registrationTime
 		});
 
 		// Emit event
