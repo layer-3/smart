@@ -29,8 +29,16 @@ abstract contract YellowClearingBase is AccessControl {
 
 	// Participant data
 	struct ParticipantData {
-		uint64 registrationTime;
 		ParticipantStatus status;
+		uint64 nonce;
+		uint64 registrationTime;
+	}
+
+	// Participant identity payload
+	struct IdentityPayload {
+		YellowClearingBase YellowClearing;
+		address participant;
+		uint64 nonce;
 	}
 
 	// Roles
@@ -43,7 +51,8 @@ abstract contract YellowClearingBase is AccessControl {
 	// Participant data mapping
 	mapping(address => ParticipantData) internal _participantData;
 
-	// Next implementation
+	// Prev and next implementations
+	YellowClearingBase private immutable _prevImplementation;
 	YellowClearingBase private _nextImplementation;
 
 	// Address of this contract
@@ -57,8 +66,10 @@ abstract contract YellowClearingBase is AccessControl {
 		_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 		_grantRole(REGISTRY_MAINTAINER_ROLE, msg.sender);
 
-		if (address(previousImplementation) != address(0)) {
-			_grantRole(PREVIOUS_IMPLEMENTATION_ROLE, address(previousImplementation));
+		_prevImplementation = previousImplementation;
+
+		if (address(_prevImplementation) != address(0)) {
+			_grantRole(PREVIOUS_IMPLEMENTATION_ROLE, address(_prevImplementation));
 		}
 	}
 
@@ -114,16 +125,39 @@ abstract contract YellowClearingBase is AccessControl {
 	}
 
 	/**
-	 * @notice Recursively check that participant is not present in this registry and any subsequent.
-	 * @dev Recursively check that participant is not present in this registry and all subsequent.
+	 * @notice Recursively check that participant is not present in this registry and all previous ones.
+	 * @dev Recursively check that participant is not present in this registry and all previous ones.
 	 * @param participant Address of participant to check.
 	 */
-	function requireParticipantNotPresent(address participant) public view {
-		if (address(_nextImplementation) != address(0)) {
-			_nextImplementation.requireParticipantNotPresent(participant);
+	function requireParticipantNotPresentBackwards(address participant) public view {
+		if (address(_prevImplementation) != address(0)) {
+			_prevImplementation.requireParticipantNotPresentBackwards(participant);
 		}
 
-		require(!hasParticipant(participant), 'Participant already registered');
+		_requireParticipantNotPresent(participant);
+	}
+
+	/**
+	 * @notice Recursively check that participant is not present in this registry and all subsequent ones.
+	 * @dev Recursively check that participant is not present in this registry and all subsequent ones.
+	 * @param participant Address of participant to check.
+	 */
+	function requireParticipantNotPresentForwards(address participant) public view {
+		if (address(_nextImplementation) != address(0)) {
+			_nextImplementation.requireParticipantNotPresentForwards(participant);
+		}
+
+		_requireParticipantNotPresent(participant);
+	}
+
+	/**
+	 * @notice Recursively check that participant is not present in this registry and all previous and subsequent ones.
+	 * @dev Recursively check that participant is not present in this registry and all previous and subsequent ones.
+	 * @param participant Address of participant to check.
+	 */
+	function requireParticipantNotPresentRecursive(address participant) public view {
+		requireParticipantNotPresentBackwards(participant);
+		requireParticipantNotPresentForwards(participant);
 	}
 
 	/**
@@ -137,9 +171,32 @@ abstract contract YellowClearingBase is AccessControl {
 		view
 		returns (ParticipantData memory)
 	{
-		require(hasParticipant(participant), 'Participant does not exist');
+		_requireParticipantPresent(participant);
 
 		return _participantData[participant];
+	}
+
+	/**
+	 * @notice Return identity payload structure for a supplied participant. Used to ease interaction with this contract.
+	 * @dev Return identity payload structure for a supplied participant. Used to ease interaction with this contract.
+	 * @param participant Address of participant to get identity payload for.
+	 * @return IdentityPayload Identity payload structure for a supplied participant.
+	 */
+	function getIdentityPayload(address participant) public view returns (IdentityPayload memory) {
+		uint64 nonce;
+
+		if (!hasParticipant(participant)) {
+			nonce = 0;
+		} else {
+			nonce = _participantData[participant].nonce + 1;
+		}
+
+		return
+			IdentityPayload({
+				YellowClearing: YellowClearingBase(_self),
+				participant: participant,
+				nonce: nonce
+			});
 	}
 
 	// ======================
@@ -148,18 +205,24 @@ abstract contract YellowClearingBase is AccessControl {
 
 	/**
 	 * @notice Register participant by adding it to the registry with Pending status. Emit `ParticipantRegistered` event.
-	 * @dev Participant must not be present in this or any subsequent implementations.
+	 * @dev Participant must not be present in this or any previous or subsequent implementations.
 	 * @param participant Virtual (no address, only public key exist) address of participant to add.
-	 * @param signature Participant virtual address signer by this same participant.
+	 * @param signature Participant identity payload signed by this same participant.
 	 */
 	function registerParticipant(address participant, bytes calldata signature) external {
-		requireParticipantNotPresent(participant);
+		requireParticipantNotPresentRecursive(participant);
 
-		require(_recoverAddressSigner(participant, signature) == participant, 'Invalid signer');
+		IdentityPayload memory identityPayload = getIdentityPayload(participant);
+
+		require(
+			_recoverIdentitySigner(identityPayload, signature) == participant,
+			'Invalid signer'
+		);
 
 		_participantData[participant] = ParticipantData({
-			registrationTime: uint64(block.timestamp),
-			status: ParticipantStatus.Pending
+			status: ParticipantStatus.Pending,
+			nonce: identityPayload.nonce,
+			registrationTime: uint64(block.timestamp)
 		});
 
 		emit ParticipantRegistered(participant);
@@ -172,7 +235,7 @@ abstract contract YellowClearingBase is AccessControl {
 	 * @param participant Address of participant to validate.
 	 */
 	function validateParticipant(address participant) external onlyRole(REGISTRY_VALIDATOR_ROLE) {
-		require(hasParticipant(participant), 'Participant does not exist');
+		_requireParticipantPresent(participant);
 		require(
 			_participantData[participant].status == ParticipantStatus.Pending,
 			'Invalid status'
@@ -191,7 +254,7 @@ abstract contract YellowClearingBase is AccessControl {
 	 * @param participant Address of participant to suspend.
 	 */
 	function suspendParticipant(address participant) external onlyRole(AUDITOR_ROLE) {
-		require(hasParticipant(participant), 'Participant does not exist');
+		_requireParticipantPresent(participant);
 
 		ParticipantStatus status = _participantData[participant].status;
 		require(
@@ -213,7 +276,7 @@ abstract contract YellowClearingBase is AccessControl {
 	 * @param participant Address of participant to reinstate.
 	 */
 	function reinstateParticipant(address participant) external onlyRole(AUDITOR_ROLE) {
-		require(hasParticipant(participant), 'Participant does not exist');
+		_requireParticipantPresent(participant);
 		require(
 			_participantData[participant].status == ParticipantStatus.Suspended,
 			'Invalid status'
@@ -255,26 +318,36 @@ abstract contract YellowClearingBase is AccessControl {
 	 * @notice Migrate participant to the newest implementation present in upgrades chain. Emit `ParticipantMigratedFrom` and `ParticipantMigratedTo` events.
 	 * @dev NextImplementation must have been set. Participant must not have been migrated.
 	 * @param participant Address of participant to migrate.
-	 * @param signature Participant address signed by that participant.
+	 * @param signature Participant identity payload signed by that participant.
 	 */
 	function migrateParticipant(address participant, bytes calldata signature) external {
 		require(address(_nextImplementation) != address(0), 'Next implementation is not set');
 
-		require(hasParticipant(participant), 'Participant does not exist');
+		_requireParticipantPresent(participant);
 
-		require(_recoverAddressSigner(participant, signature) == participant, 'Invalid signer');
+		IdentityPayload memory identityPayload = getIdentityPayload(participant);
+
+		require(
+			_recoverIdentitySigner(identityPayload, signature) == participant,
+			'Invalid signer'
+		);
 
 		// Get previous participant data
 		ParticipantData memory currentData = _participantData[participant];
 		require(currentData.status != ParticipantStatus.Migrated, 'Participant already migrated');
 
+		// Update data to resemble migration
+		ParticipantData memory updatedData = currentData;
+		updatedData.nonce = identityPayload.nonce;
+
 		// Migrate data, emit ParticipantMigratedTo
-		_nextImplementation.migrateParticipantData(participant, currentData);
+		_nextImplementation.migrateParticipantData(participant, updatedData);
 
 		// Mark participant as migrated on this implementation
 		_participantData[participant] = ParticipantData({
-			registrationTime: currentData.registrationTime,
-			status: ParticipantStatus.Migrated
+			status: ParticipantStatus.Migrated,
+			nonce: updatedData.nonce,
+			registrationTime: updatedData.registrationTime
 		});
 
 		// Emit event
@@ -304,20 +377,37 @@ abstract contract YellowClearingBase is AccessControl {
 	// internal functions
 	// ======================
 
-	// Recover signer from `signature` provided `_address` is signed.
 	/**
-	 * @notice Recover signer of the address.
-	 * @dev Recover signer of the address.
-	 * @param _address Address to be signed.
-	 * @param signature Signed address.
+	 * @notice Require participant it present in this registry.
+	 * @dev Require participant it present in this registry.
+	 * @param participant Address of participant to check.
+	 */
+	function _requireParticipantPresent(address participant) internal view {
+		require(hasParticipant(participant), 'Participant does not exist');
+	}
+
+	/**
+	 * @notice Require participant it not present in this registry.
+	 * @dev Require participant it not present in this registry.
+	 * @param participant Address of participant to check.
+	 */
+	function _requireParticipantNotPresent(address participant) internal view {
+		require(!hasParticipant(participant), 'Participant already exist');
+	}
+
+	/**
+	 * @notice Recover signer of identity payload.
+	 * @dev Recover signer of identity payload.
+	 * @param identityPayload Identity payload that has been signed.
+	 * @param signature Signed identity payload.
 	 * @return address Address of the signer.
 	 */
-	function _recoverAddressSigner(address _address, bytes memory signature)
+	function _recoverIdentitySigner(IdentityPayload memory identityPayload, bytes memory signature)
 		internal
 		pure
 		returns (address)
 	{
-		return keccak256(abi.encode(_address)).toEthSignedMessageHash().recover(signature);
+		return keccak256(abi.encode(identityPayload)).toEthSignedMessageHash().recover(signature);
 	}
 
 	/**

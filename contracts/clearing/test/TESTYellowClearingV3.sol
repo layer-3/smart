@@ -13,7 +13,7 @@ contract TESTYellowClearingV3 is YellowClearingBase {
 		internal
 		override
 	{
-		ParticipantData memory migratedData = ParticipantData(42, data.status);
+		ParticipantData memory migratedData = ParticipantData(data.status, data.nonce, 42);
 
 		_participantData[participant] = migratedData;
 	}
