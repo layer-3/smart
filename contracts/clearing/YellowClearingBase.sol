@@ -30,8 +30,8 @@ abstract contract YellowClearingBase is AccessControl {
 	// Participant data
 	struct ParticipantData {
 		ParticipantStatus status;
-		uint64 registrationTime;
 		uint64 nonce;
+		uint64 registrationTime;
 	}
 
 	// Participant interaction payload
@@ -51,7 +51,8 @@ abstract contract YellowClearingBase is AccessControl {
 	// Participant data mapping
 	mapping(address => ParticipantData) internal _participantData;
 
-	// Next implementation
+	// Prev and next implementations
+	YellowClearingBase private immutable _prevImplementation;
 	YellowClearingBase private _nextImplementation;
 
 	// Address of this contract
@@ -64,6 +65,8 @@ abstract contract YellowClearingBase is AccessControl {
 	constructor(YellowClearingBase previousImplementation) {
 		_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 		_grantRole(REGISTRY_MAINTAINER_ROLE, msg.sender);
+
+		_prevImplementation = previousImplementation;
 
 		if (address(previousImplementation) != address(0)) {
 			_grantRole(PREVIOUS_IMPLEMENTATION_ROLE, address(previousImplementation));
@@ -121,17 +124,32 @@ abstract contract YellowClearingBase is AccessControl {
 		return _participantData[participant].status != ParticipantStatus.None;
 	}
 
+	// todo: add doc comment
+	function requireParticipantNotPresentBackwards(address participant) public view {
+		if (address(_prevImplementation) != address(0)) {
+			_prevImplementation.requireParticipantNotPresentBackwards(participant);
+		}
+
+		_requireParticipantNotPresent(participant);
+	}
+
+	// todo: add doc comment
+	function requireParticipantNotPresentForwards(address participant) public view {
+		if (address(_nextImplementation) != address(0)) {
+			_nextImplementation.requireParticipantNotPresentForwards(participant);
+		}
+
+		_requireParticipantNotPresent(participant);
+	}
+
 	/**
 	 * @notice Recursively check that participant is not present in this registry and any subsequent.
 	 * @dev Recursively check that participant is not present in this registry and all subsequent.
 	 * @param participant Address of participant to check.
 	 */
-	function requireParticipantNotPresent(address participant) public view {
-		if (address(_nextImplementation) != address(0)) {
-			_nextImplementation.requireParticipantNotPresent(participant);
-		}
-
-		require(!hasParticipant(participant), 'Participant already registered');
+	function requireParticipantNotPresentRecursive(address participant) public view {
+		requireParticipantNotPresentBackwards(participant);
+		requireParticipantNotPresentForwards(participant);
 	}
 
 	/**
@@ -145,9 +163,25 @@ abstract contract YellowClearingBase is AccessControl {
 		view
 		returns (ParticipantData memory)
 	{
-		require(hasParticipant(participant), 'Participant does not exist');
+		_requireParticipantPresent(participant);
 
 		return _participantData[participant];
+	}
+
+	// todo: add doc comments
+	function getInteractionPayload(address participant)
+		external
+		view
+		returns (InteractionPayload memory)
+	{
+		_requireParticipantPresent(participant);
+
+		return
+			InteractionPayload({
+				YellowClearing: YellowClearingBase(_self),
+				participant: participant,
+				nonce: _participantData[participant].nonce + 1
+			});
 	}
 
 	// ======================
@@ -162,7 +196,7 @@ abstract contract YellowClearingBase is AccessControl {
 	 * @param signature Participant virtual address signed by this same participant.
 	 */
 	function registerParticipant(address participant, bytes calldata signature) external {
-		requireParticipantNotPresent(participant);
+		requireParticipantNotPresentRecursive(participant);
 
 		InteractionPayload memory interactionPayload = InteractionPayload({
 			YellowClearing: YellowClearingBase(_self),
@@ -177,8 +211,8 @@ abstract contract YellowClearingBase is AccessControl {
 
 		_participantData[participant] = ParticipantData({
 			status: ParticipantStatus.Pending,
-			registrationTime: uint64(block.timestamp),
-			nonce: 0
+			nonce: 0,
+			registrationTime: uint64(block.timestamp)
 		});
 
 		emit ParticipantRegistered(participant);
@@ -191,7 +225,7 @@ abstract contract YellowClearingBase is AccessControl {
 	 * @param participant Address of participant to validate.
 	 */
 	function validateParticipant(address participant) external onlyRole(REGISTRY_VALIDATOR_ROLE) {
-		require(hasParticipant(participant), 'Participant does not exist');
+		_requireParticipantPresent(participant);
 		require(
 			_participantData[participant].status == ParticipantStatus.Pending,
 			'Invalid status'
@@ -210,7 +244,7 @@ abstract contract YellowClearingBase is AccessControl {
 	 * @param participant Address of participant to suspend.
 	 */
 	function suspendParticipant(address participant) external onlyRole(AUDITOR_ROLE) {
-		require(hasParticipant(participant), 'Participant does not exist');
+		_requireParticipantPresent(participant);
 
 		ParticipantStatus status = _participantData[participant].status;
 		require(
@@ -232,7 +266,7 @@ abstract contract YellowClearingBase is AccessControl {
 	 * @param participant Address of participant to reinstate.
 	 */
 	function reinstateParticipant(address participant) external onlyRole(AUDITOR_ROLE) {
-		require(hasParticipant(participant), 'Participant does not exist');
+		_requireParticipantPresent(participant);
 		require(
 			_participantData[participant].status == ParticipantStatus.Suspended,
 			'Invalid status'
@@ -280,7 +314,7 @@ abstract contract YellowClearingBase is AccessControl {
 	function migrateParticipant(address participant, bytes calldata signature) external {
 		require(address(_nextImplementation) != address(0), 'Next implementation is not set');
 
-		require(hasParticipant(participant), 'Participant does not exist');
+		_requireParticipantPresent(participant);
 
 		InteractionPayload memory interactionPayload = InteractionPayload({
 			YellowClearing: YellowClearingBase(_self),
@@ -306,8 +340,8 @@ abstract contract YellowClearingBase is AccessControl {
 		// Mark participant as migrated on this implementation
 		_participantData[participant] = ParticipantData({
 			status: ParticipantStatus.Migrated,
-			registrationTime: currentData.registrationTime,
-			nonce: currentData.nonce
+			nonce: currentData.nonce,
+			registrationTime: currentData.registrationTime
 		});
 
 		// Emit event
@@ -336,6 +370,16 @@ abstract contract YellowClearingBase is AccessControl {
 	// ======================
 	// internal functions
 	// ======================
+
+	// todo: add doc comment
+	function _requireParticipantPresent(address participant) internal view {
+		require(hasParticipant(participant), 'Participant does not exist');
+	}
+
+	// todo: add doc comment
+	function _requireParticipantNotPresent(address participant) internal view {
+		require(!hasParticipant(participant), 'Participant already exist');
+	}
 
 	// todo: change comment
 	// /**
