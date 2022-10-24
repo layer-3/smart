@@ -178,7 +178,7 @@ abstract contract YellowClearingBase is AccessControl {
 
 	/**
 	 * @notice Return interaction payload structure for a supplied participant. Used to ease interaction with this contract.
-	 * @dev Participant must be present.
+	 * @dev Return interaction payload structure for a supplied participant. Used to ease interaction with this contract.
 	 * @param participant Address of participant to get interaction payload for.
 	 * @return InteractionPayload Interaction payload structure for a supplied participant.
 	 */
@@ -187,13 +187,19 @@ abstract contract YellowClearingBase is AccessControl {
 		view
 		returns (InteractionPayload memory)
 	{
-		_requireParticipantPresent(participant);
+		uint64 nonce;
+
+		if (!hasParticipant(participant)) {
+			nonce = 0;
+		} else {
+			nonce = _participantData[participant].nonce + 1;
+		}
 
 		return
 			InteractionPayload({
 				YellowClearing: YellowClearingBase(_self),
 				participant: participant,
-				nonce: _participantData[participant].nonce + 1
+				nonce: nonce
 			});
 	}
 
