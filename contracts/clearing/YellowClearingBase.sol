@@ -29,8 +29,16 @@ abstract contract YellowClearingBase is AccessControl {
 
 	// Participant data
 	struct ParticipantData {
-		uint64 registrationTime;
 		ParticipantStatus status;
+		uint64 registrationTime;
+		uint64 nonce;
+	}
+
+	// Participant interaction payload
+	struct InteractionPayload {
+		YellowClearingBase YellowClearing;
+		address participant;
+		uint64 nonce;
 	}
 
 	// Roles
@@ -146,20 +154,31 @@ abstract contract YellowClearingBase is AccessControl {
 	// participant changes
 	// ======================
 
+	// todo: change comment
 	/**
 	 * @notice Register participant by adding it to the registry with Pending status. Emit `ParticipantRegistered` event.
 	 * @dev Participant must not be present in this or any subsequent implementations.
 	 * @param participant Virtual (no address, only public key exist) address of participant to add.
-	 * @param signature Participant virtual address signer by this same participant.
+	 * @param signature Participant virtual address signed by this same participant.
 	 */
 	function registerParticipant(address participant, bytes calldata signature) external {
 		requireParticipantNotPresent(participant);
 
-		require(_recoverAddressSigner(participant, signature) == participant, 'Invalid signer');
+		InteractionPayload memory interactionPayload = InteractionPayload({
+			YellowClearing: YellowClearingBase(_self),
+			participant: participant,
+			nonce: 0
+		});
+
+		require(
+			_recoverInteractionSigner(interactionPayload, signature) == participant,
+			'Invalid signer'
+		);
 
 		_participantData[participant] = ParticipantData({
+			status: ParticipantStatus.Pending,
 			registrationTime: uint64(block.timestamp),
-			status: ParticipantStatus.Pending
+			nonce: 0
 		});
 
 		emit ParticipantRegistered(participant);
@@ -251,6 +270,7 @@ abstract contract YellowClearingBase is AccessControl {
 	// migrate participant
 	// ======================
 
+	// todo: change comment
 	/**
 	 * @notice Migrate participant to the newest implementation present in upgrades chain. Emit `ParticipantMigratedFrom` and `ParticipantMigratedTo` events.
 	 * @dev NextImplementation must have been set. Participant must not have been migrated.
@@ -262,19 +282,32 @@ abstract contract YellowClearingBase is AccessControl {
 
 		require(hasParticipant(participant), 'Participant does not exist');
 
-		require(_recoverAddressSigner(participant, signature) == participant, 'Invalid signer');
+		InteractionPayload memory interactionPayload = InteractionPayload({
+			YellowClearing: YellowClearingBase(_self),
+			participant: participant,
+			nonce: _participantData[participant].nonce + 1
+		});
+
+		require(
+			_recoverInteractionSigner(interactionPayload, signature) == participant,
+			'Invalid signer'
+		);
 
 		// Get previous participant data
 		ParticipantData memory currentData = _participantData[participant];
 		require(currentData.status != ParticipantStatus.Migrated, 'Participant already migrated');
+
+		// Update nonce to resemble migration
+		currentData.nonce++;
 
 		// Migrate data, emit ParticipantMigratedTo
 		_nextImplementation.migrateParticipantData(participant, currentData);
 
 		// Mark participant as migrated on this implementation
 		_participantData[participant] = ParticipantData({
+			status: ParticipantStatus.Migrated,
 			registrationTime: currentData.registrationTime,
-			status: ParticipantStatus.Migrated
+			nonce: currentData.nonce
 		});
 
 		// Emit event
@@ -304,20 +337,20 @@ abstract contract YellowClearingBase is AccessControl {
 	// internal functions
 	// ======================
 
-	// Recover signer from `signature` provided `_address` is signed.
-	/**
-	 * @notice Recover signer of the address.
-	 * @dev Recover signer of the address.
-	 * @param _address Address to be signed.
-	 * @param signature Signed address.
-	 * @return address Address of the signer.
-	 */
-	function _recoverAddressSigner(address _address, bytes memory signature)
-		internal
-		pure
-		returns (address)
-	{
-		return keccak256(abi.encode(_address)).toEthSignedMessageHash().recover(signature);
+	// todo: change comment
+	// /**
+	//  * @notice Recover signer of the address.
+	//  * @dev Recover signer of the address.
+	//  * @param _address Address to be signed.
+	//  * @param signature Signed address.
+	//  * @return address Address of the signer.
+	//  */
+	function _recoverInteractionSigner(
+		InteractionPayload memory interactionPayload,
+		bytes memory signature
+	) internal pure returns (address) {
+		return
+			keccak256(abi.encode(interactionPayload)).toEthSignedMessageHash().recover(signature);
 	}
 
 	/**
