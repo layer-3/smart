@@ -5,24 +5,21 @@ import type { YellowClearingBase } from '../../../typechain';
 
 const AddressZero = ethers.constants.AddressZero;
 
-export async function deployRegistry(
-  version: number,
-  signer?: Signer,
-): Promise<YellowClearingBase> {
+export async function deployRegistry(version = 1, signer?: Signer): Promise<YellowClearingBase> {
   return _deployRegistry(version, { signer });
 }
 
 export async function deployNextRegistry(
-  version: number,
   prevImpl: YellowClearingBase,
+  version = 1,
   signer?: Signer,
 ): Promise<YellowClearingBase> {
   return _deployRegistry(version, { prevImpl, signer });
 }
 
 export async function deployAndLinkNextRegistry(
-  version: number,
   prevImpl: YellowClearingBase,
+  version = 1,
   signer?: Signer,
 ): Promise<YellowClearingBase> {
   return _deployRegistry(version, {
