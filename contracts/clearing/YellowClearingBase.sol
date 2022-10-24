@@ -124,7 +124,11 @@ abstract contract YellowClearingBase is AccessControl {
 		return _participantData[participant].status != ParticipantStatus.None;
 	}
 
-	// todo: add doc comment
+	/**
+	 * @notice Recursively check that participant is not present in this registry and all previous ones.
+	 * @dev Recursively check that participant is not present in this registry and all previous ones.
+	 * @param participant Address of participant to check.
+	 */
 	function requireParticipantNotPresentBackwards(address participant) public view {
 		if (address(_prevImplementation) != address(0)) {
 			_prevImplementation.requireParticipantNotPresentBackwards(participant);
@@ -133,7 +137,11 @@ abstract contract YellowClearingBase is AccessControl {
 		_requireParticipantNotPresent(participant);
 	}
 
-	// todo: add doc comment
+	/**
+	 * @notice Recursively check that participant is not present in this registry and all subsequent ones.
+	 * @dev Recursively check that participant is not present in this registry and all subsequent ones.
+	 * @param participant Address of participant to check.
+	 */
 	function requireParticipantNotPresentForwards(address participant) public view {
 		if (address(_nextImplementation) != address(0)) {
 			_nextImplementation.requireParticipantNotPresentForwards(participant);
@@ -143,8 +151,8 @@ abstract contract YellowClearingBase is AccessControl {
 	}
 
 	/**
-	 * @notice Recursively check that participant is not present in this registry and any subsequent.
-	 * @dev Recursively check that participant is not present in this registry and all subsequent.
+	 * @notice Recursively check that participant is not present in this registry and all previous and subsequent ones.
+	 * @dev Recursively check that participant is not present in this registry and all previous and subsequent ones.
 	 * @param participant Address of participant to check.
 	 */
 	function requireParticipantNotPresentRecursive(address participant) public view {
@@ -168,7 +176,12 @@ abstract contract YellowClearingBase is AccessControl {
 		return _participantData[participant];
 	}
 
-	// todo: add doc comments
+	/**
+	 * @notice Return interaction payload structure for a supplied participant. Used to ease interaction with this contract.
+	 * @dev Participant must be present.
+	 * @param participant Address of participant to get interaction payload for.
+	 * @return InteractionPayload Interaction payload structure for a supplied participant.
+	 */
 	function getInteractionPayload(address participant)
 		external
 		view
@@ -188,12 +201,11 @@ abstract contract YellowClearingBase is AccessControl {
 	// participant changes
 	// ======================
 
-	// todo: change comment
 	/**
 	 * @notice Register participant by adding it to the registry with Pending status. Emit `ParticipantRegistered` event.
-	 * @dev Participant must not be present in this or any subsequent implementations.
+	 * @dev Participant must not be present in this or any previous or subsequent implementations.
 	 * @param participant Virtual (no address, only public key exist) address of participant to add.
-	 * @param signature Participant virtual address signed by this same participant.
+	 * @param signature Participant interaction payload signed by this same participant.
 	 */
 	function registerParticipant(address participant, bytes calldata signature) external {
 		requireParticipantNotPresentRecursive(participant);
@@ -304,12 +316,11 @@ abstract contract YellowClearingBase is AccessControl {
 	// migrate participant
 	// ======================
 
-	// todo: change comment
 	/**
 	 * @notice Migrate participant to the newest implementation present in upgrades chain. Emit `ParticipantMigratedFrom` and `ParticipantMigratedTo` events.
 	 * @dev NextImplementation must have been set. Participant must not have been migrated.
 	 * @param participant Address of participant to migrate.
-	 * @param signature Participant address signed by that participant.
+	 * @param signature Participant interaction payload signed by that participant.
 	 */
 	function migrateParticipant(address participant, bytes calldata signature) external {
 		require(address(_nextImplementation) != address(0), 'Next implementation is not set');
@@ -371,24 +382,31 @@ abstract contract YellowClearingBase is AccessControl {
 	// internal functions
 	// ======================
 
-	// todo: add doc comment
+	/**
+	 * @notice Require participant it present in this registry.
+	 * @dev Require participant it present in this registry.
+	 * @param participant Address of participant to check.
+	 */
 	function _requireParticipantPresent(address participant) internal view {
 		require(hasParticipant(participant), 'Participant does not exist');
 	}
 
-	// todo: add doc comment
+	/**
+	 * @notice Require participant it not present in this registry.
+	 * @dev Require participant it not present in this registry.
+	 * @param participant Address of participant to check.
+	 */
 	function _requireParticipantNotPresent(address participant) internal view {
 		require(!hasParticipant(participant), 'Participant already exist');
 	}
 
-	// todo: change comment
-	// /**
-	//  * @notice Recover signer of the address.
-	//  * @dev Recover signer of the address.
-	//  * @param _address Address to be signed.
-	//  * @param signature Signed address.
-	//  * @return address Address of the signer.
-	//  */
+	/**
+	 * @notice Recover signer of interaction payload.
+	 * @dev Recover signer of interaction payload.
+	 * @param interactionPayload Interaction payload that has been signed.
+	 * @param signature Signed interaction payload.
+	 * @return address Address of the signer.
+	 */
 	function _recoverInteractionSigner(
 		InteractionPayload memory interactionPayload,
 		bytes memory signature
