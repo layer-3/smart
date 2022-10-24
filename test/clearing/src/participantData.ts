@@ -13,14 +13,16 @@ export enum Status {
 }
 
 export interface ParticipantData {
-  registrationTime: number;
   status: BigNumber;
+  nonce: number;
+  registrationTime: number;
 }
 
 export function MockData(status: Status): ParticipantData {
   return {
-    registrationTime: Date.now(),
     status: BigNumber.from(status),
+    nonce: Math.round(Math.random() * 100),
+    registrationTime: Date.now(),
   };
 }
 

@@ -11,8 +11,8 @@ import {
   NEXT_IMPL_ALREADY_SET,
   NO_NEXT_IMPL,
   NO_PARTICIPANT,
+  PARTICIPANT_ALREADY_EXIST,
   PARTICIPANT_ALREADY_MIGRATED,
-  PARTICIPANT_ALREADY_REGISTERED,
   PREV_IMPL_ROLE_REQUIRED,
 } from '../../src/revert-reasons';
 import { signEncoded } from '../../src/signatures';
@@ -25,10 +25,12 @@ import {
   PARTICIPANT_STATUS_CHANGED,
 } from '../../src/event-names';
 import { connectGroup } from '../../src/contracts';
+import { randomSignerWithAddress } from '../../src/signers';
 
 import { deployAndLinkNextRegistry, deployNextRegistry, deployRegistry } from './src/deploy';
 import { MockData, Status, setParticipantStatus } from './src/participantData';
-import { migrateParams, registerParams } from './src/transactions';
+import { migrateParams, registerParams, registerParamsFromPayload } from './src/transactions';
+import { getInteractionPayload, signInteractionPayload } from './src/interactionPayload';
 
 import type {
   TESTYellowClearingV1,
@@ -196,50 +198,170 @@ describe('Network Registry', () => {
     });
   });
 
-  describe('requireParticipantNotPresent', () => {
+  describe('requireParticipantNotPresentBackwards', () => {
     it('Succeed if participant is not present in this impl', async () => {
-      await expect(RegistryV1.requireParticipantNotPresent(notPresentPartipant.address)).not.to.be
-        .reverted;
+      await expect(RegistryV1.requireParticipantNotPresentBackwards(notPresentPartipant.address))
+        .not.to.be.reverted;
     });
 
-    it('Succeed if participant is not present in 2 consequent impls', async () => {
-      await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
-
-      await expect(RegistryV1.requireParticipantNotPresent(notPresentPartipant.address)).not.to.be
-        .reverted;
-    });
-
-    it('Succeed if participant is not present in 3 consequent impls', async () => {
+    it('Succeed if participant is not present in this and prev impl', async () => {
       const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
-      await deployAndLinkNextRegistry(3, RegistryV2, registryAdmin);
 
-      await expect(RegistryV1.requireParticipantNotPresent(notPresentPartipant.address)).not.to.be
-        .reverted;
+      await expect(
+        RegistryV2.connect(someone).requireParticipantNotPresentBackwards(
+          notPresentPartipant.address,
+        ),
+      ).not.to.be.reverted;
+    });
+
+    it('Succeed if participant is not present in this and 2 prev impl', async () => {
+      const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
+      const RegistryV3 = await deployAndLinkNextRegistry(3, RegistryV2, registryAdmin);
+
+      await expect(
+        RegistryV3.connect(someone).requireParticipantNotPresentBackwards(
+          notPresentPartipant.address,
+        ),
+      ).not.to.be.reverted;
     });
 
     it('Revert if participant is present in this impl', async () => {
       await expect(
-        RegistryV1.requireParticipantNotPresent(activePartipant.address),
-      ).to.be.revertedWith(PARTICIPANT_ALREADY_REGISTERED);
+        RegistryV1.requireParticipantNotPresentBackwards(activePartipant.address),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
     });
 
-    it('Revert if participant is present in 2nd consequent impl', async () => {
+    it('Revert if participant is present in prev impl', async () => {
+      const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
+
+      await expect(
+        RegistryV2.connect(someone).requireParticipantNotPresentBackwards(activePartipant.address),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
+    });
+
+    it('Revert if participant is present in 2nd prev impl', async () => {
+      const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
+      const RegistryV3 = await deployAndLinkNextRegistry(3, RegistryV2, registryAdmin);
+
+      await expect(
+        RegistryV3.connect(someone).requireParticipantNotPresentBackwards(activePartipant.address),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
+    });
+  });
+
+  describe('requireParticipantNotPresentForwards', () => {
+    it('Succeed if participant is not present in this impl', async () => {
+      await expect(RegistryV1.requireParticipantNotPresentForwards(notPresentPartipant.address)).not
+        .to.be.reverted;
+    });
+
+    it('Succeed if participant is not present in this and next impls', async () => {
+      await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
+
+      await expect(RegistryV1.requireParticipantNotPresentForwards(notPresentPartipant.address)).not
+        .to.be.reverted;
+    });
+
+    it('Succeed if participant is not present in this and next impls', async () => {
+      const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
+      await deployAndLinkNextRegistry(3, RegistryV2, registryAdmin);
+
+      await expect(RegistryV1.requireParticipantNotPresentForwards(notPresentPartipant.address)).not
+        .to.be.reverted;
+    });
+
+    it('Revert if participant is present in this impl', async () => {
+      await expect(
+        RegistryV1.requireParticipantNotPresentForwards(activePartipant.address),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
+    });
+
+    it('Revert if participant is present in next impl', async () => {
       const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
       await setParticipantStatus(RegistryV2, someone, Status.Active);
 
-      await expect(RegistryV1.requireParticipantNotPresent(someone.address)).to.be.revertedWith(
-        PARTICIPANT_ALREADY_REGISTERED,
-      );
+      await expect(
+        RegistryV1.requireParticipantNotPresentForwards(someone.address),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
     });
 
-    it('Revert if participant is present in 3rd consequent impl', async () => {
+    it('Revert if participant is present in 2nd next impl', async () => {
       const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
       const RegistryV3 = await deployAndLinkNextRegistry(3, RegistryV2, registryAdmin);
       await setParticipantStatus(RegistryV3, someone, Status.Active);
 
-      await expect(RegistryV1.requireParticipantNotPresent(someone.address)).to.be.revertedWith(
-        PARTICIPANT_ALREADY_REGISTERED,
-      );
+      await expect(
+        RegistryV1.requireParticipantNotPresentForwards(someone.address),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
+    });
+  });
+
+  describe('requireParticipantNotPresentRecursive', () => {
+    it('Succeed if participant is not present in this impl', async () => {
+      await expect(RegistryV1.requireParticipantNotPresentRecursive(notPresentPartipant.address))
+        .not.to.be.reverted;
+    });
+
+    it('Succeed if participant is not present in this, 1 prev and 1 next impls', async () => {
+      const middleRegistry = await deployAndLinkNextRegistry(1, RegistryV1);
+      await deployAndLinkNextRegistry(1, middleRegistry);
+
+      await expect(
+        middleRegistry.requireParticipantNotPresentRecursive(notPresentPartipant.address),
+      ).not.to.be.reverted;
+    });
+
+    it('Succeed if participant is not present in this, 2 prev and 2 next impls', async () => {
+      const prevRegistry = await deployAndLinkNextRegistry(1, RegistryV1);
+      const middleRegistry = await deployAndLinkNextRegistry(1, prevRegistry);
+      const nextRegistry = await deployAndLinkNextRegistry(1, middleRegistry);
+      await deployAndLinkNextRegistry(1, nextRegistry);
+
+      await expect(
+        middleRegistry.requireParticipantNotPresentRecursive(notPresentPartipant.address),
+      ).not.to.be.reverted;
+    });
+
+    it('Revert if participant is present in this impl', async () => {
+      await expect(
+        RegistryV1.requireParticipantNotPresentForwards(activePartipant.address),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
+    });
+
+    it('Revert if participant is present in prev impl', async () => {
+      const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
+
+      await expect(
+        RegistryV2.connect(someone).requireParticipantNotPresentBackwards(activePartipant.address),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
+    });
+
+    it('Revert if participant is present in 2nd prev impl', async () => {
+      const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
+      const RegistryV3 = await deployAndLinkNextRegistry(3, RegistryV2, registryAdmin);
+
+      await expect(
+        RegistryV3.connect(someone).requireParticipantNotPresentBackwards(activePartipant.address),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
+    });
+
+    it('Revert if participant is present in next impl', async () => {
+      const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
+      await setParticipantStatus(RegistryV2, someone, Status.Active);
+
+      await expect(
+        RegistryV1.requireParticipantNotPresentForwards(someone.address),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
+    });
+
+    it('Revert if participant is present in 2nd next impl', async () => {
+      const RegistryV2 = await deployAndLinkNextRegistry(2, RegistryV1, registryAdmin);
+      const RegistryV3 = await deployAndLinkNextRegistry(3, RegistryV2, registryAdmin);
+      await setParticipantStatus(RegistryV3, someone, Status.Active);
+
+      await expect(
+        RegistryV1.requireParticipantNotPresentForwards(someone.address),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
     });
   });
 
@@ -271,41 +393,125 @@ describe('Network Registry', () => {
     });
   });
 
+  describe('getInteractionPayload', () => {
+    it('Payload is correct for present participant', async () => {
+      const payload = await RegistryAsSomeone.getInteractionPayload(activePartipant.address);
+
+      expect(payload.YellowClearing).to.equal(RegistryV1.address);
+      expect(payload.participant).to.equal(activePartipant.address);
+
+      const { nonce } = await RegistryAsSomeone.getParticipantData(activePartipant.address);
+      expect(payload.nonce).to.equal(nonce.add(1));
+    });
+
+    it('Payload is correct for absent participant', async () => {
+      const payload = await RegistryAsSomeone.getInteractionPayload(notPresentPartipant.address);
+
+      expect(payload.YellowClearing).to.equal(RegistryV1.address);
+      expect(payload.participant).to.equal(notPresentPartipant.address);
+      expect(payload.nonce).to.equal(0);
+    });
+  });
+
   describe('registerParticipant', () => {
     it('Can register participant', async () => {
-      await expect(
-        RegistryAsSomeone.registerParticipant(...(await registerParams(virtualParticipant))),
-      ).not.to.be.reverted;
+      await RegistryAsSomeone.registerParticipant(
+        ...(await registerParams(RegistryV1, virtualParticipant)),
+      );
     });
 
     it('Participant is marked Pending', async () => {
-      await RegistryAsSomeone.registerParticipant(...(await registerParams(virtualParticipant)));
+      await RegistryAsSomeone.registerParticipant(
+        ...(await registerParams(RegistryV1, virtualParticipant)),
+      );
       const data = await RegistryV1.getParticipantData(virtualParticipant.address);
 
       expect(data.status).to.equal(Status.Pending);
     });
 
     it('Revert on signer not participant', async () => {
+      const IP = await getInteractionPayload(RegistryV1, virtualParticipant);
+
       await expect(
         RegistryAsSomeone.registerParticipant(
           virtualParticipant.address,
-          await signEncoded(
-            someone,
-            utils.defaultAbiCoder.encode(['address'], [someother.address]),
-          ),
+          await signInteractionPayload(IP, someone),
         ),
       ).to.be.revertedWith(INVALID_SIGNER);
     });
 
-    it('Revert if participant already present', async () => {
+    it('Revert on wrong signed data', async () => {
+      const correctInteractionPayload = await getInteractionPayload(RegistryV1, virtualParticipant);
+
+      const wrongContractAddressIP = correctInteractionPayload;
+      wrongContractAddressIP.YellowClearing = someone.address;
       await expect(
-        RegistryAsSomeone.registerParticipant(...(await registerParams(activePartipant))),
-      ).to.be.revertedWith(PARTICIPANT_ALREADY_REGISTERED);
+        RegistryAsSomeone.registerParticipant(
+          ...(await registerParamsFromPayload(virtualParticipant, wrongContractAddressIP)),
+        ),
+      ).to.be.revertedWith(INVALID_SIGNER);
+
+      const wrongParticipantAddressIP = correctInteractionPayload;
+      wrongParticipantAddressIP.participant = someone.address;
+      await expect(
+        RegistryAsSomeone.registerParticipant(
+          ...(await registerParamsFromPayload(virtualParticipant, wrongParticipantAddressIP)),
+        ),
+      ).to.be.revertedWith(INVALID_SIGNER);
+
+      const wrongNonceIP = correctInteractionPayload;
+      wrongNonceIP.nonce += 10;
+      await expect(
+        RegistryAsSomeone.registerParticipant(
+          ...(await registerParamsFromPayload(virtualParticipant, wrongNonceIP)),
+        ),
+      ).to.be.revertedWith(INVALID_SIGNER);
+    });
+
+    it('Revert if participant is already present', async () => {
+      await expect(
+        RegistryAsSomeone.registerParticipant(
+          ...(await registerParams(RegistryV1, activePartipant)),
+        ),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
+    });
+
+    it('Revert if participant is present in prev impl', async () => {
+      const nextRegistry = await deployAndLinkNextRegistry(1, RegistryV1);
+
+      const interactionPayload = await getInteractionPayload(RegistryV1, virtualParticipant);
+      interactionPayload.YellowClearing = nextRegistry.address;
+
+      await expect(
+        nextRegistry
+          .connect(someone)
+          .registerParticipant(
+            ...(await registerParamsFromPayload(activePartipant, interactionPayload)),
+          ),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
+    });
+
+    it('Revert if participant is present in next impl', async () => {
+      const nextRegistry = await deployAndLinkNextRegistry(1, RegistryV1);
+
+      const v2ActiveParticipant = await randomSignerWithAddress();
+      await setParticipantStatus(nextRegistry, v2ActiveParticipant, Status.Active);
+
+      const interactionPayload = await getInteractionPayload(nextRegistry, v2ActiveParticipant);
+      interactionPayload.YellowClearing = RegistryV1.address;
+
+      await expect(
+        RegistryAsSomeone.registerParticipant(
+          ...(await registerParamsFromPayload(v2ActiveParticipant, interactionPayload)),
+        ),
+      ).to.be.revertedWith(PARTICIPANT_ALREADY_EXIST);
     });
 
     it('Event emitted', async () => {
       await expect(
-        RegistryAsSomeone.registerParticipant(...(await registerParams(virtualParticipant))),
+        RegistryAsSomeone.registerParticipant(
+          ...(await registerParams(RegistryV1, virtualParticipant)),
+        ),
       )
         .to.emit(RegistryV1, PARTICIPANT_REGISTERED)
         .withArgs(virtualParticipant.address);
@@ -477,19 +683,20 @@ describe('Network Registry', () => {
     });
 
     it('Succeed if all requirements are met', async () => {
-      await expect(RegistryV1.migrateParticipant(...(await migrateParams(activePartipant)))).not.to
-        .be.reverted;
+      await expect(
+        RegistryV1.migrateParticipant(...(await migrateParams(RegistryV1, activePartipant))),
+      ).not.to.be.reverted;
     });
 
     it('Participant data is copied', async () => {
-      await RegistryV1.migrateParticipant(...(await migrateParams(activePartipant)));
+      await RegistryV1.migrateParticipant(...(await migrateParams(RegistryV1, activePartipant)));
       const data = await RegistryV2.getParticipantData(activePartipant.address);
 
       expect(data.status).to.equal(Status.Active);
     });
 
     it('Participant is marked as migrated', async () => {
-      await RegistryV1.migrateParticipant(...(await migrateParams(activePartipant)));
+      await RegistryV1.migrateParticipant(...(await migrateParams(RegistryV1, activePartipant)));
       const data = await RegistryV1.getParticipantData(activePartipant.address);
 
       expect(data.status).to.equal(Status.Migrated);
@@ -500,7 +707,7 @@ describe('Network Registry', () => {
       expect(await RegistryV2.getNextImplementation()).to.equal(RegistryV3.address);
 
       // migrate
-      await RegistryV1.migrateParticipant(...(await migrateParams(activePartipant)));
+      await RegistryV1.migrateParticipant(...(await migrateParams(RegistryV1, activePartipant)));
 
       // data copied
       const dataV3 = await RegistryV3.getParticipantData(activePartipant.address);
@@ -519,13 +726,13 @@ describe('Network Registry', () => {
       await NotLinkedRegistry.setParticipantData(someone.address, MockData(Status.Active));
 
       await expect(
-        NotLinkedRegistry.migrateParticipant(...(await migrateParams(someone))),
+        NotLinkedRegistry.migrateParticipant(...(await migrateParams(NotLinkedRegistry, someone))),
       ).to.be.revertedWith(NO_NEXT_IMPL);
     });
 
     it('Revert if participant is not present', async () => {
       await expect(
-        RegistryV1.migrateParticipant(...(await migrateParams(someone))),
+        RegistryV1.migrateParticipant(...(await migrateParams(RegistryV1, someone))),
       ).to.be.revertedWith(NO_PARTICIPANT);
     });
 
@@ -542,10 +749,10 @@ describe('Network Registry', () => {
     });
 
     it('Revert if participant already migrated', async () => {
-      await RegistryV1.migrateParticipant(...(await migrateParams(activePartipant)));
+      await RegistryV1.migrateParticipant(...(await migrateParams(RegistryV1, activePartipant)));
 
       await expect(
-        RegistryV1.migrateParticipant(...(await migrateParams(activePartipant))),
+        RegistryV1.migrateParticipant(...(await migrateParams(RegistryV1, activePartipant))),
       ).to.be.revertedWith(PARTICIPANT_ALREADY_MIGRATED);
     });
 
@@ -553,7 +760,7 @@ describe('Network Registry', () => {
       await RegistryV2.setNextImplementation(RegistryV3.address);
 
       // migrate
-      await RegistryV1.migrateParticipant(...(await migrateParams(activePartipant)));
+      await RegistryV1.migrateParticipant(...(await migrateParams(RegistryV1, activePartipant)));
 
       // registration time migrated
       const dataV3 = await RegistryV3.getParticipantData(activePartipant.address);
@@ -561,7 +768,9 @@ describe('Network Registry', () => {
     });
 
     it('Events emitted', async () => {
-      const tx = RegistryV1.migrateParticipant(...(await migrateParams(activePartipant)));
+      const tx = RegistryV1.migrateParticipant(
+        ...(await migrateParams(RegistryV1, activePartipant)),
+      );
 
       await expect(tx)
         .to.emit(RegistryV1, PARTICIPANT_MIGRATED_FROM)

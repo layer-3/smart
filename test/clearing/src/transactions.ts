@@ -1,15 +1,33 @@
-import { signSelf } from '../../../src/signatures';
+import {
+  InteractionPayload,
+  getAndSignInteractionPayload,
+  signInteractionPayload,
+} from './interactionPayload';
 
 import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import type { YellowClearingBase } from '../../../typechain';
 
-export type registerParams = [string, string];
+export type RegisterParams = [string, string];
 
-export async function registerParams(participant: SignerWithAddress): Promise<registerParams> {
-  return [participant.address, await signSelf(participant)];
+export async function registerParams(
+  registry: YellowClearingBase,
+  participant: SignerWithAddress,
+): Promise<RegisterParams> {
+  return await getAndSignInteractionPayload(registry, participant);
 }
 
-export type migrateParams = [string, string];
+export async function registerParamsFromPayload(
+  participant: SignerWithAddress,
+  interactionPayload: InteractionPayload,
+): Promise<RegisterParams> {
+  return [participant.address, await signInteractionPayload(interactionPayload, participant)];
+}
 
-export async function migrateParams(participant: SignerWithAddress): Promise<migrateParams> {
-  return [participant.address, await signSelf(participant)];
+export type MigrateParams = [string, string];
+
+export async function migrateParams(
+  registry: YellowClearingBase,
+  participant: SignerWithAddress,
+): Promise<MigrateParams> {
+  return await getAndSignInteractionPayload(registry, participant);
 }

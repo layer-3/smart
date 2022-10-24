@@ -1,4 +1,4 @@
-import {utils} from 'ethers';
+import { utils } from 'ethers';
 
 const hexify = utils.hexlify;
 
@@ -29,7 +29,7 @@ export const INVALID_CHAIN_ID = 'Invalid chain id';
 // network registry
 export const NEXT_IMPL_ALREADY_SET = 'Next implementation already set';
 export const PREV_IMPL_ROLE_REQUIRED = 'Previous implementation role is required';
-export const PARTICIPANT_ALREADY_REGISTERED = 'Participant already registered';
+export const PARTICIPANT_ALREADY_EXIST = 'Participant already exist';
 export const NO_PARTICIPANT = 'Participant does not exist';
 export const INVALID_SIGNER = 'Invalid signer';
 export const INVALID_STATUS = 'Invalid status';
