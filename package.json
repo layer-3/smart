@@ -15,7 +15,6 @@
     "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
     "@openzeppelin/contracts": "npm:@openzeppelin/contracts@^4.6.0",
-    "@openzeppelin/contracts-3.4.2": "npm:@openzeppelin/contracts@3.4.2",
     "@openzeppelin/contracts-upgradeable": "^4.6.0",
     "@openzeppelin/hardhat-upgrades": "^1.17.0",
     "@openzeppelin/test-helpers": "^0.5.15",
@@ -32,7 +31,6 @@
     "dotenv": "^16.0.0",
     "eslint": "^8.25.0",
     "eslint-config-prettier": "^8.5.0",
-    "eslint-config-standard": "^16.0.3",
     "eslint-plugin-array-func": "^3.1.7",
     "eslint-plugin-eslint-comments": "^3.2.0",
     "eslint-plugin-import": "^2.26.0",
@@ -52,16 +50,11 @@
     "hardhat-deploy": "^0.11.5",
     "hardhat-gas-reporter": "^1.0.8",
     "prettier": "^2.6.2",
-    "prettier-plugin-solidity": "^1.0.0-beta.19",
-    "solc-0.7.4": "npm:solc@^0.7.4",
-    "solc-0.8.16": "npm:solc@^0.8.16",
+    "solc": "npm:solc@^0.8.16",
     "solidity-coverage": "^0.7.18",
     "solidity-docgen": "^0.5.16",
     "ts-node": "^10.7.0",
     "typechain": "^5.2.0",
     "typescript": "^4.6.4"
-  },
-  "dependencies": {
-    "@statechannels/exit-format": "^0.0.6"
   }
 }
