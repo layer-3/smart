@@ -26,11 +26,11 @@ import {
 } from '../../src/event-names';
 import { connectGroup } from '../../src/contracts';
 import { randomSignerWithAddress } from '../../src/signers';
+import { getIdentityPayload, signIdentityPayload } from '../../src/identityPayload';
 
 import { deployAndLinkNextRegistry, deployNextRegistry, deployRegistry } from './src/deploy';
 import { MockData, Status, setParticipantStatus } from './src/participantData';
 import { migrateParams, registerParams, registerParamsFromPayload } from './src/transactions';
-import { getIdentityPayload, signIdentityPayload } from './src/identityPayload';
 
 import type {
   TESTYellowClearingV1,

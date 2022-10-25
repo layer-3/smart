@@ -1,10 +1,10 @@
 import { type ParamType, defaultAbiCoder } from 'ethers/lib/utils';
 
-import { signEncoded } from '../../../src/signatures';
+import { signEncoded } from './signatures';
 
 import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import type { BigNumber } from 'ethers';
-import type { YellowClearingBase } from '../../../typechain';
+import type { YellowClearingBase } from '../typechain';
 
 export interface identityPayloadBN {
   YellowClearing: string;
