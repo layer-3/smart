@@ -43,7 +43,7 @@ async function main(): Promise<void> {
   console.log(`Renounced 'REGISTRY_MAINTAINER_ROLE' from deployer (${deployer.address})`);
 
   await Clearing.renounceRole(ADM_ROLE, deployer.address);
-  console.log(`Renounced 'DEFAULT_ADMIN_ROLE' from gnosis (${deployer.address})`);
+  console.log(`Renounced 'DEFAULT_ADMIN_ROLE' from deployer (${deployer.address})`);
 }
 
 main().catch((error) => {
