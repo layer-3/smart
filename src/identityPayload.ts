@@ -1,18 +1,18 @@
 import { type ParamType, defaultAbiCoder } from 'ethers/lib/utils';
 
-import { signEncoded } from '../../../src/signatures';
+import { signEncoded } from './signatures';
 
 import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import type { BigNumber } from 'ethers';
-import type { YellowClearingBase } from '../../../typechain';
+import type { YellowClearingBase } from '../typechain';
 
-export interface identityPayloadBN {
+export interface IdentityPayloadBN {
   YellowClearing: string;
   participant: string;
   nonce: BigNumber;
 }
 
-export interface identityPayload {
+export interface IdentityPayload {
   YellowClearing: string;
   participant: string;
   nonce: number;
@@ -21,7 +21,7 @@ export interface identityPayload {
 export async function getIdentityPayload(
   registry: YellowClearingBase,
   participant: SignerWithAddress,
-): Promise<identityPayload> {
+): Promise<IdentityPayload> {
   const IPBN = await registry.getIdentityPayload(participant.address);
 
   return {
@@ -32,7 +32,7 @@ export async function getIdentityPayload(
 }
 
 export async function signIdentityPayload(
-  identityPayload: identityPayload,
+  identityPayload: IdentityPayload,
   signer: SignerWithAddress,
 ): Promise<string> {
   const encodedIP = defaultAbiCoder.encode(

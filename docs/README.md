@@ -31,7 +31,7 @@ The main technology behind our custody solution is the smart contract on Ethereu
   Custody takes advantage of solidity to implement the smart contract to validate and sign contract of deposit from the user’s wallet into opendax decentralize exchange wallet, withdrawal from opendax decentralize exchange wallet into user’s wallet.
 
 - **Hardhat**  
-  [Ethereum development environment for professionals ](https://hardhat.org/)
+  [Ethereum development environment for professionals](https://hardhat.org/)
   The development tool to run, debug, test, deploy and upgrade smart contract of the custody with Solidity. It helps developers manage and automate the recurring tasks that are inherent to the process of building smart contracts and dApps, as well as easily introducing more functionality around this workflow. This means compiling, running and testing smart contracts at the very core.
 
   Hardhat comes built-in with Hardhat Network, a local Ethereum network designed for development. Its functionality focuses around Solidity debugging, featuring stack traces, console.log() and explicit error messages when transactions fail.
@@ -60,3 +60,82 @@ There are 2 components intract with the custody:
   After the trading is complete finex will verify trading transaction and start withdrawal process by signing to the custoday as broker.
 
   The assets will be withdraw from opendax decentralize exchange wallet to user's wallet at the end.
+
+## YellowClearing overview
+
+### Registry logic
+
+- **ParticipantData**  
+  Data stored for each participant inside a registry is defined as follows:
+
+  ```solidity
+  enum ParticipantStatus {
+    // Participant is not registered or have been removed
+    None,
+    // Participant is registered but not yet validated
+    Pending,
+    // Participant is registered but do not have token staked
+    Inactive,
+    // Participant is registered and have token staked
+    Active,
+    // Participant is registered but is not allowed to participate
+    Suspended,
+    // Participant is registered but have migrated to the next implementation
+    Migrated
+  }
+
+  struct ParticipantData {
+    ParticipantStatus status;
+    uint64 nonce;
+    uint64 registrationTime;
+  }
+  ```
+
+  Where `status` is a participant status, which Yellow Network allowance is build upon; `nonce` - a number of last mutative participant interaction with the registry (i.e. invoked `registerParticipant` or `migrateParticipant` for a given participant); `registrationTime` - timestamp in seconds at the moment of participant registration.
+
+### Interaction
+
+Registry logic has a defined set of interaction functions, most of which are straightforward to use. However, `registerParticipant` and `migrateParticipant` require to be described. Both of these functions accept two arguments: `participant` and `signature`.
+`participant` is an address of participant to interact with, whereas `signature` is an `IdentityPayload` signed by `participant`.
+
+IdentityPayload is a special structure acting as a proof of account for interaction with `YellowClearing` and is defined as follows:
+
+```solidity
+struct IdentityPayload {
+  YellowClearingBase YellowClearing;
+  address participant;
+  uint64 nonce;
+}
+```
+
+Identity payload can be easily retrieved by invoking `getIdentityPayload(address participant)` function of the `YellowClearing` smart contract. Nevertheless, be aware that returned structure is somewhat different:
+
+Typescript:
+
+```typescript
+export interface IdentityPayloadBN {
+  YellowClearing: string;
+  participant: string;
+  nonce: BigNumber; // BigNumber instead of number
+}
+```
+
+### Usage
+
+- **Frontdex**  
+  Frontdex can get already signed `IdentityPayload` by using `getAndSignIdentityPayload` function located at `/src/identityPayload.ts`.
+
+  For example, overall Frontdex participant registration code should look like this:
+
+  ```typescript
+  const YellowClearing = new ethers.Contract(registryAddress, YellowClearingV1Artifact.abi, signer);
+
+  const registerParams = await getAndSignIdenityPayload(YellowClearing, signer);
+
+  const registerTx = await YellowClearing.registerParticipant(...registerParams);
+
+  await registerTx.wait();
+  ```
+
+- **Finex**  
+  To get `IdentityPayload`, Finex can invoke `getIdentityPayload(address participant)` function on a `YellowClearing` smart contract, although keep in mind that structure returned from this function need to be modified before further participant signing: `nonce` field should be cast from `BigNumber` to `uint256` (or any other `uint` type).

@@ -1,4 +1,8 @@
-import { getAndSignIdentityPayload, identityPayload, signIdentityPayload } from './identityPayload';
+import {
+  getAndSignIdentityPayload,
+  identityPayload,
+  signIdentityPayload,
+} from '../../../src/identityPayload';
 
 import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import type { YellowClearingBase } from '../../../typechain';
