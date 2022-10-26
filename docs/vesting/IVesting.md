@@ -1,262 +1,261 @@
-## IVesting
+# IVesting
 
-### Contents
 
+
+## Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
 
-### Functions
 
-#### `addInvestor`
+## Functions
 
-📋 &nbsp;&nbsp;
+### `addInvestor`
+
+📋   &nbsp;&nbsp;
 Add investor and receivable amount for future claiming
 
 > Can be called only before vesting process starts. If called twice for the same investor, the second call overwrites the data
 
-##### Declaration
+
+#### Declaration
 
 ```solidity
   function addInvestor(
     address investor,
     uint256 amount,
     uint256 iuPercent
-  ) external
-```
+  ) external```
 
-##### Args:
 
-| Arg         | Type    | Description                                                                                                              |
-| ----------- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `investor`  | address | Address of investor                                                                                                      |
-| `amount`    | uint256 | Tokens amount which investor should receive in general                                                                   |
-| `iuPercent` | uint256 | Which percent of tokens should be available immediately after vesting cliff (represented with 2 decimals: 1000 = 10.00%) |
+#### Args
 
-#### `addInvestors`
+| Arg | Type | Description |
+| --- | --- | --- |
+|`investor` | address | Address of investor
+|`amount` | uint256 | Tokens amount which investor should receive in general
+|`iuPercent` | uint256 | Which percent of tokens should be available immediately after vesting cliff (represented with 2 decimals: 1000 = 10.00%)### `addInvestors`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 The same as addInvestor, but for multiple investors
 
 > Provided arrays should have the same length
 
-##### Declaration
+
+#### Declaration
 
 ```solidity
   function addInvestors(
     address[] investors,
     uint256[] amounts,
     uint256 iuPercent
-  ) external
-```
+  ) external```
 
-##### Args:
 
-| Arg         | Type      | Description                                                                                                              |
-| ----------- | --------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `investors` | address[] | Array of investors                                                                                                       |
-| `amounts`   | uint256[] | Array of receivable amounts                                                                                              |
-| `iuPercent` | uint256   | Which percent of tokens should be available immediately after vesting cliff (represented with 2 decimals: 1000 = 10.00%) |
+#### Args
 
-#### `removeInvestor`
+| Arg | Type | Description |
+| --- | --- | --- |
+|`investors` | address[] | Array of investors
+|`amounts` | uint256[] | Array of receivable amounts
+|`iuPercent` | uint256 | Which percent of tokens should be available immediately after vesting cliff (represented with 2 decimals: 1000 = 10.00%)### `removeInvestor`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Remove investor
 
-##### Declaration
+No dev description
+
+#### Declaration
 
 ```solidity
   function removeInvestor(
     address investor
-  ) external
-```
+  ) external```
 
-##### Args:
 
-| Arg        | Type    | Description         |
-| ---------- | ------- | ------------------- |
-| `investor` | address | Address of investor |
+#### Args
 
-#### `claimIuTokens`
+| Arg | Type | Description |
+| --- | --- | --- |
+|`investor` | address | Address of investor### `claimIuTokens`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Claim Initial Unlock tokens immediately after vesting cliff
 
 > Can be called once for each investor
 
-##### Declaration
+#### Declaration
 
 ```solidity
   function claimIuTokens(
-  ) external
-```
+  ) external```
 
-#### `claimLockedTokens`
 
-📋 &nbsp;&nbsp;
+### `claimLockedTokens`
+
+📋   &nbsp;&nbsp;
 Claim locked tokens
+No dev description
 
-##### Declaration
+#### Declaration
 
 ```solidity
   function claimLockedTokens(
-  ) external
-```
+  ) external```
 
-#### `getToPayTokens`
 
-📋 &nbsp;&nbsp;
+### `getToPayTokens`
+
+📋   &nbsp;&nbsp;
 Get total amount of tokens this contract will pay investors after vesting is started
 
 > NOTE: toPayTokens is not updated when tokens are transferred to investors
 
-##### Declaration
+
+#### Declaration
 
 ```solidity
   function getToPayTokens(
-  ) external returns (uint256)
-```
+  ) external returns (uint256)```
 
-##### Returns:
 
-| Type      | Description  |
-| --------- | ------------ |
-| `uint256` | Total tokens |
+#### Returns
 
-#### `getReleasableLockedTokens`
+| Type | Description |
+| --- | --- |
+|`uint256` | Total tokens### `getReleasableLockedTokens`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Get current available locked tokens
 
-##### Declaration
+No dev description
+
+#### Declaration
 
 ```solidity
   function getReleasableLockedTokens(
     address investor
-  ) external returns (uint256)
-```
+  ) external returns (uint256)```
 
-##### Args:
 
-| Arg        | Type    | Description |
-| ---------- | ------- | ----------- |
-| `investor` | address | address     |
+#### Args
 
-##### Returns:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`investor` | address | address
+#### Returns
 
-| Type      | Description                           |
-| --------- | ------------------------------------- |
-| `uint256` | Amount of tokens ready to be released |
+| Type | Description |
+| --- | --- |
+|`uint256` | Amount of tokens ready to be released### `getInvestorData`
 
-#### `getInvestorData`
-
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Get investor data
 
-##### Declaration
+No dev description
+
+#### Declaration
 
 ```solidity
   function getInvestorData(
     address investor
-  ) external returns (uint256 iuAmount, uint256 releasedLockedTokens, uint256 totalLockedTokens)
-```
+  ) external returns (uint256 iuAmount, uint256 releasedLockedTokens, uint256 totalLockedTokens)```
 
-##### Args:
 
-| Arg        | Type    | Description |
-| ---------- | ------- | ----------- |
-| `investor` | address | address     |
+#### Args
 
-##### Returns:
+| Arg | Type | Description |
+| --- | --- | --- |
+|`investor` | address | address
+#### Returns
 
-| Type                   | Description                         |
-| ---------------------- | ----------------------------------- |
-| `iuAmount`             | uint256 Initial Unlock token amount |
-| `releasedLockedTokens` | uint256 Released tokens             |
-| `totalLockedTokens`    | uint256 Total locked tokens         |
+| Type | Description |
+| --- | --- |
+|`iuAmount` | uint256 Initial Unlock token amount
+|`releasedLockedTokens` | uint256 Released tokens
+|`totalLockedTokens` | uint256 Total locked tokens### `getStartTime`
 
-#### `getStartTime`
-
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Get vesting start time
 
-##### Declaration
+No dev description
+
+#### Declaration
 
 ```solidity
   function getStartTime(
-  ) external returns (uint256)
-```
+  ) external returns (uint256)```
 
-##### Returns:
 
-| Type      | Description                      |
-| --------- | -------------------------------- |
-| `uint256` | start time in seconds from epoch |
+#### Returns
 
-#### `getPeriodDays`
+| Type | Description |
+| --- | --- |
+|`uint256` | start time in seconds from epoch### `getPeriodDays`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Get vesting period in days
 
-##### Declaration
+No dev description
+
+#### Declaration
 
 ```solidity
   function getPeriodDays(
-  ) external returns (uint256)
-```
+  ) external returns (uint256)```
 
-##### Returns:
 
-| Type      | Description            |
-| --------- | ---------------------- |
-| `uint256` | vesting period in days |
+#### Returns
 
-#### `getCliffDays`
+| Type | Description |
+| --- | --- |
+|`uint256` | vesting period in days### `getCliffDays`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Get vesting cliff in days
 
-##### Declaration
+No dev description
+
+#### Declaration
 
 ```solidity
   function getCliffDays(
-  ) external returns (uint256)
-```
+  ) external returns (uint256)```
 
-##### Returns:
 
-| Type      | Description           |
-| --------- | --------------------- |
-| `uint256` | vesting cliff in days |
+#### Returns
 
-#### `getClaimingIntervalDays`
+| Type | Description |
+| --- | --- |
+|`uint256` | vesting cliff in days### `getClaimingIntervalDays`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Get claiming interval in days
 
-##### Declaration
+No dev description
+
+#### Declaration
 
 ```solidity
   function getClaimingIntervalDays(
-  ) external returns (uint256)
-```
+  ) external returns (uint256)```
 
-##### Returns:
 
-| Type      | Description               |
-| --------- | ------------------------- |
-| `uint256` | claiming interval in days |
+#### Returns
 
-### Events
+| Type | Description |
+| --- | --- |
+|`uint256` | claiming interval in days
+## Events
 
-#### `TokensReceived`
+### `TokensReceived`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 An investor received tokens
 
-##### Params:
+#### Params
 
-| Param            | Type    | Indexed | Description                                       |
-| ---------------- | ------- | :-----: | ------------------------------------------------- |
-| `investor`       | address |         | Address of investor, who received tokens          |
-| `amount`         | uint256 |         | Amount of tokens received                         |
-| `isLockedTokens` | bool    |         | Whether received tokens were locked- or iu-tokens |
+| Param | Type | Indexed | Description |
+| --- | --- | :---: | --- |
+|`investor` | address |  | Address of investor, who received tokens
+|`amount` | uint256 |  | Amount of tokens received
+|`isLockedTokens` | bool |  | Whether received tokens were locked- or iu-tokens

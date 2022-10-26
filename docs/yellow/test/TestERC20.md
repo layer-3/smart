@@ -1,4 +1,4 @@
-# IYellow
+# TestERC20
 
 
 
@@ -9,7 +9,7 @@
 
 ## Functions
 
-### `initialize`
+### `constructor`
 
 📋   &nbsp;&nbsp;
 No description
@@ -18,24 +18,17 @@ No dev description
 #### Declaration
 
 ```solidity
-  function initialize(
-  ) external```
+  function constructor(
+  ) public ERC20```
 
 
-### `mint`
+#### Modifiers
 
-📋   &nbsp;&nbsp;
-No description
-No dev description
+| Modifier |
+| --- |
+| ERC20 |
 
-#### Declaration
-
-```solidity
-  function mint(
-  ) external```
-
-
-### `burn`
+### `setBalance`
 
 📋   &nbsp;&nbsp;
 No description
@@ -44,11 +37,11 @@ No dev description
 #### Declaration
 
 ```solidity
-  function burn(
-  ) external```
+  function setBalance(
+  ) public```
 
 
-### `pause`
+### `setUserBalance`
 
 📋   &nbsp;&nbsp;
 No description
@@ -57,8 +50,27 @@ No dev description
 #### Declaration
 
 ```solidity
-  function pause(
-  ) external```
+  function setUserBalance(
+  ) public onlyOwner```
+
+
+#### Modifiers
+
+| Modifier |
+| --- |
+| onlyOwner |
+
+### `_setBalance`
+
+📋   &nbsp;&nbsp;
+No description
+No dev description
+
+#### Declaration
+
+```solidity
+  function _setBalance(
+  ) internal```
 
 
 

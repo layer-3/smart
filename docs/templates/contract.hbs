@@ -1,18 +1,17 @@
-## {{{name}}}
+# {{{name}}}
 
-{{{title}}}
-{{{natspec.userdoc}}}
+{{#if title}}{{title}}{{/if~}}
+{{#if natspec.userdoc}}{{natspec.userdoc}}{{/if~}}
 {{#if natspec.devdoc}}> {{natspec.devdoc}}{{/if}}
 
-### Contents
+## Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
 
 {{#if ownVariables}}
-### Globals
+## Globals
 
 {{!-- > Note this contains internal vars as well due to a bug in the docgen procedure --}}
-
 | Var | Type | Description |
 | --- | --- | --- |
 {{#ownVariables}}
@@ -23,26 +22,26 @@
 {{/if}}
 
 {{#if ownModifiers}}
-### Modifiers
+## Modifiers
 
 {{#ownModifiers}}
-#### `{{name}}`
+### `{{name}}`
 
 📋   &nbsp;&nbsp;
 {{#if natspec.userdoc}}{{natspec.userdoc}}{{else}}No description{{/if}}
 {{#if natspec.devdoc}}> {{natspec.devdoc}}{{/if}}
 
-##### Declaration
+#### Declaration
 ```solidity
   modifier {{name}}{{#if natspec.params}}(
     {{#natspec.params}}
     {{#lookup ../args.types @index}}{{/lookup}} {{param}}{{#if @last}}{{else}},{{/if}}
     {{/natspec.params}}
-  ){{/if}}
+  ){{/if~}}
 ```
 
 {{#if natspec.params}}
-##### Args:
+#### Args:
 | Arg | Type | Description |
 | --- | --- | --- |
 {{#natspec.params}}
@@ -51,29 +50,32 @@
 {{/if}}
 
 {{/ownModifiers}}
-{{/if}}
+{{/if~}}
 
 {{#if ownFunctions}}
-### Functions
+## Functions
 
 {{#ownFunctions}}
-#### `{{name}}`
+### `{{name}}`
 
 📋   &nbsp;&nbsp;
 {{#if natspec.userdoc}}{{natspec.userdoc}}{{else}}No description{{/if}}
-{{#if natspec.devdoc}}> {{natspec.devdoc}}{{/if}}
+{{#if natspec.devdoc}}> {{natspec.devdoc}}{{else}}No dev description{{/if}}
 
-##### Declaration
+#### Declaration
+
 ```solidity
   function {{name}}(
     {{#natspec.params}}
     {{#lookup ../args.types @index}}{{/lookup}} {{param}}{{#if @last}}{{else}},{{/if}}
     {{/natspec.params}}
-  ) {{visibility}}{{#astNode.modifiers}} {{modifierName.name}}{{/astNode.modifiers}}{{#if outputs}} returns ({{outputs}}){{/if}}
+  ) {{visibility}}{{#astNode.modifiers}} {{modifierName.name}}{{/astNode.modifiers}}{{#if outputs}} returns ({{outputs}}){{/if~}}
 ```
 
 {{#if astNode.modifiers}}
-##### Modifiers:
+
+#### Modifiers
+
 | Modifier |
 | --- |
 {{#astNode.modifiers}}
@@ -84,46 +86,50 @@
 {{/if}}
 
 {{#if natspec.params}}
-##### Args:
+#### Args
+
 | Arg | Type | Description |
 | --- | --- | --- |
 {{#natspec.params}}
 |`{{param}}` | {{#lookup ../args.types @index}}{{/lookup}} | {{description}}
 {{~/natspec.params}}
-{{/if}}
+{{else}}
+{{/if~}}
 
 {{#if natspec.returns}}
-##### Returns:
+#### Returns
+
 | Type | Description |
 | --- | --- |
 {{#natspec.returns}}
-|`{{param}}` | {{description}} 
+|`{{param}}` | {{description}}
 {{~/natspec.returns}}
-{{/if}}
+{{else}}
+{{/if~}}
 
 {{/ownFunctions}}
 {{/if}}
 
-
 {{#if ownEvents}}
-### Events
+## Events
 
 {{#ownEvents}}
-#### `{{name}}`
+### `{{name}}`
 
 📋   &nbsp;&nbsp;
 {{#if natspec.userdoc}}{{natspec.userdoc}}{{else}}No description{{/if}}
-{{#if natspec.devdoc}}> {{natspec.devdoc}}{{/if}}
-  
+{{#if natspec.devdoc}}> {{natspec.devdoc}}{{/if~}}
 
 {{#if natspec.params}}
-##### Params:
+#### Params
+
 | Param | Type | Indexed | Description |
 | --- | --- | :---: | --- |
 {{#natspec.params}}
 |`{{param}}` | {{lookup ../args.types @index}} | {{#with (lookup ../astNode.parameters.parameters @index)}}{{#if indexed}}:white_check_mark:{{/if}}{{/with}} | {{description}} {{~-~}}
 {{/natspec.params}}
-{{/if}}
+{{else}}
+{{/if~}}
 
 {{/ownEvents}}
 {{/if}}

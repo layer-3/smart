@@ -1,174 +1,172 @@
-## Yellow
+# Yellow
 
-### Contents
 
+
+## Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
 
-### Functions
 
-#### `init`
+## Functions
 
-📋 &nbsp;&nbsp;
+### `init`
+
+📋   &nbsp;&nbsp;
 Initialize the contract and the owner address permissions.
-
-- Set the owner as multi-signature account from Gnosis Safe
-- Set the total supply to 10 billion tokens with 18 decimal places for a total of 10\*\*27 units.
+- Set the total supply to 10 billion tokens with 18 decimal places for a total of 10**27 units.
 - grant DEFAULT_ADMIN_ROLE to owner.
 - grant MINTER_ROLE to owner.
 - grant PAUSER_ROLE to owner.
+The owner will be a multi-signature wallet using a Gnosis Safe.
+Several signatures will be mandatory for minting new tokens or pausing transfers.
+This will ensure that not a single person can manipulate the market by stopping transfers of minting new tokens.
+No dev description
 
-##### Declaration
+#### Declaration
 
 ```solidity
   function init(
-  ) public initializer
-```
+  ) public initializer```
 
-##### Modifiers:
 
-| Modifier    |
-| ----------- |
+#### Modifiers
+
+| Modifier |
+| --- |
 | initializer |
 
-#### `_beforeTokenTransfer`
+### `_beforeTokenTransfer`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Requirements:
-
 - the contract must not be paused.
 
 > For explicit interface definition.
 
-##### Declaration
+#### Declaration
 
 ```solidity
   function _beforeTokenTransfer(
-  ) internal
-```
+  ) internal```
 
-#### `mint`
 
-📋 &nbsp;&nbsp;
+### `mint`
+
+📋   &nbsp;&nbsp;
 Creates `amount` new tokens for `to`.
 Requirements:
-
 - the caller must have the `MINTER_ROLE`.
 - the contract owner has `MINTER_ROLE` by default.
 
 > For explicit interface definition.
 
-##### Declaration
+
+#### Declaration
 
 ```solidity
   function mint(
     address to,
     uint256 amount
-  ) public onlyRole
-```
+  ) public onlyRole```
 
-##### Modifiers:
+
+#### Modifiers
 
 | Modifier |
-| -------- |
+| --- |
 | onlyRole |
 
-##### Args:
+#### Args
 
-| Arg      | Type    | Description                         |
-| -------- | ------- | ----------------------------------- |
-| `to`     | address | Account address to create tokens to |
-| `amount` | uint256 | Amount of tokens to create          |
+| Arg | Type | Description |
+| --- | --- | --- |
+|`to` | address | Account address to create tokens to
+|`amount` | uint256 | Amount of tokens to create### `pause`
 
-#### `pause`
-
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Pauses all token transfers.
 Requirements:
-
 - the caller must have the `PAUSER_ROLE`.
 - the contract owner has `PAUSER_ROLE` by default.
 
 > For explicit interface definition.
 
-##### Declaration
+#### Declaration
 
 ```solidity
   function pause(
-  ) public onlyRole
-```
+  ) public onlyRole```
 
-##### Modifiers:
+
+#### Modifiers
 
 | Modifier |
-| -------- |
+| --- |
 | onlyRole |
 
-#### `burn`
+### `burn`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 Removes `amount` new tokens from caller.
 
 > For explicit interface definition.
 
-##### Declaration
+
+#### Declaration
 
 ```solidity
   function burn(
     uint256 amount
-  ) public
-```
+  ) public```
 
-##### Args:
 
-| Arg      | Type    | Description                |
-| -------- | ------- | -------------------------- |
-| `amount` | uint256 | Amount of tokens to remove |
+#### Args
 
-#### `_mint`
+| Arg | Type | Description |
+| --- | --- | --- |
+|`amount` | uint256 | Amount of tokens to remove### `_mint`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 No description
-
 > For explicit interface definition.
 
-##### Declaration
+#### Declaration
 
 ```solidity
   function _mint(
-  ) internal
-```
+  ) internal```
 
-#### `_pause`
 
-📋 &nbsp;&nbsp;
+### `_pause`
+
+📋   &nbsp;&nbsp;
 No description
-
 > For explicit interface definition.
 
-##### Declaration
+#### Declaration
 
 ```solidity
   function _pause(
-  ) internal whenNotPaused
-```
+  ) internal whenNotPaused```
 
-##### Modifiers:
 
-| Modifier      |
-| ------------- |
+#### Modifiers
+
+| Modifier |
+| --- |
 | whenNotPaused |
 
-#### `_burn`
+### `_burn`
 
-📋 &nbsp;&nbsp;
+📋   &nbsp;&nbsp;
 No description
-
 > For explicit interface definition.
 
-##### Declaration
+#### Declaration
 
 ```solidity
   function _burn(
-  ) internal
-```
+  ) internal```
+
+
+

@@ -1,4 +1,4 @@
-# VestingERC20
+# TESTYellowClearingV3
 
 
 
@@ -19,29 +19,16 @@ No dev description
 
 ```solidity
   function constructor(
-  ) public ERC20```
+  ) public YellowClearingBase```
 
 
 #### Modifiers
 
 | Modifier |
 | --- |
-| ERC20 |
+| YellowClearingBase |
 
-### `mint`
-
-📋   &nbsp;&nbsp;
-No description
-No dev description
-
-#### Declaration
-
-```solidity
-  function mint(
-  ) public```
-
-
-### `burnFrom`
+### `_migrateParticipantData`
 
 📋   &nbsp;&nbsp;
 No description
@@ -50,8 +37,8 @@ No dev description
 #### Declaration
 
 ```solidity
-  function burnFrom(
-  ) public```
+  function _migrateParticipantData(
+  ) internal```
 
 
 

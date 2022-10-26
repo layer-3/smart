@@ -1,4 +1,4 @@
-# VestingERC20
+# TESTYellowClearingV2
 
 
 
@@ -6,6 +6,11 @@
 <!-- START doctoc -->
 <!-- END doctoc -->
 
+## Globals
+
+| Var | Type | Description |
+| --- | --- | --- |
+| newStorageVariable | uint256 |  |
 
 ## Functions
 
@@ -19,29 +24,16 @@ No dev description
 
 ```solidity
   function constructor(
-  ) public ERC20```
+  ) public YellowClearingBase```
 
 
 #### Modifiers
 
 | Modifier |
 | --- |
-| ERC20 |
+| YellowClearingBase |
 
-### `mint`
-
-📋   &nbsp;&nbsp;
-No description
-No dev description
-
-#### Declaration
-
-```solidity
-  function mint(
-  ) public```
-
-
-### `burnFrom`
+### `newFunctionPresent`
 
 📋   &nbsp;&nbsp;
 No description
@@ -50,8 +42,8 @@ No dev description
 #### Declaration
 
 ```solidity
-  function burnFrom(
-  ) public```
+  function newFunctionPresent(
+  ) external returns (bool)```
 
 
 
