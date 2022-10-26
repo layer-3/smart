@@ -1,14 +1,16 @@
 import * as dotenv from 'dotenv';
 import { HardhatUserConfig, task } from 'hardhat/config';
+
+import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
-import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
 import '@openzeppelin/hardhat-upgrades';
 import 'hardhat-abi-exporter';
 import 'hardhat-deploy';
+import type { TypechainUserConfig } from '@typechain/hardhat/dist/types';
 
 dotenv.config();
 
@@ -23,7 +25,7 @@ task('accounts', 'Prints the list of accounts', async (_, hre) => {
 const ACCOUNTS = process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [];
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY ?? '';
 
-const config: HardhatUserConfig = {
+const config: HardhatUserConfig & { typechain: TypechainUserConfig } = {
   solidity: {
     compilers: [
       {
@@ -36,6 +38,9 @@ const config: HardhatUserConfig = {
         },
       },
     ],
+  },
+  typechain: {
+    outDir: 'typechain',
   },
   namedAccounts: {
     deployer: {
