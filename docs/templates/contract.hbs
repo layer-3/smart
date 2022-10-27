@@ -3,9 +3,11 @@
 
 {{#if title}}{{title}}{{/if~}}
 {{#if natspec.userdoc}}{{natspec.userdoc}}{{/if~}}
-{{#if natspec.devdoc}}> {{natspec.devdoc}}{{/if}}
-{{! ------------- ------------- -------------}}
+{{#if natspec.devdoc}}
+> {{natspec.devdoc}}
 
+{{/if}}
+{{! ------------- ------------- -------------}}
 ## Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
@@ -31,15 +33,24 @@
 {{#if ownModifiers}}
 
 ## Modifiers
-
 {{#ownModifiers}}
+
 ### `{{name}}`
 
 📋   &nbsp;&nbsp;
-{{#if natspec.userdoc}}{{natspec.userdoc}}{{else}}No description{{/if}}
-{{#if natspec.devdoc}}> {{natspec.devdoc}}{{/if}}
+{{#if natspec.userdoc}}
+{{natspec.userdoc}}
+{{else}}
+No description
+{{/if~}}
 
+{{#if natspec.devdoc}}
+> {{natspec.devdoc}}
+{{/if}}
+
+{{! --- modifier declaration ---}}
 #### Declaration
+
 ```solidity
   modifier {{name}}{{#if natspec.params}}(
     {{#natspec.params}}
@@ -47,18 +58,19 @@
     {{/natspec.params}}
   ){{/if}}
 ```
-
+{{! --- modifier params ---}}
 {{#if natspec.params}}
+
 #### Args:
+
 | Arg | Type | Description |
 | --- | --- | --- |
 {{#natspec.params}}
 |`{{param}}` | {{#lookup ../args.types @index}}{{/lookup}} | {{description}} {{~"|"}}
 {{~/natspec.params}}
 {{/if}}
-
 {{/ownModifiers}}
-{{/if~}}
+{{/if}}
 {{! ------------- ------------- -------------}}
 {{!
 ------------- FUNCTIONS -------------
@@ -73,14 +85,12 @@
 📋   &nbsp;&nbsp;
 {{#if natspec.userdoc}}
 {{natspec.userdoc}}
-{{~else~}}
+{{else}}
 No description
-{{/if}}
+{{/if~}}
 
 {{#if natspec.devdoc}}
 > {{natspec.devdoc}}
-{{~else}}
-No dev description
 {{/if}}
 
 {{! --- function declaration ---}}
@@ -149,16 +159,10 @@ No dev description
 
 📋   &nbsp;&nbsp;
 {{#if natspec.userdoc}}
-{{natspec.userdoc}}
-{{~else~}}
-No description
-{{/if~}}
-
+{{natspec.userdoc}}{{else}}No description{{/if}}
 {{#if natspec.devdoc}}
 > {{natspec.devdoc}}
-{{~else~}}
-No dev description
-{{/if~}}
+{{/if}}
 {{! --- event params ---}}
 {{#if natspec.params}}
 
