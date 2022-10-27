@@ -22,7 +22,7 @@
 | --- | --- | --- |
 {{#ownVariables}}
 {{#unless (eq visibility "internal")}}
-| {{name}} | {{ type }} | {{#if (eq name "BROKER_ROLE")}}Broker role identifier value{{else}}{{#if (eq name "WITHDRAW_TYPE")}}Withdrawal type identifier value{{else}}{{#if (eq name "DEPOSIT_TYPE")}}Deposit type identifier value{{else}}{{/if}}{{/if}}{{/if}} |
+| {{name}} | {{ type }} | {{description}} |
 {{/unless}}
 {{/ownVariables}}
 {{/if}}
