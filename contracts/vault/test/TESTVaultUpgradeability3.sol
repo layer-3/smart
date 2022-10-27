@@ -12,7 +12,7 @@ contract TESTVaultUpgradeability3 is VaultImplBase {
 	uint256 public migrationInvoked;
 
 	// does not take storage slot
-	uint256 public constant version = 3;
+	uint256 public constant VERSION = 3;
 
 	// Proxy calls this upon linking
 	function _initialize() internal override {

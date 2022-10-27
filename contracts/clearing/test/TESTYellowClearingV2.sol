@@ -10,7 +10,7 @@ contract TESTYellowClearingV2 is YellowClearingBase {
 	{}
 
 	// can introduce new storage variables
-	uint256 newStorageVariable = 42;
+	uint256 public newStorageVariable = 42;
 
 	// can introduce new functions
 	function newFunctionPresent() external pure returns (bool) {
