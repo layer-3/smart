@@ -6,7 +6,6 @@ Base logic for the Implementation.
 ## Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
-
 ## Globals
 
 | Var | Type | Description |
@@ -21,11 +20,11 @@ Base logic for the Implementation.
 Check that the execution is being performed through a delegatecall call and that the execution context is
 a proxy contract with an implementation (as defined in ERC1967) pointing to self.
 
-
 #### Declaration
-```solidity
-  modifier onlyProxy```
 
+```solidity
+  modifier onlyProxy
+```
 
 ### `notDelegated`
 
@@ -33,11 +32,11 @@ a proxy contract with an implementation (as defined in ERC1967) pointing to self
 Check that the execution is not being performed through a delegate call. This allows a function to be
 callable on the implementing contract but not through proxies.
 
-
 #### Declaration
-```solidity
-  modifier notDelegated```
 
+```solidity
+  modifier notDelegated
+```
 
 ### `onlyMaintainer`
 
@@ -48,9 +47,10 @@ Check that the caller has MAINTAINER_ROLE.
 If called directly, this contract's storage is checked. This logic allows to have a different Proxy and Implementation roles.
 
 #### Declaration
-```solidity
-  modifier onlyMaintainer```
 
+```solidity
+  modifier onlyMaintainer
+```
 
 ## Functions
 
@@ -58,14 +58,13 @@ If called directly, this contract's storage is checked. This logic allows to hav
 
 📋   &nbsp;&nbsp;
 Set the Implementation deployer as an Admin and Maintainer.
-No dev description
 
 #### Declaration
 
 ```solidity
   function constructor(
-  ) internal```
-
+  ) internal
+```
 
 ### `_setupDeployerRoles`
 
@@ -78,8 +77,8 @@ Grant DEFAULT_ADMIN_ROLE and MAINTAINER_ROLE to the caller. Internal method.
 
 ```solidity
   function _setupDeployerRoles(
-  ) internal```
-
+  ) internal
+```
 
 ### `getNextImplementation`
 
@@ -94,8 +93,8 @@ NextImplementation points to the next implementation contract in a chain of cont
 
 ```solidity
   function getNextImplementation(
-  ) external notDelegated returns (contract VaultImplBase)```
-
+  ) external notDelegated returns (contract VaultImplBase)
+```
 
 #### Modifiers
 
@@ -107,7 +106,9 @@ NextImplementation points to the next implementation contract in a chain of cont
 
 | Type | Description |
 | --- | --- |
-|`VaultImplBase` | Next implementation contract address or zero address if not set yet.### `setNextImplementation`
+|`VaultImplBase` | Next implementation contract address or zero address if not set yet.
+
+### `setNextImplementation`
 
 📋   &nbsp;&nbsp;
 Set next implementation contract address if not set yet.
@@ -122,8 +123,8 @@ Emits `NextImplementationSet` event.
 ```solidity
   function setNextImplementation(
     contract VaultImplBase nextImplementation
-  ) external notDelegated onlyMaintainer```
-
+  ) external notDelegated onlyMaintainer
+```
 
 #### Modifiers
 
@@ -136,7 +137,9 @@ Emits `NextImplementationSet` event.
 
 | Arg | Type | Description |
 | --- | --- | --- |
-|`nextImplementation` | contract VaultImplBase | Next implementation contract address.### `proxiableUUID`
+|`nextImplementation` | contract VaultImplBase | Next implementation contract address.|
+
+### `proxiableUUID`
 
 📋   &nbsp;&nbsp;
 No description
@@ -147,8 +150,8 @@ implementation. It is used to validate the implementation's compatibility when p
 
 ```solidity
   function proxiableUUID(
-  ) external notDelegated returns (bytes32)```
-
+  ) external notDelegated returns (bytes32)
+```
 
 #### Modifiers
 
@@ -167,8 +170,8 @@ Override this function for Implementation to initialize any storage variables. U
 
 ```solidity
   function _initialize(
-  ) internal onlyProxy```
-
+  ) internal onlyProxy
+```
 
 #### Modifiers
 
@@ -187,8 +190,8 @@ Call `_initialize_ defined by the Implementation to initialize any storage varia
 
 ```solidity
   function initialize(
-  ) external onlyProxy```
-
+  ) external onlyProxy
+```
 
 #### Modifiers
 
@@ -207,8 +210,8 @@ Override this function for Implementation to migrate any storage variables betwe
 
 ```solidity
   function _migrate(
-  ) internal onlyProxy```
-
+  ) internal onlyProxy
+```
 
 #### Modifiers
 
@@ -227,8 +230,8 @@ Call `_migrate` defined by the Implementation to migrate any storage variables. 
 
 ```solidity
   function applyUpgrade(
-  ) external onlyProxy```
-
+  ) external onlyProxy
+```
 
 #### Modifiers
 
@@ -247,8 +250,8 @@ Perform an upgrade from the current implementation contract to a next one specif
 
 ```solidity
   function upgrade(
-  ) public onlyMaintainer onlyProxy```
-
+  ) public onlyMaintainer onlyProxy
+```
 
 #### Modifiers
 
@@ -257,7 +260,6 @@ Perform an upgrade from the current implementation contract to a next one specif
 | onlyMaintainer |
 | onlyProxy |
 
-
 ## Events
 
 ### `NextImplementationSet`
@@ -265,6 +267,8 @@ Perform an upgrade from the current implementation contract to a next one specif
 📋   &nbsp;&nbsp;
 No description
 > Indicates that a next implementation address was set.
+
+
 #### Params
 
 | Param | Type | Indexed | Description |

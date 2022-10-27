@@ -7,7 +7,6 @@ Logic for the Proxy, excluding start implementation contract address, which must
 <!-- START doctoc -->
 <!-- END doctoc -->
 
-
 ## Functions
 
 ### `constructor`
@@ -21,8 +20,8 @@ Set the address of the latest version of implementation contract, provided the f
 
 ```solidity
   function constructor(
-  ) internal```
-
+  ) internal
+```
 
 ### `getImplementation`
 
@@ -36,14 +35,16 @@ Retrieve implementation contract.
 
 ```solidity
   function getImplementation(
-  ) external returns (address)```
-
+  ) external returns (address)
+```
 
 #### Returns
 
 | Type | Description |
 | --- | --- |
-|`address` | Implementation contract address.### `_implementation`
+|`address` | Implementation contract address.
+
+### `_implementation`
 
 📋   &nbsp;&nbsp;
 Retrieve implementation contract stored in `_IMPLEMENTATION_SLOT`. Internal method.
@@ -55,8 +56,8 @@ Retrieve implementation contract stored in `_IMPLEMENTATION_SLOT`. Internal meth
 
 ```solidity
   function _implementation(
-  ) internal returns (address)```
-
+  ) internal returns (address)
+```
 
 #### Returns
 

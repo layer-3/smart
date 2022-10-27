@@ -1,11 +1,8 @@
 # TESTYellowClearingV2
 
-
-
 ## Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
-
 ## Globals
 
 | Var | Type | Description |
@@ -18,14 +15,13 @@
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function constructor(
-  ) public YellowClearingBase```
-
+  ) public YellowClearingBase
+```
 
 #### Modifiers
 
@@ -37,13 +33,10 @@ No dev description
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function newFunctionPresent(
-  ) external returns (bool)```
-
-
-
+  ) external returns (bool)
+```

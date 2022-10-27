@@ -1,11 +1,8 @@
 # Yellow
 
-
-
 ## Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
-
 
 ## Functions
 
@@ -20,14 +17,13 @@ Initialize the contract and the owner address permissions.
 The owner will be a multi-signature wallet using a Gnosis Safe.
 Several signatures will be mandatory for minting new tokens or pausing transfers.
 This will ensure that not a single person can manipulate the market by stopping transfers of minting new tokens.
-No dev description
 
 #### Declaration
 
 ```solidity
   function init(
-  ) public initializer```
-
+  ) public initializer
+```
 
 #### Modifiers
 
@@ -47,8 +43,8 @@ Requirements:
 
 ```solidity
   function _beforeTokenTransfer(
-  ) internal```
-
+  ) internal
+```
 
 ### `mint`
 
@@ -67,8 +63,8 @@ Requirements:
   function mint(
     address to,
     uint256 amount
-  ) public onlyRole```
-
+  ) public onlyRole
+```
 
 #### Modifiers
 
@@ -81,7 +77,10 @@ Requirements:
 | Arg | Type | Description |
 | --- | --- | --- |
 |`to` | address | Account address to create tokens to
-|`amount` | uint256 | Amount of tokens to create### `pause`
+|
+|`amount` | uint256 | Amount of tokens to create|
+
+### `pause`
 
 📋   &nbsp;&nbsp;
 Pauses all token transfers.
@@ -95,8 +94,8 @@ Requirements:
 
 ```solidity
   function pause(
-  ) public onlyRole```
-
+  ) public onlyRole
+```
 
 #### Modifiers
 
@@ -117,14 +116,16 @@ Removes `amount` new tokens from caller.
 ```solidity
   function burn(
     uint256 amount
-  ) public```
-
+  ) public
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
-|`amount` | uint256 | Amount of tokens to remove### `_mint`
+|`amount` | uint256 | Amount of tokens to remove|
+
+### `_mint`
 
 📋   &nbsp;&nbsp;
 No description
@@ -134,8 +135,8 @@ No description
 
 ```solidity
   function _mint(
-  ) internal```
-
+  ) internal
+```
 
 ### `_pause`
 
@@ -147,8 +148,8 @@ No description
 
 ```solidity
   function _pause(
-  ) internal whenNotPaused```
-
+  ) internal whenNotPaused
+```
 
 #### Modifiers
 
@@ -166,7 +167,5 @@ No description
 
 ```solidity
   function _burn(
-  ) internal```
-
-
-
+  ) internal
+```

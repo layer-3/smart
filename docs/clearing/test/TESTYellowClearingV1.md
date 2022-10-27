@@ -6,26 +6,22 @@
 <!-- START doctoc -->
 <!-- END doctoc -->
 
-
 ## Functions
 
 ### `constructor`
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function constructor(
-  ) public YellowClearingBase```
-
+  ) public YellowClearingBase
+```
 
 #### Modifiers
 
 | Modifier |
 | --- |
 | YellowClearingBase |
-
-

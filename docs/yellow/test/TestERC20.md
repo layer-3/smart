@@ -1,11 +1,8 @@
 # TestERC20
 
-
-
 ## Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
-
 
 ## Functions
 
@@ -13,14 +10,13 @@
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function constructor(
-  ) public ERC20```
-
+  ) public ERC20
+```
 
 #### Modifiers
 
@@ -32,27 +28,25 @@ No dev description
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function setBalance(
-  ) public```
-
+  ) public
+```
 
 ### `setUserBalance`
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function setUserBalance(
-  ) public onlyOwner```
-
+  ) public onlyOwner
+```
 
 #### Modifiers
 
@@ -64,13 +58,10 @@ No dev description
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function _setBalance(
-  ) internal```
-
-
-
+  ) internal
+```

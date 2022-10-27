@@ -1,11 +1,8 @@
 # TESTYellowClearingV3
 
-
-
 ## Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
-
 
 ## Functions
 
@@ -13,14 +10,13 @@
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function constructor(
-  ) public YellowClearingBase```
-
+  ) public YellowClearingBase
+```
 
 #### Modifiers
 
@@ -32,13 +28,10 @@ No dev description
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function _migrateParticipantData(
-  ) internal```
-
-
-
+  ) internal
+```

@@ -1,11 +1,8 @@
 # VestingERC20
 
-
-
 ## Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
-
 
 ## Functions
 
@@ -13,14 +10,13 @@
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function constructor(
-  ) public ERC20```
-
+  ) public ERC20
+```
 
 #### Modifiers
 
@@ -32,26 +28,22 @@ No dev description
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function mint(
-  ) public```
-
+  ) public
+```
 
 ### `burnFrom`
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function burnFrom(
-  ) public```
-
-
-
+  ) public
+```

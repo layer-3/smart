@@ -6,7 +6,6 @@ Base contract for Yellow Clearing. Responsible for all operations regarding Yell
 ## Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
-
 ## Globals
 
 | Var | Type | Description |
@@ -24,14 +23,13 @@ Base contract for Yellow Clearing. Responsible for all operations regarding Yell
 📋   &nbsp;&nbsp;
 Grant DEFAULT_ADMIN_ROLE and REGISTRY_MAINTAINER_ROLE roles to deployer, link previous implementation it supplied.
 
-No dev description
 
 #### Declaration
 
 ```solidity
   function constructor(
-  ) internal```
-
+  ) internal
+```
 
 ### `getNextImplementation`
 
@@ -45,14 +43,16 @@ Get next implementation address if set, zero address if not.
 
 ```solidity
   function getNextImplementation(
-  ) external returns (contract YellowClearingBase)```
-
+  ) external returns (contract YellowClearingBase)
+```
 
 #### Returns
 
 | Type | Description |
 | --- | --- |
-|`YellowClearingBase` | Next implementation address if set, zero address if not.### `setNextImplementation`
+|`YellowClearingBase` | Next implementation address if set, zero address if not.
+
+### `setNextImplementation`
 
 📋   &nbsp;&nbsp;
 Set next implementation address. Must not be zero address or self. Emit `NextImplementationSet` event.
@@ -65,8 +65,8 @@ Set next implementation address. Must not be zero address or self. Emit `NextImp
 ```solidity
   function setNextImplementation(
     contract YellowClearingBase nextImplementation
-  ) external onlyRole```
-
+  ) external onlyRole
+```
 
 #### Modifiers
 
@@ -78,7 +78,9 @@ Set next implementation address. Must not be zero address or self. Emit `NextImp
 
 | Arg | Type | Description |
 | --- | --- | --- |
-|`nextImplementation` | contract YellowClearingBase | Next implementation address.### `hasParticipant`
+|`nextImplementation` | contract YellowClearingBase | Next implementation address.|
+
+### `hasParticipant`
 
 📋   &nbsp;&nbsp;
 Check if participant is present in the registry. Participant is not present if it is not stored in the mapping or has `ParticipantStatus.None`.
@@ -90,14 +92,16 @@ Check if participant is present in the registry. Participant is not present if i
 
 ```solidity
   function hasParticipant(
-  ) public returns (bool)```
-
+  ) public returns (bool)
+```
 
 #### Returns
 
 | Type | Description |
 | --- | --- |
-|`True` | if participant is present, false otherwise.### `requireParticipantNotPresentBackwards`
+|`True` | if participant is present, false otherwise.
+
+### `requireParticipantNotPresentBackwards`
 
 📋   &nbsp;&nbsp;
 Recursively check that participant is not present in this registry and all previous ones.
@@ -110,14 +114,16 @@ Recursively check that participant is not present in this registry and all previ
 ```solidity
   function requireParticipantNotPresentBackwards(
     address participant
-  ) public```
-
+  ) public
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
-|`participant` | address | Address of participant to check.### `requireParticipantNotPresentForwards`
+|`participant` | address | Address of participant to check.|
+
+### `requireParticipantNotPresentForwards`
 
 📋   &nbsp;&nbsp;
 Recursively check that participant is not present in this registry and all subsequent ones.
@@ -130,14 +136,16 @@ Recursively check that participant is not present in this registry and all subse
 ```solidity
   function requireParticipantNotPresentForwards(
     address participant
-  ) public```
-
+  ) public
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
-|`participant` | address | Address of participant to check.### `requireParticipantNotPresentRecursive`
+|`participant` | address | Address of participant to check.|
+
+### `requireParticipantNotPresentRecursive`
 
 📋   &nbsp;&nbsp;
 Recursively check that participant is not present in this registry and all previous and subsequent ones.
@@ -150,14 +158,16 @@ Recursively check that participant is not present in this registry and all previ
 ```solidity
   function requireParticipantNotPresentRecursive(
     address participant
-  ) public```
-
+  ) public
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
-|`participant` | address | Address of participant to check.### `getParticipantData`
+|`participant` | address | Address of participant to check.|
+
+### `getParticipantData`
 
 📋   &nbsp;&nbsp;
 Get participant data stored in the registry. Revert if participant is not present.
@@ -170,19 +180,23 @@ Get participant data stored in the registry. Revert if participant is not presen
 ```solidity
   function getParticipantData(
     address participant
-  ) external returns (struct YellowClearingBase.ParticipantData)```
-
+  ) external returns (struct YellowClearingBase.ParticipantData)
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
 |`participant` | address | Address of participant to get data about.
+|
+
 #### Returns
 
 | Type | Description |
 | --- | --- |
-|`ParticipantData` | Participant data.### `getIdentityPayload`
+|`ParticipantData` | Participant data.
+
+### `getIdentityPayload`
 
 📋   &nbsp;&nbsp;
 Return identity payload structure for a supplied participant. Used to ease interaction with this contract.
@@ -195,19 +209,23 @@ Return identity payload structure for a supplied participant. Used to ease inter
 ```solidity
   function getIdentityPayload(
     address participant
-  ) public returns (struct YellowClearingBase.IdentityPayload)```
-
+  ) public returns (struct YellowClearingBase.IdentityPayload)
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
 |`participant` | address | Address of participant to get identity payload for.
+|
+
 #### Returns
 
 | Type | Description |
 | --- | --- |
-|`IdentityPayload` | Identity payload structure for a supplied participant.### `registerParticipant`
+|`IdentityPayload` | Identity payload structure for a supplied participant.
+
+### `registerParticipant`
 
 📋   &nbsp;&nbsp;
 Register participant by adding it to the registry with Pending status. Emit `ParticipantRegistered` event.
@@ -221,15 +239,18 @@ Register participant by adding it to the registry with Pending status. Emit `Par
   function registerParticipant(
     address participant,
     bytes signature
-  ) external```
-
+  ) external
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
 |`participant` | address | Virtual (no address, only public key exist) address of participant to add.
-|`signature` | bytes | Participant identity payload signed by this same participant.### `validateParticipant`
+|
+|`signature` | bytes | Participant identity payload signed by this same participant.|
+
+### `validateParticipant`
 
 📋   &nbsp;&nbsp;
 Validate participant and, depending on checks to be added, set their status to either Active or Inactive. Emit `ParticipantStatusChanged` event.
@@ -242,8 +263,8 @@ Validate participant and, depending on checks to be added, set their status to e
 ```solidity
   function validateParticipant(
     address participant
-  ) external onlyRole```
-
+  ) external onlyRole
+```
 
 #### Modifiers
 
@@ -255,7 +276,9 @@ Validate participant and, depending on checks to be added, set their status to e
 
 | Arg | Type | Description |
 | --- | --- | --- |
-|`participant` | address | Address of participant to validate.### `suspendParticipant`
+|`participant` | address | Address of participant to validate.|
+
+### `suspendParticipant`
 
 📋   &nbsp;&nbsp;
 Suspend participant and set their status to Suspended. Emit `ParticipantStatusChanged` event.
@@ -268,8 +291,8 @@ Suspend participant and set their status to Suspended. Emit `ParticipantStatusCh
 ```solidity
   function suspendParticipant(
     address participant
-  ) external onlyRole```
-
+  ) external onlyRole
+```
 
 #### Modifiers
 
@@ -281,7 +304,9 @@ Suspend participant and set their status to Suspended. Emit `ParticipantStatusCh
 
 | Arg | Type | Description |
 | --- | --- | --- |
-|`participant` | address | Address of participant to suspend.### `reinstateParticipant`
+|`participant` | address | Address of participant to suspend.|
+
+### `reinstateParticipant`
 
 📋   &nbsp;&nbsp;
 Reinstate participant and, depending on checks to be added, set their status to either Active or Inactive. Emit `ParticipantStatusChanged` event.
@@ -294,8 +319,8 @@ Reinstate participant and, depending on checks to be added, set their status to 
 ```solidity
   function reinstateParticipant(
     address participant
-  ) external onlyRole```
-
+  ) external onlyRole
+```
 
 #### Modifiers
 
@@ -307,7 +332,9 @@ Reinstate participant and, depending on checks to be added, set their status to 
 
 | Arg | Type | Description |
 | --- | --- | --- |
-|`participant` | address | Address of participant to reinstate.### `setParticipantData`
+|`participant` | address | Address of participant to reinstate.|
+
+### `setParticipantData`
 
 📋   &nbsp;&nbsp;
 Set participant data to data supplied. Emit `ParticipantDataChanged` event.
@@ -321,8 +348,8 @@ Set participant data to data supplied. Emit `ParticipantDataChanged` event.
   function setParticipantData(
     address participant,
     struct YellowClearingBase.ParticipantData data
-  ) external onlyRole```
-
+  ) external onlyRole
+```
 
 #### Modifiers
 
@@ -335,7 +362,10 @@ Set participant data to data supplied. Emit `ParticipantDataChanged` event.
 | Arg | Type | Description |
 | --- | --- | --- |
 |`participant` | address | Address of participant to set data of.
-|`data` | struct YellowClearingBase.ParticipantData | Data to set.### `migrateParticipant`
+|
+|`data` | struct YellowClearingBase.ParticipantData | Data to set.|
+
+### `migrateParticipant`
 
 📋   &nbsp;&nbsp;
 Migrate participant to the newest implementation present in upgrades chain. Emit `ParticipantMigratedFrom` and `ParticipantMigratedTo` events.
@@ -349,15 +379,18 @@ Migrate participant to the newest implementation present in upgrades chain. Emit
   function migrateParticipant(
     address participant,
     bytes signature
-  ) external```
-
+  ) external
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
 |`participant` | address | Address of participant to migrate.
-|`signature` | bytes | Participant identity payload signed by that participant.### `migrateParticipantData`
+|
+|`signature` | bytes | Participant identity payload signed by that participant.|
+
+### `migrateParticipantData`
 
 📋   &nbsp;&nbsp;
 Recursively migrate participant data to newest implementation in upgrades chain. Emit `ParticipantMigratedTo` event.
@@ -371,8 +404,8 @@ Recursively migrate participant data to newest implementation in upgrades chain.
   function migrateParticipantData(
     address participant,
     struct YellowClearingBase.ParticipantData data
-  ) external onlyRole```
-
+  ) external onlyRole
+```
 
 #### Modifiers
 
@@ -385,7 +418,10 @@ Recursively migrate participant data to newest implementation in upgrades chain.
 | Arg | Type | Description |
 | --- | --- | --- |
 |`participant` | address | Address of participant to migrate data of.
-|`data` | struct YellowClearingBase.ParticipantData | Participant data to migrate.### `_requireParticipantPresent`
+|
+|`data` | struct YellowClearingBase.ParticipantData | Participant data to migrate.|
+
+### `_requireParticipantPresent`
 
 📋   &nbsp;&nbsp;
 Require participant it present in this registry.
@@ -398,14 +434,16 @@ Require participant it present in this registry.
 ```solidity
   function _requireParticipantPresent(
     address participant
-  ) internal```
-
+  ) internal
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
-|`participant` | address | Address of participant to check.### `_requireParticipantNotPresent`
+|`participant` | address | Address of participant to check.|
+
+### `_requireParticipantNotPresent`
 
 📋   &nbsp;&nbsp;
 Require participant it not present in this registry.
@@ -418,14 +456,16 @@ Require participant it not present in this registry.
 ```solidity
   function _requireParticipantNotPresent(
     address participant
-  ) internal```
-
+  ) internal
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
-|`participant` | address | Address of participant to check.### `_recoverIdentitySigner`
+|`participant` | address | Address of participant to check.|
+
+### `_recoverIdentitySigner`
 
 📋   &nbsp;&nbsp;
 Recover signer of identity payload.
@@ -439,20 +479,25 @@ Recover signer of identity payload.
   function _recoverIdentitySigner(
     struct YellowClearingBase.IdentityPayload identityPayload,
     bytes signature
-  ) internal returns (address)```
-
+  ) internal returns (address)
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
 |`identityPayload` | struct YellowClearingBase.IdentityPayload | Identity payload that has been signed.
+|
 |`signature` | bytes | Signed identity payload.
+|
+
 #### Returns
 
 | Type | Description |
 | --- | --- |
-|`address` | Address of the signer.### `_migrateParticipantData`
+|`address` | Address of the signer.
+
+### `_migrateParticipantData`
 
 📋   &nbsp;&nbsp;
 Internal logic of migrating participant data. Can be overridden to change.
@@ -466,37 +511,44 @@ Internal logic of migrating participant data. Can be overridden to change.
   function _migrateParticipantData(
     address participant,
     struct YellowClearingBase.ParticipantData data
-  ) internal```
-
+  ) internal
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
 |`participant` | address | Address of participant to migrate data of.
-|`data` | struct YellowClearingBase.ParticipantData | Participant data to migrate.
+|
+|`data` | struct YellowClearingBase.ParticipantData | Participant data to migrate.|
+
 ## Events
 
 ### `NextImplementationSet`
 
 📋   &nbsp;&nbsp;
 No description
+
 ### `ParticipantRegistered`
 
 📋   &nbsp;&nbsp;
 No description
+
 ### `ParticipantStatusChanged`
 
 📋   &nbsp;&nbsp;
 No description
+
 ### `ParticipantDataSet`
 
 📋   &nbsp;&nbsp;
 No description
+
 ### `ParticipantMigratedFrom`
 
 📋   &nbsp;&nbsp;
 No description
+
 ### `ParticipantMigratedTo`
 
 📋   &nbsp;&nbsp;

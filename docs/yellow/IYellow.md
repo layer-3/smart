@@ -1,11 +1,8 @@
 # IYellow
 
-
-
 ## Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
-
 
 ## Functions
 
@@ -13,52 +10,46 @@
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function initialize(
-  ) external```
-
+  ) external
+```
 
 ### `mint`
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function mint(
-  ) external```
-
+  ) external
+```
 
 ### `burn`
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function burn(
-  ) external```
-
+  ) external
+```
 
 ### `pause`
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function pause(
-  ) external```
-
-
-
+  ) external
+```

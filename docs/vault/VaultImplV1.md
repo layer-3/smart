@@ -5,7 +5,6 @@
 ## Contents
 <!-- START doctoc -->
 <!-- END doctoc -->
-
 ## Globals
 
 | Var | Type | Description |
@@ -29,15 +28,18 @@ Revert if hash of supplied signature was already used by the issuer.
   function _requireSigNotUsed(
     address issuer,
     bytes signature
-  ) internal```
-
+  ) internal
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
 |`issuer` | address | Account using supplied signature.
-|`signature` | bytes | Signature used as identifier for action requested from vault.### `_requireValidSignature`
+|
+|`signature` | bytes | Signature used as identifier for action requested from vault.|
+
+### `_requireValidSignature`
 
 📋   &nbsp;&nbsp;
 Check supplied signature to be indeed signed by claimed signer.
@@ -52,27 +54,30 @@ Check supplied signature to be indeed signed by claimed signer.
     address signer,
     bytes encodedData,
     bytes signature
-  ) internal```
-
+  ) internal
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
 |`signer` | address | Signer claimed to have signed the payload.
+|
 |`encodedData` | bytes | Encoded data, which denotes action to be performed.
-|`signature` | bytes | Payload signed by claimed signer.### `_requireValidAddress`
+|
+|`signature` | bytes | Payload signed by claimed signer.|
+
+### `_requireValidAddress`
 
 📋   &nbsp;&nbsp;
 No description
-No dev description
 
 #### Declaration
 
 ```solidity
   function _requireValidAddress(
-  ) internal```
-
+  ) internal
+```
 
 ### `_checkPayload`
 
@@ -87,14 +92,16 @@ Check that payload data is correct: expire timestamp is due, destination is not 
 ```solidity
   function _checkPayload(
     struct IVault.Payload payload
-  ) internal```
-
+  ) internal
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
-|`payload` | struct IVault.Payload | Payload structure, which denotes action to be performed.### `_useSignature`
+|`payload` | struct IVault.Payload | Payload structure, which denotes action to be performed.|
+
+### `_useSignature`
 
 📋   &nbsp;&nbsp;
 Mark the signature as used by the issuer.
@@ -108,15 +115,18 @@ Mark the signature as used by the issuer.
   function _useSignature(
     address issuer,
     bytes signature
-  ) internal```
-
+  ) internal
+```
 
 #### Args
 
 | Arg | Type | Description |
 | --- | --- | --- |
 |`issuer` | address | User issuer address.
-|`signature` | bytes | Signature used as identifier for action requested from vault.### `getChainId`
+|
+|`signature` | bytes | Signature used as identifier for action requested from vault.|
+
+### `getChainId`
 
 📋   &nbsp;&nbsp;
 Return chain id.
@@ -128,14 +138,16 @@ Return chain id.
 
 ```solidity
   function getChainId(
-  ) internal returns (uint256)```
-
+  ) internal returns (uint256)
+```
 
 #### Returns
 
 | Type | Description |
 | --- | --- |
-|`uint256` | Chain id.### `setup`
+|`uint256` | Chain id.
+
+### `setup`
 
 📋   &nbsp;&nbsp;
 The setup function sets addresses of the broker and coSigner.
@@ -149,8 +161,8 @@ The setup function sets addresses of the broker and coSigner.
   function setup(
     address brokerAddress,
     address coSignerAddress
-  ) external onlyProxy onlyRole```
-
+  ) external onlyProxy onlyRole
+```
 
 #### Modifiers
 
@@ -164,7 +176,10 @@ The setup function sets addresses of the broker and coSigner.
 | Arg | Type | Description |
 | --- | --- | --- |
 |`brokerAddress` | address | Address derived from broker public key.
-|`coSignerAddress` | address | Address derived from coSigner public key.### `getLastId`
+|
+|`coSignerAddress` | address | Address derived from coSigner public key.|
+
+### `getLastId`
 
 📋   &nbsp;&nbsp;
 Get last ledger id (deposits and withdrawals id).
@@ -176,8 +191,8 @@ Get last ledger id (deposits and withdrawals id).
 
 ```solidity
   function getLastId(
-  ) external onlyProxy returns (uint256)```
-
+  ) external onlyProxy returns (uint256)
+```
 
 #### Modifiers
 
@@ -189,7 +204,9 @@ Get last ledger id (deposits and withdrawals id).
 
 | Type | Description |
 | --- | --- |
-|`uint256` | Ledger id.### `getBrokerAddress`
+|`uint256` | Ledger id.
+
+### `getBrokerAddress`
 
 📋   &nbsp;&nbsp;
 Get broker (only public key it is derived from exists) key for this vault.
@@ -201,8 +218,8 @@ Get broker (only public key it is derived from exists) key for this vault.
 
 ```solidity
   function getBrokerAddress(
-  ) external onlyProxy returns (address)```
-
+  ) external onlyProxy returns (address)
+```
 
 #### Modifiers
 
@@ -214,7 +231,9 @@ Get broker (only public key it is derived from exists) key for this vault.
 
 | Type | Description |
 | --- | --- |
-|`address` | Broker (only public key it is derived from exists) key.### `setBrokerAddress`
+|`address` | Broker (only public key it is derived from exists) key.
+
+### `setBrokerAddress`
 
 📋   &nbsp;&nbsp;
 Set the address derived from the broker's new public key. Emits `BrokerAddressSet` event.
@@ -228,8 +247,8 @@ Set the address derived from the broker's new public key. Emits `BrokerAddressSe
   function setBrokerAddress(
     address address_,
     bytes signature
-  ) external onlyProxy```
-
+  ) external onlyProxy
+```
 
 #### Modifiers
 
@@ -242,7 +261,10 @@ Set the address derived from the broker's new public key. Emits `BrokerAddressSe
 | Arg | Type | Description |
 | --- | --- | --- |
 |`address_` | address | New broker address.
-|`signature` | bytes | New address signed by broker's current public key.### `getCoSignerAddress`
+|
+|`signature` | bytes | New address signed by broker's current public key.|
+
+### `getCoSignerAddress`
 
 📋   &nbsp;&nbsp;
 Get coSigner (only public key it is derived from exists) key for this vault.
@@ -254,8 +276,8 @@ Get coSigner (only public key it is derived from exists) key for this vault.
 
 ```solidity
   function getCoSignerAddress(
-  ) external onlyProxy returns (address)```
-
+  ) external onlyProxy returns (address)
+```
 
 #### Modifiers
 
@@ -267,7 +289,9 @@ Get coSigner (only public key it is derived from exists) key for this vault.
 
 | Type | Description |
 | --- | --- |
-|`address` | CoSigner (only public key it is derived from exists) key.### `setCoSignerAddress`
+|`address` | CoSigner (only public key it is derived from exists) key.
+
+### `setCoSignerAddress`
 
 📋   &nbsp;&nbsp;
 Set the address derived from the coSigner's new public key. Emits `CoSignerAddressSet` event.
@@ -281,8 +305,8 @@ Set the address derived from the coSigner's new public key. Emits `CoSignerAddre
   function setCoSignerAddress(
     address address_,
     bytes signature
-  ) external onlyProxy```
-
+  ) external onlyProxy
+```
 
 #### Modifiers
 
@@ -295,7 +319,10 @@ Set the address derived from the coSigner's new public key. Emits `CoSignerAddre
 | Arg | Type | Description |
 | --- | --- | --- |
 |`address_` | address | New coSigner address.
-|`signature` | bytes | New address signed by coSigner's current public key.### `deposit`
+|
+|`signature` | bytes | New address signed by coSigner's current public key.|
+
+### `deposit`
 
 📋   &nbsp;&nbsp;
 Deposit assets with given payload from the caller. Emits `Deposited` event.
@@ -310,8 +337,8 @@ Deposit assets with given payload from the caller. Emits `Deposited` event.
     struct IVault.Payload payload,
     bytes brokerSignature,
     bytes coSignerSignature
-  ) external onlyProxy```
-
+  ) external onlyProxy
+```
 
 #### Modifiers
 
@@ -324,8 +351,12 @@ Deposit assets with given payload from the caller. Emits `Deposited` event.
 | Arg | Type | Description |
 | --- | --- | --- |
 |`payload` | struct IVault.Payload | Deposit payload.
+|
 |`brokerSignature` | bytes | Payload signed by the broker.
-|`coSignerSignature` | bytes | Payload signed by the coSigner.### `withdraw`
+|
+|`coSignerSignature` | bytes | Payload signed by the coSigner.|
+
+### `withdraw`
 
 📋   &nbsp;&nbsp;
 Withdraw assets with given payload to the destination specified in the payload. Emits `Withdrawn` event.
@@ -340,8 +371,8 @@ Withdraw assets with given payload to the destination specified in the payload. 
     struct IVault.Payload payload,
     bytes brokerSignature,
     bytes coSignerSignature
-  ) external onlyProxy```
-
+  ) external onlyProxy
+```
 
 #### Modifiers
 
@@ -354,5 +385,7 @@ Withdraw assets with given payload to the destination specified in the payload. 
 | Arg | Type | Description |
 | --- | --- | --- |
 |`payload` | struct IVault.Payload | Withdraw payload.
+|
 |`brokerSignature` | bytes | Payload signed by the Broker.
-|`coSignerSignature` | bytes | Payload signed by the coSigner.
+|
+|`coSignerSignature` | bytes | Payload signed by the coSigner.|
