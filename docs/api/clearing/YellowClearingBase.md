@@ -9,6 +9,11 @@ Base contract for Yellow Clearing. Responsible for all operations regarding Yell
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Usage](#usage)
+- [Struct Types](#struct-types)
+  - [`ParticipantData`](#participantdata)
+  - [`IdentityPayload`](#identitypayload)
+- [Enum Types](#enum-types)
+  - [`ParticipantStatus`](#participantstatus)
 - [Globals](#globals)
 - [Functions](#functions)
   - [`constructor`](#constructor)
@@ -44,6 +49,43 @@ Base contract for Yellow Clearing. Responsible for all operations regarding Yell
 ## Usage
 
 test
+
+## Struct Types
+
+### `ParticipantData`
+
+```solidity
+struct ParticipantData {
+  enum YellowClearingBase.ParticipantStatus status;
+  uint64 nonce;
+  uint64 registrationTime;
+}
+```
+
+### `IdentityPayload`
+
+```solidity
+struct IdentityPayload {
+  contract YellowClearingBase YellowClearing;
+  address participant;
+  uint64 nonce;
+}
+```
+
+## Enum Types
+
+### `ParticipantStatus`
+
+```solidity
+enum ParticipantStatus {
+  None,
+  Pending,
+  Inactive,
+  Active,
+  Suspended,
+  Migrated,
+}
+```
 
 ## Globals
 

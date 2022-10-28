@@ -6,6 +6,9 @@ IVault is the interface to implement custody.
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+- [Struct Types](#struct-types)
+  - [`Allocation`](#allocation)
+  - [`Payload`](#payload)
 - [Functions](#functions)
   - [`setup`](#setup)
   - [`getLastId`](#getlastid)
@@ -22,6 +25,31 @@ IVault is the interface to implement custody.
   - [`Withdrawn`](#withdrawn)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## Struct Types
+
+### `Allocation`
+
+```solidity
+struct Allocation {
+  address asset;
+  uint256 amount;
+}
+```
+
+### `Payload`
+
+```solidity
+struct Payload {
+  bytes32 action;
+  bytes32 rid;
+  uint64 expire;
+  address destination;
+  struct IVault.Allocation[] allocations;
+  address implAddress;
+  uint256 chainId;
+}
+```
 
 ## Functions
 

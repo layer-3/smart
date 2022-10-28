@@ -19,6 +19,8 @@ NOTE: Contract is upgradeable to ensure if any security issues are found, they c
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+- [Struct Types](#struct-types)
+  - [`Investor`](#investor)
 - [Globals](#globals)
 - [Functions](#functions)
   - [`initialize`](#initialize)
@@ -36,6 +38,18 @@ NOTE: Contract is upgradeable to ensure if any security issues are found, they c
   - [`getClaimingIntervalDays`](#getclaimingintervaldays)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## Struct Types
+
+### `Investor`
+
+```solidity
+struct Investor {
+  uint256 iuTokens;
+  uint256 releasedLockedTokens;
+  uint256 totalLockedTokens;
+}
+```
 
 ## Globals
 

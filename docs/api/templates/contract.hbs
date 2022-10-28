@@ -19,6 +19,46 @@
 {{/if~}}
 {{! ------------- ------------- -------------}}
 {{!
+------------- STRUCTS -------------
+}}
+{{#if ownStructs}}
+
+## Struct Types
+{{#each ownStructs}}
+
+### `{{name}}`
+
+```solidity
+struct {{name}} {
+{{#each members}}
+  {{type}} {{name}};
+{{/each}}
+}
+```
+{{/each}}
+{{/if}}
+{{! ------------- ------------- -------------}}
+{{!
+------------- ENUMS -------------
+}}
+{{#if ownEnums}}
+
+## Enum Types
+{{#each ownEnums}}
+
+### `{{name}}`
+
+```solidity
+enum {{name}} {
+{{#each members}}
+  {{.}},
+{{/each}}
+}
+```
+{{/each}}
+{{/if}}
+{{!------------- ------------- -------------}}
+{{!
 ------------- GLOBAL FIELDS -------------
 }}
 {{#if ownVariables}}
