@@ -5,3 +5,5 @@ cache
 coverage
 node_modules
 typechain
+
+/docs/api/templates/helpers.js
