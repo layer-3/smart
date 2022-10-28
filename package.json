@@ -4,7 +4,7 @@
     "contracts:node": "npx hardhat node --no-deploy",
     "contracts:deploy-localhost": "npx hardhat deploy --network localhost --export-all addresses.json",
     "contracts:export-accounts": "npx hardhat run scripts/export-accounts.ts",
-    "lint:check": "npx eslint \"./\"",
+    "lint:check": "npx eslint \"./\" && prettier '**/*.{json,sol,md}' -c",
     "lint:fix": "npm run eslint:fix; npm run prettier:fix",
     "eslint:fix": "eslint '**/*.{js,ts}' --fix",
     "prettier:fix": "prettier '**/*.{json,sol,md}' --write",
