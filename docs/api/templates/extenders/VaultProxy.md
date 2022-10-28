@@ -1,17 +1,4 @@
-# VaultProxy
-
-Proxy contract containing all delegate logic and hardcoded start implementation contract address.
-For more information see `VaultProxyBase.sol`.
-
-## Contents
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
-- [Different bytecode](#different-bytecode)
-- [Deploy](#deploy)
-- [Setup](#setup)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DOCTOC SKIP -->
 
 ## Different bytecode
 
