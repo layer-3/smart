@@ -1,6 +1,6 @@
 import {
+  IdentityPayload,
   getAndSignIdentityPayload,
-  identityPayload,
   signIdentityPayload,
 } from '../../../src/identityPayload';
 
@@ -18,7 +18,7 @@ export async function registerParams(
 
 export async function registerParamsFromPayload(
   participant: SignerWithAddress,
-  identityPayload: identityPayload,
+  identityPayload: IdentityPayload,
 ): Promise<RegisterParams> {
   return [participant.address, await signIdentityPayload(identityPayload, participant)];
 }
