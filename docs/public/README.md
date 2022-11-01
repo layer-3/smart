@@ -2,7 +2,7 @@
 
 ## Addresses
 
-Here are addresses of the deployed last version on smart contracts:
+Here are addresses of deployed last versions of smart contracts:
 
 ### VaultImplV1
 
