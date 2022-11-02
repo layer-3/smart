@@ -1,4 +1,4 @@
-import { providers } from 'ethers';
+import { BigNumber, providers, utils } from 'ethers';
 import { ethers } from 'hardhat';
 
 import { getNetworkName } from './networks';
@@ -11,7 +11,11 @@ export const GAS_TRACKER_SUPPORTED_NETWORKS = new Set(['homestead', 'matic']);
 // usual actual to max fee per gas ratio
 export const ACTUAL_TO_MAX_FEE_RATIO = 0.6;
 
-export async function estimateFeePerGas(): Promise<number> {
+function maxToActualFee(max: BigNumber): BigNumber {
+  return max.mul(ACTUAL_TO_MAX_FEE_RATIO * 100).div(100);
+}
+
+export async function estimateFeePerGas(): Promise<BigNumber> {
   // get network
   const networkName = await getNetworkName();
 
@@ -22,9 +26,14 @@ export async function estimateFeePerGas(): Promise<number> {
     // get data from fee oracle
     const gasData = (await etherscan.fetch('gastracker', {
       action: 'gasoracle',
-    })) as { ProposedGasPrice: string };
+    })) as { ProposeGasPrice: string };
 
-    return Number.parseFloat(gasData.ProposedGasPrice);
+    if (!gasData.ProposeGasPrice) {
+      throw new Error('Estimation failed: ProposedGasPrice is undefined');
+    }
+
+    // TODO: support for networks other than ethereum, polygon and testnets
+    return utils.parseUnits(gasData.ProposeGasPrice, 'gwei');
   } else {
     // get offline fee data
     const { maxFeePerGas } = await ethers.provider.getFeeData();
@@ -34,7 +43,7 @@ export async function estimateFeePerGas(): Promise<number> {
       throw new Error('Estimation failed: maxFeePerGas is null');
     }
 
-    return ACTUAL_TO_MAX_FEE_RATIO * maxFeePerGas.toNumber();
+    return maxToActualFee(maxFeePerGas);
   }
 }
 
@@ -43,24 +52,22 @@ export async function transactionFees(
   method_name: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   args: any[],
-): Promise<number> {
-  const gasUsed = (await contract.estimateGas[method_name](args)).toNumber();
+): Promise<BigNumber> {
+  const gasUsed = await contract.estimateGas[method_name](args);
 
   const feePerGas = await estimateFeePerGas();
 
-  return gasUsed * feePerGas;
+  return gasUsed.mul(feePerGas);
 }
 
 export async function deploymentFees(
   factory: ContractFactory,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   args: any[],
-): Promise<number> {
-  const gasUsed = (
-    await ethers.provider.estimateGas(factory.getDeployTransaction(args))
-  ).toNumber();
+): Promise<BigNumber> {
+  const gasUsed = await ethers.provider.estimateGas(factory.getDeployTransaction(args));
 
   const feePerGas = await estimateFeePerGas();
 
-  return gasUsed * feePerGas;
+  return gasUsed.mul(feePerGas);
 }

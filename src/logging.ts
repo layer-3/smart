@@ -1,7 +1,12 @@
 import { ethers } from 'hardhat';
-import { Contract, ContractFactory, utils } from 'ethers';
+import { BigNumber, Contract, ContractFactory, utils } from 'ethers';
 
-import { GAS_TRACKER_SUPPORTED_NETWORKS, deploymentFees, transactionFees } from './gas-estimation';
+import {
+  ACTUAL_TO_MAX_FEE_RATIO,
+  GAS_TRACKER_SUPPORTED_NETWORKS,
+  deploymentFees,
+  transactionFees,
+} from './gas-estimation';
 import { getNetworkExplorerURL, getNetworkName } from './networks';
 
 export const SEPARATOR = '\n-------------------\n';
@@ -38,21 +43,18 @@ export async function logEnvironment(lo: LogOptions = defaultLogOptions): Promis
   console.log(SEPARATOR);
 }
 
-async function logGasFees(estimated: number): Promise<void> {
-  let noteMsg = '';
+// TODO: support other networks than ethereum and polygon + testnets
+function formatFees(fees: BigNumber): string {
+  return utils.commify(utils.formatEther(fees.toString())) + ' ether / matic';
+}
+
+async function logGasFees(estimated: BigNumber): Promise<void> {
+  console.log(`Estimated to consume ${formatFees(estimated)}`);
 
   if (!GAS_TRACKER_SUPPORTED_NETWORKS.has(await getNetworkName())) {
-    noteMsg = `(rough estimation, 60% of gasAmount * maxFeePerGas)`;
-  }
-
-  console.log(
-    `Estimated to consume ${utils.commify(estimated)} wei (${utils.commify(
-      utils.formatUnits(estimated, 'gwei'),
-    )} gwei)`,
-  );
-
-  if (noteMsg !== '') {
-    console.log(noteMsg);
+    console.log(
+      `(rough estimation, ${ACTUAL_TO_MAX_FEE_RATIO * 100}% of gasAmount * maxFeePerGas)`,
+    );
   }
 }
 
@@ -78,7 +80,7 @@ export async function estimateAndLogDeploymentFees(
 // message, hash or address
 type MessageAndHashOrAddress = [string, string];
 
-function isHashOrAddress(hashOrAddress: string): 'tx' | 'address' {
+function _hashOrAddress(hashOrAddress: string): 'tx' | 'address' {
   if (!ethers.utils.isHexString(hashOrAddress)) {
     throw new Error('Not a hex string');
   }
@@ -116,7 +118,7 @@ function _logTxHashOrAddress(msgAndHshOrAddr: MessageAndHashOrAddress, explorerU
   console.log(msgAndHshOrAddr[0], msgAndHshOrAddr[1]);
 
   if (explorerURL !== '') {
-    const hshOrAddr = isHashOrAddress(msgAndHshOrAddr[1]);
+    const hshOrAddr = _hashOrAddress(msgAndHshOrAddr[1]);
     console.log(`(${explorerURL}/${hshOrAddr}/${msgAndHshOrAddr[1]})`);
   }
 
