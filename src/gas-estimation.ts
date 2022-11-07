@@ -61,10 +61,18 @@ export async function transactionFees(
 }
 
 export async function deploymentFees(
-  factory: ContractFactory,
+  factoryOrName: ContractFactory | string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   args: any[],
 ): Promise<BigNumber> {
+  let factory: ContractFactory;
+
+  if (typeof factoryOrName === 'string') {
+    factory = await ethers.getContractFactory(factoryOrName);
+  } else {
+    factory = factoryOrName;
+  }
+
   const gasUsed = await ethers.provider.estimateGas(factory.getDeployTransaction(args));
 
   const feePerGas = await estimateFeePerGas();

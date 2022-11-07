@@ -24,6 +24,10 @@ const defaultLogOptions: LogOptions = {
 };
 
 export async function logEnvironment(lo: LogOptions = defaultLogOptions): Promise<void> {
+  if (Object.values(lo).length > 0) {
+    console.log(SEPARATOR);
+  }
+
   if (lo.network) {
     const network = await ethers.provider.getNetwork();
     console.log('Current network:', network.name);
@@ -39,42 +43,6 @@ export async function logEnvironment(lo: LogOptions = defaultLogOptions): Promis
     const balanceBigNum = await deployer.getBalance();
     console.log('Deployer balance:', balanceBigNum.toString());
   }
-
-  console.log(SEPARATOR);
-}
-
-// TODO: support other networks than ethereum and polygon + testnets
-function formatFees(fees: BigNumber): string {
-  return utils.commify(utils.formatEther(fees.toString())) + ' ether / matic';
-}
-
-async function logGasFees(estimated: BigNumber): Promise<void> {
-  console.log(`Estimated to consume ${formatFees(estimated)}`);
-
-  if (!GAS_TRACKER_SUPPORTED_NETWORKS.has(await getNetworkName())) {
-    console.log(
-      `(rough estimation, ${ACTUAL_TO_MAX_FEE_RATIO * 100}% of gasAmount * maxFeePerGas)`,
-    );
-  }
-}
-
-export async function estimateAndLogTransactionFees(
-  contract: Contract,
-  method_name: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  args: any[],
-): Promise<void> {
-  const estimated = await transactionFees(contract, method_name, args);
-  await logGasFees(estimated);
-}
-
-export async function estimateAndLogDeploymentFees(
-  factory: ContractFactory,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  args: any[],
-): Promise<void> {
-  const estimated = await deploymentFees(factory, args);
-  await logGasFees(estimated);
 }
 
 // message, hash or address
@@ -128,6 +96,8 @@ function _logTxHashOrAddress(msgAndHshOrAddr: MessageAndHashOrAddress, explorerU
 export async function logTxHashOrAddress(
   messageAndHashOrAddress: MessageAndHashOrAddress,
 ): Promise<void> {
+  console.log(SEPARATOR);
+
   const explorerURL = await _getExplorerURL();
 
   _logTxHashOrAddress(messageAndHashOrAddress, explorerURL);
@@ -136,9 +106,47 @@ export async function logTxHashOrAddress(
 export async function logTxHashesOrAddresses(
   messagesAndHashesOrAddresses: MessageAndHashOrAddress[],
 ): Promise<void> {
+  console.log(SEPARATOR);
+
   const explorerURL = await _getExplorerURL();
 
   for (const msgAndHshOrAddr of messagesAndHashesOrAddresses) {
     _logTxHashOrAddress(msgAndHshOrAddr, explorerURL);
   }
+}
+
+// TODO: support other networks than ethereum and polygon + testnets
+function _formatFees(fees: BigNumber): string {
+  return utils.commify(utils.formatEther(fees.toString())) + ' ether / matic';
+}
+
+async function _logGasFees(estimated: BigNumber): Promise<void> {
+  console.log(SEPARATOR);
+
+  console.log(`Estimated to consume ${_formatFees(estimated)}`);
+
+  if (!GAS_TRACKER_SUPPORTED_NETWORKS.has(await getNetworkName())) {
+    console.log(
+      `(rough estimation, ${ACTUAL_TO_MAX_FEE_RATIO * 100}% of gasAmount * maxFeePerGas)`,
+    );
+  }
+}
+
+export async function estimateAndLogTransactionFees(
+  contract: Contract,
+  method_name: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  args: any[],
+): Promise<void> {
+  const estimated = await transactionFees(contract, method_name, args);
+  await _logGasFees(estimated);
+}
+
+export async function estimateAndLogDeploymentFees(
+  factory: ContractFactory | string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  args: any[],
+): Promise<void> {
+  const estimated = await deploymentFees(factory, args);
+  await _logGasFees(estimated);
 }

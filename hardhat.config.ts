@@ -39,8 +39,8 @@ const config: HardhatUserConfig = {
   },
   paths: {
     sources: 'contracts',
-    deploy: 'hardhat-deploy',
-    deployments: 'hardhat-deployments',
+    deploy: 'deploy',
+    deployments: 'deployments',
   },
   networks: {
     ethereum: {
