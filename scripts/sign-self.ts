@@ -1,28 +1,25 @@
 import { ethers } from 'hardhat';
 
 import { signSelf } from '../src/signatures';
+import { logEnvironment, logTxHashOrAddress } from '../src/logging';
 
 import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import type { Signer } from 'ethers';
 
 async function main(): Promise<void> {
-  const provider = ethers.provider;
-  const network = await provider.getNetwork();
-  console.log('Current network:', network.name);
+  await logEnvironment();
 
-  const [deployer] = await ethers.getSigners();
-  console.log('Deployer address:', deployer.address);
-  const balanceBigNum = await deployer.getBalance();
-  console.log('Deployer balance:', balanceBigNum.toString());
-
-  let signer: Signer | SignerWithAddress = deployer;
+  let signer: Signer | SignerWithAddress;
 
   if (process.env.PRIVATE_KEY) {
     signer = new ethers.Wallet(process.env.PRIVATE_KEY);
+  } else {
+    const [caller] = await ethers.getSigners();
+    signer = caller;
   }
 
-  console.log('Signer:', signer);
-  console.log(await signSelf(signer));
+  await logTxHashOrAddress(['Signer:', await signer.getAddress()]);
+  console.log('Signed:', await signSelf(signer));
 }
 
 main().catch((error) => {

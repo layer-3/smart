@@ -4,23 +4,26 @@ import {
   SEPARATOR,
   estimateAndLogDeploymentFees,
   logEnvironment,
-  logTxHashOrAddress,
+  logTxHashesOrAddresses,
 } from '../src/logging';
+import { requireEnv } from '../src/env';
 
 import type { Contract } from 'ethers';
 
 async function main(): Promise<void> {
-  await logEnvironment();
+  const contractName = requireEnv<string>('CONTRACT', 'No contract name provided!');
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let args: any[] = [];
+  console.log('Contract name:', contractName);
+
+  let args: unknown[] = [];
   if (process.env.CONTRACT_ARGS) {
     args = process.env.CONTRACT_ARGS.split(',').map((v) => v.trim());
     console.log(`Args:`, args);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const factory = await ethers.getContractFactory(process.env.CONTRACT_FACTORY!);
+  await logEnvironment();
+
+  const factory = await ethers.getContractFactory(contractName);
 
   let contract: Contract | undefined;
   let reverted = false;
@@ -50,11 +53,12 @@ async function main(): Promise<void> {
   if (!reverted && contract) {
     const { ...deployTransaction } = contract.deployTransaction;
 
-    await logTxHashOrAddress(['Transaction hash:', deployTransaction.hash]);
-
     await contract.deployed();
 
-    await logTxHashOrAddress([`Deployed to:`, contract.address]);
+    await logTxHashesOrAddresses([
+      ['Transaction hash', deployTransaction.hash],
+      [`${contractName} address`, contract.address],
+    ]);
   }
 }
 

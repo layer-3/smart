@@ -1,6 +1,7 @@
 import { isAddress } from 'ethers/lib/utils';
 
 import { grantRenounceRolesAndLog } from '../helpers';
+import { requireEnv } from '../../src/env';
 
 import type { DeployFunction } from 'hardhat-deploy/dist/types';
 import type { HardhatRuntimeEnvironment } from 'hardhat/types';
@@ -11,10 +12,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await getNamedAccounts();
 
   // Fetch args
-  const granteeAddress = process.env.GRANTEE ?? undefined;
-  if (!granteeAddress || !isAddress(granteeAddress)) {
-    throw new Error(`Incorrect grantee address: ${granteeAddress ?? 'undefined'}`);
-  }
+  const granteeAddress = requireEnv(
+    'GRANTEE',
+    (address) => `Incorrect grantee address: ${address ?? 'undefined'} provided`,
+    isAddress,
+  );
   console.log('Grantee address:', granteeAddress);
 
   // deploy vault from script
