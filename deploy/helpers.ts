@@ -4,14 +4,17 @@ import hre from 'hardhat';
 import { SEPARATOR, estimateAndLogDeploymentFees } from '../src/logging';
 
 import type { DeployOptions, DeployResult } from 'hardhat-deploy/types';
-import type { AccessControl } from '../typechain';
 
 export async function grantRenounceRolesAndLog(
-  contract: AccessControl,
+  contractName: string,
   grantees: string[],
   renouncer: string,
   roles: string[],
 ): Promise<void> {
+  const {
+    deployments: { execute },
+  } = hre;
+
   console.log(SEPARATOR);
 
   for (const grantee of grantees) {
@@ -23,7 +26,7 @@ export async function grantRenounceRolesAndLog(
         roleId = ethers.utils.id(role);
       }
 
-      await contract.grantRole(roleId, grantee);
+      await execute(contractName, { from: renouncer }, 'grantRole', roleId, grantee);
       console.log(`Granted ${role} to grantee (${grantee})`);
     }
   }
@@ -36,7 +39,7 @@ export async function grantRenounceRolesAndLog(
       roleId = ethers.utils.id(role);
     }
 
-    await contract.grantRole(roleId, renouncer);
+    await execute(contractName, { from: renouncer }, 'renounceRole', roleId, renouncer);
     console.log(`Renounced ${role} from renouncer (${renouncer})`);
   }
 }
