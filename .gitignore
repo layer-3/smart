@@ -12,7 +12,6 @@ typechain/
 cache/
 /artifacts/
 /.openzeppelin/unknown-*.json
-/hardhat-deployments/
 
 # Output of kaidump command
 kaigara-data.yaml
