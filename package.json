@@ -6,7 +6,7 @@
     "contracts:export-accounts": "npx hardhat run scripts/export-accounts.ts",
     "lint": "npx eslint \"./\" && prettier '**/*.{json,sol,md}' -c && solhint 'contracts/**/*.sol'",
     "lint:fix": "eslint '**/*.{js,ts}' --fix && prettier '**/*.{json,sol,md}' --write && solhint 'contracts/**/*.sol' --fix",
-    "docs": "solidity-docgen --solc-module solc-0.8.16 -t docs/templates -i contracts -e contracts/nitro-protocol && doctoc ./docs/*.md --maxlevel 3",
+    "docs": "solidity-docgen --solc-module solc -t docs/api/templates -i contracts -H docs/api/templates/helpers.js && doctoc ./docs/*.md --maxlevel 3",
     "update": "ncu"
   },
   "devDependencies": {
