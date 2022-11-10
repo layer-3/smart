@@ -1,3 +1,5 @@
+<!-- DOCTOC SKIP -->
+
 # Public information
 
 ## Addresses

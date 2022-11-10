@@ -2,8 +2,21 @@
 
 ## Contents
 
-<!-- START doctoc -->
-<!-- END doctoc -->
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Getting Started](#getting-started)
+- [Deployments](#deployments)
+- [Go bindings](#go-bindings)
+  - [Install `solc`](#install-solc)
+  - [Install `abigen`](#install-abigen)
+  - [Generating go bindings](#generating-go-bindings)
+- [Documentation](#documentation)
+  - [Back-end and Front-end interactions](#back-end-and-front-end-interactions)
+- [Testing](#testing)
+- [Other scripts](#other-scripts)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Getting Started
 
@@ -62,6 +75,8 @@ We encourage you to provide a combined source of data, called 'standart json', w
 
 (excerpt from [official Solidity documentation](https://docs.soliditylang.org/en/latest/installing-solidity.html). Other download methods are described there)
 
+---
+
 #### Linux packages
 
 **Latest** Ubuntu stable version is available using the following commands:
@@ -86,6 +101,8 @@ It is installable in all the [supported Linux distros](https://snapcraft.io/docs
 ```shell
 sudo snap install solc
 ```
+
+---
 
 #### MacOS packages
 
@@ -120,6 +137,8 @@ brew unlink solidity
 brew install solidity.rb
 ```
 
+---
+
 #### Static binaries
 
 Download prebuilt binary file corresponding to your OS at a desirable version from [`solidity/releases`](https://github.com/ethereum/solidity/releases) page.
@@ -128,6 +147,8 @@ Download prebuilt binary file corresponding to your OS at a desirable version fr
 
 (excerpt from [official geth installation documentation](https://geth.ethereum.org/docs/install-and-build/installing-geth). Other download methods are described there)
 Other download methods are available.
+
+---
 
 #### Linux
 
@@ -153,6 +174,8 @@ Also available on Arch linux from pacman:
 pacman -S geth
 ```
 
+---
+
 #### MacOS
 
 > Note: These commands install the core Geth software and the following developer tools: `clef`, `devp2p`, `abigen`, `bootnode`, `evm`, `rlpdump` and `puppeth`. The binaries for each of these tools are saved in `/usr/bin/`.
@@ -162,6 +185,8 @@ brew tap ethereum/ethereum
 brew install ethereum
 ```
 
+---
+
 #### Static binaries
 
 Download prebuild binary corresponding to your OS at a desirable version from [official `Download Geth` website](https://geth.ethereum.org/downloads/);
@@ -169,6 +194,8 @@ Download prebuild binary corresponding to your OS at a desirable version from [o
 ### Generating go bindings
 
 We use `make` to execute scripts to generate go bindings, so make sure it is installed.
+
+---
 
 #### Use installed `solc` and `abigen`
 
@@ -182,6 +209,8 @@ npm run bindings:local
 
 > If you need to generate go bindings frequently, we encourage you to install `solc` and `abigen` on your machine.
 
+---
+
 #### Install and use `solc` and `abigen`
 
 **Required packages:** `curl`, `tar`.
@@ -192,11 +221,15 @@ npm run bindings:local
 npm run bindings:[linux | macos]
 ```
 
+---
+
 #### Use locally installed `solc` and `abigen`
 
 **Required packages:** `curl`, `tar`.
 
 **`solc` and `abigen` from previous method are required.** Use locally installed (from previous method) `solc` and `abigen` to generate bindings.
+
+---
 
 #### Run a docker container
 

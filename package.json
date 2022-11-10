@@ -11,7 +11,7 @@
     "bindings:docker": "docker build -f abigen.Dockerfile -t abigen . && docker create --name abigen abigen && docker cp abigen:./bindings ./ && docker rm -f abigen",
     "lint": "npx eslint \"./\" && prettier '**/*.{json,sol,md}' -c && solhint 'contracts/**/*.sol'",
     "lint:fix": "eslint '**/*.{js,ts}' --fix && prettier '**/*.{json,sol,md}' --write && solhint 'contracts/**/*.sol' --fix",
-    "docs": "solidity-docgen --solc-module solc -t docs/api/templates -i contracts -H docs/api/templates/helpers.js && doctoc ./docs/*.md --maxlevel 3",
+    "docs": "solidity-docgen --solc-module solc -t docs/api/templates -i contracts -H docs/api/templates/helpers.js -o ./docs/api && doctoc ./ --maxlevel 4",
     "update": "ncu"
   },
   "devDependencies": {
