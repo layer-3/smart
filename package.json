@@ -3,7 +3,12 @@
   "scripts": {
     "contracts:node": "npx hardhat node --no-deploy",
     "contracts:deploy-localhost": "npx hardhat deploy --network localhost --export-all addresses.json",
-    "contracts:export-accounts": "npx hardhat run scripts/export-accounts.ts",
+    "export-accounts": "npx hardhat run scripts/export-accounts.ts",
+    "bindings:local": "make bindings-local SOLC_BIN=solc ABIGEN_BIN=abigen",
+    "bindings:linux": "make bindings-lin",
+    "bindings:macos": "make bindings-mac",
+    "bindings:cache": "make bindings-cache",
+    "bindings:docker": "docker build -f abigen.Dockerfile -t abigen . && docker create --name abigen abigen && docker cp abigen:./bindings ./ && docker rm -f abigen",
     "lint": "npx eslint \"./\" && prettier '**/*.{json,sol,md}' -c && solhint 'contracts/**/*.sol'",
     "lint:fix": "eslint '**/*.{js,ts}' --fix && prettier '**/*.{json,sol,md}' --write && solhint 'contracts/**/*.sol' --fix",
     "docs": "solidity-docgen --solc-module solc -t docs/api/templates -i contracts -H docs/api/templates/helpers.js && doctoc ./docs/*.md --maxlevel 3",
