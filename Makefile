@@ -8,8 +8,6 @@ OUT_DIR = ./bindings/
 SOLC_BIN = cache/solc
 ABIGEN_BIN = cache/abigen
 
-PLATFORM = linux
-
 install-solc-lin:
 	mkdir -p cache
 	curl -L https://github.com/ethereum/solidity/releases/download/v${SOLC_VERSION}/solc-static-linux -o cache/solc
