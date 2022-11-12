@@ -3,6 +3,7 @@ node_modules/
 /bindings/
 coverage/
 coverage.json
+deployments/localhost
 typechain/
 
 # Misc

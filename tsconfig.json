@@ -10,6 +10,6 @@
     "resolveJsonModule": true
   },
   "include": ["./benchmarks", "./docs/api/templates", "./scripts", "./src", "./test", "./deploy"],
-  "files": ["./hardhat.config.ts", "./environment.d.ts"],
+  "files": ["./hardhat.config.ts"],
   "exclude": ["./docs/api/templates/helpers.js"]
 }
