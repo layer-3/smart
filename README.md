@@ -13,8 +13,18 @@
   - [Generating go bindings](#generating-go-bindings)
 - [Documentation](#documentation)
   - [Back-end and Front-end interactions](#back-end-and-front-end-interactions)
-- [Testing](#testing)
-- [Other scripts](#other-scripts)
+- [Scripts](#scripts)
+  - [Compile](#compile)
+  - [Start local hardhat node](#start-local-hardhat-node)
+  - [Deploy](#deploy)
+  - [Deploy Yellow Network contracts to local node](#deploy-yellow-network-contracts-to-local-node)
+  - [Run scripts](#run-scripts)
+  - [Export addresses generated from mnemonics](#export-addresses-generated-from-mnemonics)
+  - [Verify deployed contract](#verify-deployed-contract)
+  - [Lint](#lint)
+  - [Generate documentation](#generate-documentation)
+  - [Test](#test)
+  - [Test coverage](#test-coverage)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -143,6 +153,20 @@ brew install solidity.rb
 
 Download prebuilt binary file corresponding to your OS at a desirable version from [`solidity/releases`](https://github.com/ethereum/solidity/releases) page.
 
+---
+
+#### Solc-select
+
+`solc-select` is a tool to quickly switch between Solidity compiler versions.
+
+Install with
+
+```shell
+pip3 install solc-select
+```
+
+More documentation is available on [plugin's GitHub repository](https://github.com/crytic/solc-select).
+
 ### Install `abigen`
 
 (excerpt from [official geth installation documentation](https://geth.ethereum.org/docs/install-and-build/installing-geth). Other download methods are described there)
@@ -197,11 +221,11 @@ We use `make` to execute scripts to generate go bindings, so make sure it is ins
 
 ---
 
-#### Use installed `solc` and `abigen`
+#### Use globally installed `solc` and `abigen`
 
 **Required packages:** `curl`, `tar`, `solc`, `abigen`.
 
-Installed `solc` and `abigen` are used to generate bindings.
+Run globally installed `solc` and `abigen` on the host machine.
 
 ```bash
 npm run bindings:local
@@ -215,7 +239,7 @@ npm run bindings:local
 
 **Required packages:** `curl`, `tar`.
 
-`solc` and `abigen` are installed to `/cache` folder, and later used to generate bindings.
+Install `solc` and `abigen` to `./cache` folder, and use them generate bindings.
 
 ```bash
 npm run bindings:[linux | macos]
@@ -223,11 +247,15 @@ npm run bindings:[linux | macos]
 
 ---
 
-#### Use locally installed `solc` and `abigen`
+#### Use cached `solc` and `abigen`
 
 **Required packages:** `curl`, `tar`.
 
-**`solc` and `abigen` from previous method are required.** Use locally installed (from previous method) `solc` and `abigen` to generate bindings.
+**`solc` and `abigen` must be installed to `./cache` folder.** Use `solc` and `abigen` from `./cache` to generate bindings.
+
+```bash
+npm run bindings:cache
+```
 
 ---
 
@@ -237,7 +265,7 @@ npm run bindings:[linux | macos]
 
 Use this method if you don't want any files added, except for the bindings. Run a docker container, which installs `solc` and `abigen`, generate bindings and copy them to host machine.
 
-> Note: it takes approximately 140 seconds to build container the first time, so be patient.
+> Note: it takes approximately 100 seconds to build container the first time, so be patient.
 
 ```bash
 npm run bindings:docker
@@ -251,20 +279,165 @@ Documentation of smart contract API and system architecture is available at [`/d
 
 BE and FE interactions with smart contracts are described in [`/docs/api`](./docs/api/).
 
-## Testing
+## Scripts
 
-Test everyting:
+<!-- markdownlint-disable MD033 -->
+
+### Compile
+
+```shell
+npx hardhat compile
+```
+
+Alongside with generating artifacts (abi + bytecode, stored in `./artifacts`), this script creates typescript types (stored in `./typechain`).
+
+### Start local hardhat node
+
+To start local hardhat node available at `http://127.0.0.1:8545`.
+You can connect further hardhat calls to this node by providing `--network localhost` parameter to the commands.
+
+```shell
+npm run node:local
+```
+
+### Deploy
+
+Smart contracts are deployed via `hardhat-deploy` plugin, deploy scripts are stored in `./deploy` and deployment information is stored to `./deployments` ([see more](#deployments)).
+
+If you want to deploy specific contract(s), you need to specify deploy scripts tag(s) (can be found at the bottom of the script, e.g. `func.tags = ['clearing'];`) via `--tags` flag.
+Moreover, you can specify the network you want to deploy contract(s) to via `--network` flag.
+List of supported networks is described in `hardhat.config.ts`.
+
+> Note: Some scripts require specific ENV variables to be provided, so make sure you have read the script before running it.
+
+```shell
+[script-variables] npx hardhat deploy [--tags <deploy-script-tags,...>] [--network <network>]
+```
+
+If you need to deploy a contract without a script present in `./deploy`, you can use generalized deploy script present in `./scripts`:
+
+```shell
+[CONTRACT=<name> CONTRACT_ARGS=<args,sep,by,comma>] npx hardat run scripts/deploy-contract.ts [--network <network>]
+```
+
+The same applies for upgradability deployments:
+
+```shell
+[CONTRACT=<name> CONTRACT_ARGS=<args,sep,by,comma>] npx hardat run scripts/deploy-upgradable-contract.ts [--network <network>]
+```
+
+And upgrade with
+
+```shell
+[CONTRACT=<name> IMPL_ADDRESS=<new_impl_address>] npx hardat run scripts/upgrade-contract.ts [--network <network>]
+```
+
+### Deploy Yellow Network contracts to local node
+
+```shell
+npm run YN:local
+```
+
+This deploys `YellowClearing`, `VaultImpl` and connected `VaultProxy` to it. Addresses of deployed contracts are exported to `./local-YN-addresses.json`.
+Deployers of aforementioned contracts, Broker and CoSigner are respectifully [0:5] local hardhat node addresses.
+
+> Note: Original `VaultProxy` contract requires hardcoded `VaultImpl` address, which is impossible to do by scripts.
+> Therefore, this script deploys test version of `VaultProxy` (which accepts `VaultImpl` address as a constructor parameter) and has **different abi and bytecode**.
+
+### Run scripts
+
+Scripts are located in `./scripts` folder and are used to interact with the contracts.
+
+> Note: before running a script make sure you know what ENV variables it expects to be set.
+
+```shell
+[ENV=<val>] npx hardhat run scripts/path.to.script.ts [--network <network>]
+```
+
+### Export addresses generated from mnemonics
+
+If you set mnemonics in `hardhat.config.ts` or have a mnemonic addresses of which you want to know, run
+
+```shell
+[MNEMONIC=<mnemonic>] npm run export-accounts
+```
+
+This script generates accounts addresses and private keys to `./hardhat-accounts.json`.
+
+### Verify deployed contract
+
+If you have deployed the contract with the help of `deploy` scripts, some deployments data is saved to `./deployments` ([see more](#deployments)).
+
+This data can be used to verify these contracts:
+
+```shell
+npx hardhat etherscan-verify --network <network> [--contract-name <specific-contract-name>]
+```
+
+See more with
+
+```shell
+npx hardhat help etherscan-verify
+```
+
+Nevertheless, if you have deployed the contract with simple scripts (not `hardhat-deploy`) or certain contract deployment information in `./deployments` is lost, you can use
+
+```shell
+npx hardhat verify --network <network> <address to verify>
+```
+
+See more with
+
+```shell
+npx hardhat help verify
+```
+
+### Lint
+
+To run linter to see errors use
+
+```shell
+npx run lint
+```
+
+If you want linter to fix all autofixable errors use
+
+```shell
+npx run lint:fix
+```
+
+### Generate documentation
+
+You can generate contracts documentation with
+
+```shell
+npm run docs
+```
+
+This will rewrite docs to `./docs/api` and put table of contents to all other `.md` files.
+
+### Test
+
+Test everything:
 
 ```shell
 npx hardhat test
 ```
 
-Test separate file:
+To test specific file:
 
 ```shell
 npx hardhat test test/path.to.file.spec.ts
 ```
 
-## Other scripts
+### Test coverage
 
-// TODO:
+To generate test coverage files use
+
+```shell
+npx hardhat coverage
+```
+
+This will write contracts test coverate in html page format to `./coverage` folder. Moveover, `./coverage.json` containing all coverage information will be created.
+
+<!-- markdownlint-enable MD033 -->

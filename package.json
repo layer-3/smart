@@ -1,8 +1,8 @@
 {
   "name": "yellow-smart-contracts",
   "scripts": {
-    "contracts:node": "npx hardhat node --no-deploy",
-    "contracts:deploy-localhost": "npx hardhat deploy --network localhost --export-all addresses.json",
+    "node:local": "npx hardhat node --no-deploy",
+    "YN:local": "npx hardhat node --tags YN-local --export local-YN-addresses.json",
     "export-accounts": "npx hardhat run scripts/export-accounts.ts",
     "bindings:local": "make bindings-local SOLC_BIN=solc ABIGEN_BIN=abigen",
     "bindings:linux": "make bindings-lin",
@@ -11,7 +11,7 @@
     "bindings:docker": "docker build -f abigen.Dockerfile -t abigen . && docker create --name abigen abigen && docker cp abigen:./bindings ./ && docker rm -f abigen",
     "lint": "npx eslint \"./\" && prettier '**/*.{json,sol,md}' -c && solhint 'contracts/**/*.sol'",
     "lint:fix": "eslint '**/*.{js,ts}' --fix && prettier '**/*.{json,sol,md}' --write && solhint 'contracts/**/*.sol' --fix",
-    "docs": "solidity-docgen --solc-module solc -t docs/api/templates -i contracts -H docs/api/templates/helpers.js -o ./docs/api && doctoc ./ --maxlevel 4",
+    "docs": "solidity-docgen --solc-module solc -t docs/api/templates -i contracts -H docs/api/templates/helpers.js -o ./docs/api && doctoc ./ --maxlevel 3",
     "update": "ncu"
   },
   "devDependencies": {
