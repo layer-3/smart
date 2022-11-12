@@ -221,11 +221,11 @@ We use `make` to execute scripts to generate go bindings, so make sure it is ins
 
 ---
 
-#### Use globally installed `solc` and `abigen`
+#### Use locally installed `solc` and `abigen`
 
 **Required packages:** `curl`, `tar`, `solc`, `abigen`.
 
-Run globally installed `solc` and `abigen` on the host machine.
+Run locally (on the host machine) installed `solc` and `abigen`.
 
 ```bash
 npm run bindings:local
