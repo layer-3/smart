@@ -18,6 +18,16 @@ export interface IdentityPayloadBN {
 }
 ```
 
+### Retrieve registered participants
+
+There is no on-chain mechanism to get all registered participants as to implement this, we would create a vector of attack.
+
+> Specifically, to return a list of participants, it must be stored in an iterable structure, which in Solidity there is only one type of - an array.
+> However, if anyone is able to add themselves to an array, then a malicious party can create a flood service that will register a ton of participants and make the registration call indefinitely costly on gas.
+
+To get the list of registered participants, one can fetch all `ParticipantRegistered` events on the specific contract.
+To filter participants by status, `getParticipantData` view (thus free and instant) function can be called on each participant from the list retrieved.
+
 ## Usage
 
 ### Frontdex
