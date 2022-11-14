@@ -9,6 +9,7 @@
     "noUncheckedIndexedAccess": false,
     "resolveJsonModule": true
   },
-  "include": ["./scripts", "./test", "./src", "./benchmarks"],
-  "files": ["./hardhat.config.ts"]
+  "include": ["./benchmarks", "./docs/api/templates", "./scripts", "./src", "./test", "./deploy"],
+  "files": ["./hardhat.config.ts"],
+  "exclude": ["./docs/api/templates/helpers.js"]
 }

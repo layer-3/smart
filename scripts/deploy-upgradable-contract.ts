@@ -1,20 +1,30 @@
 import { ethers, upgrades } from 'hardhat';
 
-async function main(): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const args = process.env.CONTRACT_ARGS!.split(',').map((v) => v.trim());
-  console.log(`Args:`, args);
+import { requireEnv } from '../src/env';
+import { logTxHashesOrAddresses } from '../src/logging';
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const factory = await ethers.getContractFactory(process.env.CONTRACT_FACTORY!);
+async function main(): Promise<void> {
+  const contractName = requireEnv<string>('CONTRACT', 'No contract name provided!');
+
+  console.log('Contract name:', contractName);
+
+  let args: unknown[] = [];
+  if (process.env.CONTRACT_ARGS) {
+    args = process.env.CONTRACT_ARGS.split(',').map((v) => v.trim());
+    console.log(`Args:`, args);
+  }
+
+  const factory = await ethers.getContractFactory(contractName);
   const contract = await upgrades.deployProxy(factory, args, {
     initializer: 'init',
   });
   const { ...deployTransaction } = contract.deployTransaction;
-  console.log('transaction:', deployTransaction);
   await contract.deployed();
 
-  console.log(`deployed to:`, contract.address);
+  await logTxHashesOrAddresses([
+    ['Transaction hash', deployTransaction.hash],
+    [`${contractName} address`, contract.address],
+  ]);
 }
 
 main().catch((error) => {

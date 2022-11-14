@@ -3,6 +3,8 @@
 /artifacts/
 /cache/
 /coverage/
+coverage.json
+/docs/api
 node_modules/
 typechain/
 package-lock.json

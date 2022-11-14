@@ -1,33 +1,31 @@
-import { ethers } from 'hardhat';
-
-import type { Yellow } from '../../typechain';
+import { isAddress } from 'ethers/lib/utils';
+import hre, { ethers } from 'hardhat';
 
 async function main(): Promise<void> {
-  const yellowAddress = process.env.YELLOW_ADDRESS ?? undefined;
-  const adminPrivateKey = process.env.ADMIN_PRIVATE_KEY ?? undefined;
-  const account = process.env.ACCOUNT ?? undefined;
+  const revokeeAddress = process.env.REVOKEE ?? undefined;
 
-  if (!yellowAddress || !adminPrivateKey || !account) {
-    throw new Error('Invalid arguments!');
+  if (!revokeeAddress || !isAddress(revokeeAddress)) {
+    throw new Error(`Incorrect revokee address: ${revokeeAddress ?? 'undefined'}`);
   }
 
-  console.log('Yellow address:', yellowAddress);
-  console.log('Admin private key:', adminPrivateKey);
-  console.log('Account:', account);
+  console.log('Revokee address:', revokeeAddress);
 
-  const admin = new ethers.Wallet(adminPrivateKey, ethers.provider);
+  const {
+    deployments: { execute },
+    getNamedAccounts,
+  } = hre;
 
-  const yellowFactory = await ethers.getContractFactory('Yellow');
-  const yellowAttached = yellowFactory.attach(yellowAddress);
-  const yellow = yellowAttached.connect(admin) as Yellow;
+  const { deployer: admin } = await getNamedAccounts();
 
-  try {
-    await yellow.revokeRole(ethers.utils.id('BURNER_ROLE'), account);
-  } catch (error) {
-    console.error(error);
-  }
+  await execute(
+    'Yellow',
+    { from: admin },
+    'revokeRole',
+    ethers.utils.id('BURNER_ROLE'),
+    revokeeAddress,
+  );
 
-  console.log(`BURNER_ROLE revoked from user with address ${account}'`);
+  console.log(`Revoked BURNER_ROLE from user with address ${revokeeAddress}'`);
 }
 
 main().catch((error) => {

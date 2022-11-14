@@ -1,7 +1,9 @@
 node_modules/
 .env
+/bindings/
 coverage/
 coverage.json
+deployments/localhost
 typechain/
 
 # Misc
@@ -12,7 +14,6 @@ typechain/
 cache/
 /artifacts/
 /.openzeppelin/unknown-*.json
-/hardhat-deployments/
 
 # Output of kaidump command
 kaigara-data.yaml

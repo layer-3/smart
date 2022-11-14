@@ -1,36 +1,65 @@
 import { ethers } from 'hardhat';
 
+import {
+  SEPARATOR,
+  estimateAndLogDeploymentFees,
+  logEnvironment,
+  logTxHashesOrAddresses,
+} from '../src/logging';
+import { requireEnv } from '../src/env';
+
+import type { Contract } from 'ethers';
+
 async function main(): Promise<void> {
-  const provider = ethers.provider;
-  const network = await provider.getNetwork();
-  console.log('Current network:', network.name);
+  const contractName = requireEnv<string>('CONTRACT', 'No contract name provided!');
 
-  const [deployer] = await ethers.getSigners();
-  console.log('Deployer address:', deployer.address);
-  const balanceBigNum = await deployer.getBalance();
-  console.log('Deployer balance:', balanceBigNum.toString());
+  console.log('Contract name:', contractName);
 
-  let args;
+  let args: unknown[] = [];
   if (process.env.CONTRACT_ARGS) {
     args = process.env.CONTRACT_ARGS.split(',').map((v) => v.trim());
     console.log(`Args:`, args);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const factory = await ethers.getContractFactory(process.env.CONTRACT_FACTORY!);
+  await logEnvironment();
 
-  let contract;
-  if (args) {
+  const factory = await ethers.getContractFactory(contractName);
+
+  let contract: Contract | undefined;
+  let reverted = false;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     contract = await factory.deploy(...args);
-  } else {
-    contract = await factory.deploy();
+  } catch (error) {
+    if ((error as { code: string }).code === 'INSUFFICIENT_FUNDS') {
+      reverted = true;
+    } else {
+      throw error;
+    }
   }
 
-  const { ...deployTransaction } = contract.deployTransaction;
-  console.log('Transaction:', deployTransaction);
-  await contract.deployed();
+  if (reverted || process.env.ESTIMATE) {
+    await estimateAndLogDeploymentFees(factory, args);
+    console.log(SEPARATOR);
 
-  console.log(`Deployed to:`, contract.address);
+    if (reverted) {
+      console.log(
+        'ERROR: insufficient funds. Top up the account for at least estimated amount and try again.',
+      );
+    }
+  }
+
+  if (!reverted && contract) {
+    const { ...deployTransaction } = contract.deployTransaction;
+
+    await contract.deployed();
+
+    await logTxHashesOrAddresses([
+      ['Transaction hash', deployTransaction.hash],
+      [`${contractName} address`, contract.address],
+    ]);
+  }
 }
 
 main().catch((error) => {

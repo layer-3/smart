@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 
 import hre from 'hardhat';
 import { mnemonicToSeedSync } from 'ethereum-cryptography/bip39';
@@ -24,17 +24,20 @@ async function main(): Promise<void> {
     confPassphrase = networkConfig.accounts.passphrase;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const envMnemonic = process.env.MNEMONIC!;
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const envPassphrase = process.env.PASSPHRASE!;
+  const envMnemonic = process.env.MNEMONIC;
+  const envPassphrase = process.env.PASSPHRASE;
   const accounts_number = process.env.NUMBER ?? 20;
+  const outDir = process.env.OUTDIR ?? '/../';
 
-  const mnemonic = envMnemonic || confMnemonic;
-  const passphrase = envPassphrase || confPassphrase;
+  const mnemonic = envMnemonic ?? confMnemonic;
+  const passphrase = envPassphrase ?? confPassphrase;
+
+  if (!mnemonic) {
+    throw new Error('No mnemonic provided!');
+  }
 
   if (log) {
-    console.log('mnemonic:', mnemonic);
+    console.log('Mnemonic:', mnemonic);
   }
 
   const seed = mnemonicToSeedSync(mnemonic, passphrase);
@@ -62,10 +65,12 @@ async function main(): Promise<void> {
     accounts.push({ privateKey, address });
   }
 
-  writeFileSync(
-    __dirname + '/../addresses/hardhat-accounts.json',
-    JSON.stringify(accounts, undefined, 2),
-  );
+  const dir = __dirname + outDir;
+
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+  writeFileSync(dir + '/hardhat-accounts.json', JSON.stringify(accounts, undefined, 2));
 }
 
 main().catch((error) => {

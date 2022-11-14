@@ -1,17 +1,23 @@
+import { isAddress } from 'ethers/lib/utils';
 import { ethers, upgrades } from 'hardhat';
 
-async function main(): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const contractName = process.env.CONTRACT_FACTORY!;
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const targetAddress = process.env.TARGET_ADDRESS!;
+import { requireEnv } from '../src/env';
 
-  console.log('contractName:', contractName);
-  console.log('targetAddress:', targetAddress);
+async function main(): Promise<void> {
+  const contractName = requireEnv<string>('CONTRACT', 'No contract name provided');
+
+  const implAddress = requireEnv(
+    'IMPL_ADDRESS',
+    (address) => `Incorrect address: ${address ?? 'undefined'} provided`,
+    isAddress,
+  );
+
+  console.log('Contract name:', contractName);
+  console.log('Implementation address:', implAddress);
 
   const vaultFactory = await ethers.getContractFactory(contractName);
 
-  const v2Contract = await upgrades.upgradeProxy(targetAddress, vaultFactory);
+  const v2Contract = await upgrades.upgradeProxy(implAddress, vaultFactory);
   await v2Contract.deployed();
 
   console.log(`${contractName} upgraded on:`, v2Contract.address);

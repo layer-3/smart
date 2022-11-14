@@ -530,7 +530,7 @@ describe('Vault Upgradeability Contracts', () => {
     it('upgrade when 1 next contract available', async () => {
       // v1
       // Note: connecting user (3rd party address) to avoid any address collisions
-      expect(await Vault1ProxiedAsUser.version()).to.be.equal(1);
+      expect(await Vault1ProxiedAsUser.VERSION()).to.be.equal(1);
       expect(await Vault1ProxiedAsUser.presentV1AbsentV2()).to.be.true;
 
       // upgrading
@@ -538,7 +538,7 @@ describe('Vault Upgradeability Contracts', () => {
       await Vault1ProxiedAsProxyAdmin.upgrade();
 
       // v2
-      expect(await Vault2ProxiedAsUser.version()).to.be.equal(2);
+      expect(await Vault2ProxiedAsUser.VERSION()).to.be.equal(2);
       // NOTE: using VaultImpl2Proxied here as we upgraded to it
       expect(await Vault2ProxiedAsUser.presentV2AbsentV1()).to.be.true;
     });
@@ -549,7 +549,7 @@ describe('Vault Upgradeability Contracts', () => {
 
       await Vault1ProxiedAsProxyAdmin.upgrade();
 
-      expect(await Vault3ProxiedAsUser.version()).to.be.equal(3);
+      expect(await Vault3ProxiedAsUser.VERSION()).to.be.equal(3);
     });
 
     it('revert on upgrade to zero address', async () => {
@@ -563,12 +563,12 @@ describe('Vault Upgradeability Contracts', () => {
     });
 
     it('revert on second upgrading without impl address set', async () => {
-      expect(await Vault1ProxiedAsUser.version()).to.be.equal(1);
+      expect(await Vault1ProxiedAsUser.VERSION()).to.be.equal(1);
 
       await VaultImplAsImplAdmin.setNextImplementation(VaultImpl2.address);
       await Vault1ProxiedAsProxyAdmin.upgrade();
 
-      expect(await Vault2ProxiedAsUser.version()).to.be.equal(2);
+      expect(await Vault2ProxiedAsUser.VERSION()).to.be.equal(2);
 
       await expect(Vault2ProxiedAsProxyAdmin.upgrade()).to.be.revertedWith(NEXT_IMPL_ZERO);
     });
@@ -577,25 +577,25 @@ describe('Vault Upgradeability Contracts', () => {
     // Migrate
     // ======================
     it('migrate when 1 next implementation available', async () => {
-      expect(await Vault1ProxiedAsUser.version()).to.be.equal(1);
+      expect(await Vault1ProxiedAsUser.VERSION()).to.be.equal(1);
       expect(await Vault1ProxiedAsUser.migrationInvoked()).to.be.equal(0);
 
       await VaultImplAsImplAdmin.setNextImplementation(VaultImpl2.address);
       await Vault1ProxiedAsProxyAdmin.upgrade();
 
-      expect(await Vault2ProxiedAsUser.version()).to.be.equal(2);
+      expect(await Vault2ProxiedAsUser.VERSION()).to.be.equal(2);
       expect(await Vault2ProxiedAsUser.migrationInvoked()).to.be.equal(1);
     });
 
     it('migrate when 2 next implementation available', async () => {
-      expect(await Vault1ProxiedAsUser.version()).to.be.equal(1);
+      expect(await Vault1ProxiedAsUser.VERSION()).to.be.equal(1);
       expect(await Vault1ProxiedAsUser.migrationInvoked()).to.be.equal(0);
 
       await VaultImplAsImplAdmin.setNextImplementation(VaultImpl2.address);
       await connect(VaultImpl2, implAdmin).setNextImplementation(VaultImpl3.address);
       await Vault1ProxiedAsProxyAdmin.upgrade();
 
-      expect(await Vault3ProxiedAsUser.version()).to.be.equal(3);
+      expect(await Vault3ProxiedAsUser.VERSION()).to.be.equal(3);
       expect(await Vault3ProxiedAsUser.migrationInvoked()).to.be.equal(2);
     });
 
