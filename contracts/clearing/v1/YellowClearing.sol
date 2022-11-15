@@ -1,21 +1,25 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.17;
 
 import '@openzeppelin/contracts/utils/Address.sol';
 
 import './Upgradeability.sol';
 import './Registry.sol';
+import './Adjudicator.sol';
+import './App.sol';
 
-contract YellowClearing is Upgradeability, Registry {
+contract YellowClearing is Upgradeability, Registry, Adjudicator, App {
 	struct ParticipantData {
 		Status status;
 		uint64 registrationTime;
 		Status reinstateStatus;
 	}
 
-	address public constant PREVIOUS_IMPLEMENTATION = 0x0000000000000000000000000000000000000000;
+	address public immutable previousImplementation;
 
-	constructor() {
+	constructor(address prevImpl) {
+		previousImplementation = prevImpl;
+
 		_setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
 		_setupRole(UPGRADEABILITY_MAINTAINER_ROLE, msg.sender);
@@ -31,21 +35,17 @@ contract YellowClearing is Upgradeability, Registry {
 	{
 		return
 			ParticipantData({
-				status: _status[participant],
-				registrationTime: _registrationTime[participant],
-				reinstateStatus: _reinstateStatus[participant]
+				status: status[participant],
+				registrationTime: registrationTime[participant],
+				reinstateStatus: reinstateStatus[participant]
 			});
 	}
 
-	function _isParticipantRegisteredOnPreviousImplementation(address participant)
-		private
-		view
-		returns (bool)
-	{
+	function _isParticipantRegisteredOnPrevImpl(address participant) private view returns (bool) {
 		return
 			abi.decode(
 				Address.functionStaticCall(
-					PREVIOUS_IMPLEMENTATION,
+					previousImplementation,
 					abi.encodeWithSignature('hasParticipant(address)', participant)
 				),
 				(bool)
@@ -54,15 +54,14 @@ contract YellowClearing is Upgradeability, Registry {
 
 	function isParticipantRegistered(address participant) public view returns (bool) {
 		return
-			hasParticipant(participant) ||
-			_isParticipantRegisteredOnPreviousImplementation(participant);
+			status[participant] != Status.None || _isParticipantRegisteredOnPrevImpl(participant);
 	}
 
 	function registerParticipant(address participant, bytes calldata identityPayloadSignature)
 		external
 	{
 		require(
-			_nextImplementation == address(0),
+			nextImplementation == address(0),
 			'can not register participant on old implementation'
 		);
 
@@ -70,8 +69,8 @@ contract YellowClearing is Upgradeability, Registry {
 
 		_identify(participant, identityPayloadSignature);
 
-		_status[participant] = Status.Pending;
-		_registrationTime[participant] = uint64(block.timestamp);
+		status[participant] = Status.Pending;
+		registrationTime[participant] = uint64(block.timestamp);
 
 		emit ParticipantRegistered(participant);
 	}
@@ -79,26 +78,26 @@ contract YellowClearing is Upgradeability, Registry {
 	function _migrateParticipantData(address participant) private {
 		(uint8 oldStatus, uint64 oldNonce, uint64 oldRegistrationTime) = abi.decode(
 			Address.functionStaticCall(
-				PREVIOUS_IMPLEMENTATION,
+				previousImplementation,
 				abi.encodeWithSignature('getParticipantData(address)', participant)
 			),
 			(uint8, uint64, uint64)
 		);
 
 		if (oldStatus == 1) {
-			_status[participant] = Status.Pending;
+			status[participant] = Status.Pending;
 		} else if (oldStatus == 2 || oldStatus == 3) {
-			_status[participant] = Status.Active;
+			status[participant] = Status.Active;
 		} else if (oldStatus == 4) {
-			_status[participant] = Status.Suspended;
+			status[participant] = Status.Suspended;
 		} else {
 			revert('invalid previous implementation participant status');
 		}
 
-		_registrationTime[participant] = oldRegistrationTime;
+		registrationTime[participant] = oldRegistrationTime;
 
 		Address.functionDelegateCall(
-			PREVIOUS_IMPLEMENTATION,
+			previousImplementation,
 			abi.encodeWithSignature(
 				'setParticipantData(address,tuple(uint8,uint64,uint64))',
 				participant,
@@ -117,11 +116,11 @@ contract YellowClearing is Upgradeability, Registry {
 		external
 	{
 		require(
-			_isParticipantRegisteredOnPreviousImplementation(participant),
+			_isParticipantRegisteredOnPrevImpl(participant),
 			'participant is not registered on previous implementation'
 		);
 
-		require(_status[participant] == Status.None, 'participant has already migrated');
+		require(status[participant] == Status.None, 'participant has already migrated');
 
 		_identify(participant, identityPayloadSignature);
 
@@ -132,7 +131,7 @@ contract YellowClearing is Upgradeability, Registry {
 		external
 		onlyRole(NEXT_IMPLEMENTATION_ROLE)
 	{
-		_status[participant] = Status.Migrated;
+		status[participant] = Status.Migrated;
 	}
 
 	event ParticipantRegistered(address indexed participant);

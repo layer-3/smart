@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.17;
 
 import '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
 
@@ -12,11 +12,7 @@ abstract contract Identity {
 		uint64 nonce;
 	}
 
-	mapping(address => uint64) internal _nonce;
-
-	function _incrementIdentityNonce(address participant) internal {
-		_nonce[participant]++;
-	}
+	mapping(address => uint64) private _nonce;
 
 	function getIdentityPayload(address participant) public view returns (bytes32) {
 		return
@@ -54,6 +50,6 @@ abstract contract Identity {
 			'invalid identity payload signature'
 		);
 
-		_incrementIdentityNonce(msg.sender);
+		_nonce[participant]++;
 	}
 }

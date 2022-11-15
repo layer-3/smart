@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.17;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
 
@@ -22,32 +22,20 @@ abstract contract Registry is AccessControl, Identity {
 	bytes32 public constant REGISTRY_MODERATOR_ROLE = keccak256('REGISTRY_MODERATOR_ROLE');
 	bytes32 public constant REGISTRY_VALIDATOR_ROLE = keccak256('REGISTRY_VALIDATOR_ROLE');
 
-	mapping(address => Status) internal _status;
-	mapping(address => uint64) internal _registrationTime;
-	mapping(address => Status) internal _reinstateStatus;
+	mapping(address => Status) public status;
+	mapping(address => uint64) public registrationTime;
+	mapping(address => Status) public reinstateStatus;
 
-	function hasParticipant(address participant) public view returns (bool) {
-		return _status[participant] != Status.None;
-	}
-
-	function _requireParticipantExists(address participant) internal view {
-		require(hasParticipant(participant), 'participant does not exist');
-	}
-
-	function getParticipantStatus(address participant) external view returns (Status) {
-		return _status[participant];
-	}
-
-	function getParticipantRegistrationTime(address participant) external view returns (uint64) {
-		return _registrationTime[participant];
+	function _requireParticipantExists(address participant) private view {
+		require(status[participant] != Status.None, 'participant does not exist');
 	}
 
 	function validateParticipant(address participant) external onlyRole(REGISTRY_VALIDATOR_ROLE) {
 		_requireParticipantExists(participant);
 
-		require(_status[participant] == Status.Pending, 'participant is not pending validation');
+		require(status[participant] == Status.Pending, 'participant is not pending validation');
 
-		_status[participant] = Status.Active;
+		status[participant] = Status.Active;
 
 		emit ParticipantStatusChanged(participant, Status.Active);
 	}
@@ -55,14 +43,14 @@ abstract contract Registry is AccessControl, Identity {
 	function suspendParticipant(address participant) external onlyRole(REGISTRY_MODERATOR_ROLE) {
 		_requireParticipantExists(participant);
 
-		Status status = _status[participant];
+		Status sts = status[participant];
 
-		require(status != Status.Suspended, 'participant is already suspended');
-		require(status != Status.Migrated, 'participant has migrated');
+		require(sts != Status.Suspended, 'participant is already suspended');
+		require(sts != Status.Migrated, 'participant has migrated');
 
-		_reinstateStatus[participant] = status;
+		reinstateStatus[participant] = sts;
 
-		_status[participant] = Status.Suspended;
+		status[participant] = Status.Suspended;
 
 		emit ParticipantStatusChanged(participant, Status.Suspended);
 	}
@@ -70,11 +58,11 @@ abstract contract Registry is AccessControl, Identity {
 	function reinstateParticipant(address participant) external onlyRole(REGISTRY_MODERATOR_ROLE) {
 		_requireParticipantExists(participant);
 
-		require(_status[participant] == Status.Suspended, 'participant is not suspended');
+		require(status[participant] == Status.Suspended, 'participant is not suspended');
 
-		_status[participant] = _reinstateStatus[participant];
+		status[participant] = reinstateStatus[participant];
 
-		delete _reinstateStatus[participant];
+		delete reinstateStatus[participant];
 
 		emit ParticipantStatusChanged(participant, Status.Active);
 	}

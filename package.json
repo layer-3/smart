@@ -22,6 +22,7 @@
     "@openzeppelin/contracts-upgradeable": "4.7.3",
     "@openzeppelin/hardhat-upgrades": "1.21.0",
     "@openzeppelin/test-helpers": "0.5.16",
+    "@statechannels/nitro-protocol": "^2.0.0-alpha.1",
     "@tsconfig/node18-strictest-esm": "1.0.1",
     "@typechain/ethers-v5": "10.1.0",
     "@typechain/hardhat": "6.1.3",
