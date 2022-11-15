@@ -1,12 +1,12 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import '../YellowClearingBase.sol';
-import './TESTYellowClearingV1.sol';
+import '../YellowClearingUpgradeability.sol';
+import '../YellowRegistry.sol';
 
-contract TESTYellowClearingV2 is YellowClearingBase {
-	constructor(YellowClearingBase previousImplementation)
-		YellowClearingBase(previousImplementation)
+contract TESTYellowClearingV2 is YellowClearingUpgradeability, YellowRegistry {
+	constructor(YellowClearingUpgradeability previousImplementation)
+		YellowClearingUpgradeability(previousImplementation)
 	{}
 
 	// can introduce new storage variables

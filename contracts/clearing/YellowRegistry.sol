@@ -1,115 +1,24 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
 
-/**
- * @notice Base contract for Yellow Clearing. Responsible for all operations regarding Yellow Network.
- * @dev The actual implementation must derive from YellowClearingBase and can override `_migrateParticipantData` function.
- */
-abstract contract YellowClearingBase is AccessControl {
+import './YellowAccessControl.sol';
+import './YellowClearingUpgradeability.sol';
+import './IYellowParticipant.sol';
+import './YellowLocking.sol';
+
+// YellowParticipant
+abstract contract YellowRegistry is
+	YellowAccessControl,
+	YellowClearingUpgradeability,
+	IYellowParticipant,
+	YellowLocking
+{
 	using ECDSA for bytes32;
-
-	// Participant status
-	enum ParticipantStatus {
-		// Participant is not registered or have been removed
-		None,
-		// Participant is registered but not yet validated
-		Pending,
-		// Participant is registered but do not have token staked
-		Inactive,
-		// Participant is registered and have token staked
-		Active,
-		// Participant is registered but is not allowed to participate
-		Suspended,
-		// Participant is registered but have migrated to the next implementation
-		Migrated
-	}
-
-	// Participant data
-	struct ParticipantData {
-		ParticipantStatus status;
-		uint64 nonce;
-		uint64 registrationTime;
-	}
-
-	// Participant identity payload
-	struct IdentityPayload {
-		YellowClearingBase YellowClearing;
-		address participant;
-		uint64 nonce;
-	}
-
-	// Roles
-	bytes32 public constant REGISTRY_MAINTAINER_ROLE = keccak256('REGISTRY_MAINTAINER_ROLE');
-	bytes32 public constant REGISTRY_VALIDATOR_ROLE = keccak256('REGISTRY_VALIDATOR_ROLE');
-	bytes32 public constant AUDITOR_ROLE = keccak256('AUDITOR_ROLE');
-	bytes32 public constant PREVIOUS_IMPLEMENTATION_ROLE =
-		keccak256('PREVIOUS_IMPLEMENTATION_ROLE');
 
 	// Participant data mapping
 	mapping(address => ParticipantData) internal _participantData;
-
-	// Prev and next implementations
-	YellowClearingBase private immutable _prevImplementation;
-	YellowClearingBase private _nextImplementation;
-
-	// Address of this contract
-	address private immutable _self = address(this);
-
-	/**
-	 * @notice Grant DEFAULT_ADMIN_ROLE and REGISTRY_MAINTAINER_ROLE roles to deployer, link previous implementation it supplied.
-	 *
-	 */
-	constructor(YellowClearingBase previousImplementation) {
-		_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-		_grantRole(REGISTRY_MAINTAINER_ROLE, msg.sender);
-
-		_prevImplementation = previousImplementation;
-
-		if (address(_prevImplementation) != address(0)) {
-			_grantRole(PREVIOUS_IMPLEMENTATION_ROLE, address(_prevImplementation));
-		}
-	}
-
-	// ======================
-	// Next Implementation
-	// ======================
-
-	/**
-	 * @notice Get next implementation address if set, zero address if not.
-	 * @dev Get next implementation address if set, zero address if not.
-	 * @return YellowClearingBase Next implementation address if set, zero address if not.
-	 */
-	function getNextImplementation() external view returns (YellowClearingBase) {
-		return _nextImplementation;
-	}
-
-	/**
-	 * @notice Set next implementation address. Must not be zero address or self. Emit `NextImplementationSet` event.
-	 * @dev Require REGISTRY_MAINTAINER_ROLE to be invoked. Require next implementation not to be already set. Require supplied next implementation contract to have granted this contract PREVIOUS_IMPLEMENTATION_ROLE.
-	 * @param nextImplementation Next implementation address.
-	 */
-	function setNextImplementation(YellowClearingBase nextImplementation)
-		external
-		onlyRole(REGISTRY_MAINTAINER_ROLE)
-	{
-		require(address(_nextImplementation) == address(0), 'Next implementation already set');
-		require(
-			address(nextImplementation) != address(0) && address(nextImplementation) != _self,
-			'Invalid nextImplementation supplied'
-		);
-
-		require(
-			nextImplementation.hasRole(PREVIOUS_IMPLEMENTATION_ROLE, address(this)),
-			'Previous implementation role is required'
-		);
-
-		_nextImplementation = nextImplementation;
-
-		emit NextImplementationSet(nextImplementation);
-	}
 
 	// ======================
 	// participant checks
@@ -131,7 +40,9 @@ abstract contract YellowClearingBase is AccessControl {
 	 */
 	function requireParticipantNotPresentBackwards(address participant) public view {
 		if (address(_prevImplementation) != address(0)) {
-			_prevImplementation.requireParticipantNotPresentBackwards(participant);
+			YellowRegistry(address(_prevImplementation)).requireParticipantNotPresentBackwards(
+				participant
+			);
 		}
 
 		_requireParticipantNotPresent(participant);
@@ -144,7 +55,9 @@ abstract contract YellowClearingBase is AccessControl {
 	 */
 	function requireParticipantNotPresentForwards(address participant) public view {
 		if (address(_nextImplementation) != address(0)) {
-			_nextImplementation.requireParticipantNotPresentForwards(participant);
+			YellowRegistry(address(_nextImplementation)).requireParticipantNotPresentForwards(
+				participant
+			);
 		}
 
 		_requireParticipantNotPresent(participant);
@@ -193,7 +106,7 @@ abstract contract YellowClearingBase is AccessControl {
 
 		return
 			IdentityPayload({
-				YellowClearing: YellowClearingBase(_self),
+				yellowRegistry: address(_self),
 				participant: participant,
 				nonce: nonce
 			});
@@ -314,6 +227,7 @@ abstract contract YellowClearingBase is AccessControl {
 	// migrate participant
 	// ======================
 
+	// TODO: change dev docs
 	/**
 	 * @notice Migrate participant to the newest implementation present in upgrades chain. Emit `ParticipantMigratedFrom` and `ParticipantMigratedTo` events.
 	 * @dev NextImplementation must have been set. Participant must not have been migrated.
@@ -340,8 +254,15 @@ abstract contract YellowClearingBase is AccessControl {
 		ParticipantData memory updatedData = currentData;
 		updatedData.nonce = identityPayload.nonce;
 
-		// Migrate data, emit ParticipantMigratedTo
-		_nextImplementation.migrateParticipantData(participant, updatedData);
+		// Get token amount to migrate
+		uint256 migrateTokenAmount = _lockedBy[participant];
+
+		// Get newest (right-most) Registry in upgradeability chain
+		YellowRegistry newestRegistry = YellowRegistry(address(getRightmostImplementation()));
+
+		_migrateParticipantDataTo(newestRegistry, participant, updatedData);
+
+		_migrateLockedTokensTo(newestRegistry, participant, migrateTokenAmount);
 
 		// Mark participant as migrated on this implementation
 		_participantData[participant] = ParticipantData({
@@ -352,25 +273,7 @@ abstract contract YellowClearingBase is AccessControl {
 
 		// Emit event
 		emit ParticipantMigratedFrom(participant, _self);
-	}
-
-	/**
-	 * @notice Recursively migrate participant data to newest implementation in upgrades chain. Emit `ParticipantMigratedTo` event.
-	 * @dev Require PREVIOUS_IMPLEMENTATION_ROLE to invoke.
-	 * @param participant Address of participant to migrate data of.
-	 * @param data Participant data to migrate.
-	 */
-	function migrateParticipantData(address participant, ParticipantData memory data)
-		external
-		onlyRole(PREVIOUS_IMPLEMENTATION_ROLE)
-	{
-		if (address(_nextImplementation) != address(0)) {
-			_nextImplementation.migrateParticipantData(participant, data);
-		} else {
-			_migrateParticipantData(participant, data);
-
-			emit ParticipantMigratedTo(participant, _self);
-		}
+		emit LockedTokensMigratedFrom(participant, migrateTokenAmount, _self);
 	}
 
 	// ======================
@@ -410,6 +313,24 @@ abstract contract YellowClearingBase is AccessControl {
 		return keccak256(abi.encode(identityPayload)).toEthSignedMessageHash().recover(signature);
 	}
 
+	// TODO: change dev docs
+	/**
+	 * @notice Recursively migrate participant data to newest implementation in upgrades chain. Emit `ParticipantMigratedTo` event.
+	 * @dev Require PREVIOUS_IMPLEMENTATION_ROLE to invoke.
+	 * @param participant Address of participant to migrate data of.
+	 * @param data Participant data to migrate.
+	 */
+	function _migrateParticipantDataTo(
+		YellowRegistry to,
+		address participant,
+		ParticipantData memory data
+	) internal {
+		to._migrateParticipantData(participant, data);
+
+		emit ParticipantMigratedTo(participant, _self);
+	}
+
+	// TODO: change dev docs
 	/**
 	 * @notice Internal logic of migrating participant data. Can be overridden to change.
 	 * @dev Internal logic of migrating participant data. Can be overridden to change.
@@ -417,13 +338,12 @@ abstract contract YellowClearingBase is AccessControl {
 	 * @param data Participant data to migrate.
 	 */
 	function _migrateParticipantData(address participant, ParticipantData memory data)
-		internal
+		public
 		virtual
+		onlyLeftImplementation(YellowClearingUpgradeability(msg.sender))
 	{
 		_participantData[participant] = data;
 	}
-
-	event NextImplementationSet(YellowClearingBase nextImplementation);
 
 	event ParticipantRegistered(address participant);
 
