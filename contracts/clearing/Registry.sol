@@ -6,10 +6,9 @@ import '@openzeppelin/contracts/access/AccessControl.sol';
 
 import './Upgradeability.sol';
 import './Identity.sol';
-import './Locking.sol';
 
 // YellowParticipant
-abstract contract Registry is AccessControl, Upgradeability, Identity, Locking {
+abstract contract Registry is AccessControl, Identity {
 	// ======================
 	// Structs
 	// ======================
@@ -64,44 +63,6 @@ abstract contract Registry is AccessControl, Upgradeability, Identity, Locking {
 	 */
 	function hasParticipant(address participant) public view returns (bool) {
 		return _participantData[participant].status != ParticipantStatus.None;
-	}
-
-	/**
-	 * @notice Recursively check that participant is not present in this registry and all previous ones.
-	 * @dev Recursively check that participant is not present in this registry and all previous ones.
-	 * @param participant Address of participant to check.
-	 */
-	function requireParticipantNotPresentBackwards(address participant) public view {
-		if (address(prevImplementation) != address(0)) {
-			Registry(address(prevImplementation)).requireParticipantNotPresentBackwards(
-				participant
-			);
-		}
-
-		_requireParticipantNotPresent(participant);
-	}
-
-	/**
-	 * @notice Recursively check that participant is not present in this registry and all subsequent ones.
-	 * @dev Recursively check that participant is not present in this registry and all subsequent ones.
-	 * @param participant Address of participant to check.
-	 */
-	function requireParticipantNotPresentForwards(address participant) public view {
-		if (address(nextImplementation) != address(0)) {
-			Registry(address(nextImplementation)).requireParticipantNotPresentForwards(participant);
-		}
-
-		_requireParticipantNotPresent(participant);
-	}
-
-	/**
-	 * @notice Recursively check that participant is not present in this registry and all previous and subsequent ones.
-	 * @dev Recursively check that participant is not present in this registry and all previous and subsequent ones.
-	 * @param participant Address of participant to check.
-	 */
-	function requireParticipantNotPresentRecursive(address participant) public view {
-		requireParticipantNotPresentBackwards(participant);
-		requireParticipantNotPresentForwards(participant);
 	}
 
 	/**

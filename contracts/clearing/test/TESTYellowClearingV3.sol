@@ -1,11 +1,13 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import '../Upgradeability.sol';
-import '../Registry.sol';
+import '../ClearingMigratable.sol';
+import '../interfaces/IPrevImplementation.sol';
 
-contract TESTYellowClearingV3 is Upgradeability, Registry {
-	constructor(Upgradeability previousImplementation) Upgradeability(previousImplementation) {}
+contract TESTYellowClearingV3 is ClearingMigratable {
+	constructor(IPrevImplementation previousImplementation)
+		ClearingMigratable(previousImplementation)
+	{}
 
 	function _migrateParticipantData(address participant, ParticipantData memory data)
 		public

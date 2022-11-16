@@ -1,14 +1,16 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import '../Upgradeability.sol';
-import '../Registry.sol';
+import '../ClearingMigratable.sol';
+import '../interfaces/IPrevImplementation.sol';
 
 /**
  * @dev Use for TEST PURPOSES ONLY. !!! Contains security vulnerability !!!
  */
-contract TESTYellowClearingV1 is Upgradeability, Registry {
+contract TESTYellowClearingV1 is ClearingMigratable {
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// SECURITY VULNERABILITY HERE \/ \/ \/
-	constructor(Upgradeability previousImplementation) Upgradeability(previousImplementation) {}
+	constructor(IPrevImplementation previousImplementation)
+		ClearingMigratable(previousImplementation)
+	{}
 }

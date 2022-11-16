@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/access/AccessControl.sol';
 
 import './Upgradeability.sol';
 
-abstract contract Locking is AccessControl, Upgradeability {
+abstract contract Locking is AccessControl {
 	// ======================
 	// Roles
 	// ======================
@@ -58,30 +58,6 @@ abstract contract Locking is AccessControl, Upgradeability {
 		_lockedBy[account] -= amount;
 
 		emit TokenUnlocked(account, amount);
-	}
-
-	// ======================
-	// Internal
-	// ======================
-
-	function _migrateLockedTokensTo(
-		Locking to,
-		address account,
-		uint256 amount
-	) internal {
-		bool success = yellowToken.transfer(address(to), amount);
-		require(success, 'Could not transfer Yellow token');
-
-		to._migrateLockedTokens(account, amount);
-	}
-
-	function _migrateLockedTokens(address account, uint256 amount)
-		public
-		virtual
-		onlyLeftImplementation(Upgradeability(msg.sender))
-	{
-		_lockedBy[account] = amount;
-		emit LockedTokensMigratedTo(account, amount, address(this));
 	}
 
 	// ======================

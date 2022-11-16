@@ -3,6 +3,9 @@ pragma solidity 0.8.16;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
 
+import './interfaces/IPrevImplementation.sol';
+import './interfaces/INextImplementation.sol';
+
 /**
  * @notice Base contract for Yellow Clearing. Responsible for all operations regarding Yellow Network.
  * @dev The actual implementation must derive from YellowClearingUpgradeability and can override `_migrateParticipantData` function.
@@ -20,8 +23,8 @@ abstract contract Upgradeability is AccessControl {
 	// ======================
 
 	// Prev and next implementations
-	Upgradeability public immutable prevImplementation;
-	Upgradeability public nextImplementation;
+	IPrevImplementation public immutable prevImplementation;
+	INextImplementation public nextImplementation;
 
 	// Address of this contract
 	address internal immutable _self = address(this);
@@ -30,7 +33,7 @@ abstract contract Upgradeability is AccessControl {
 	 * @notice Grant DEFAULT_ADMIN_ROLE and REGISTRY_MAINTAINER_ROLE roles to deployer, link previous implementation it supplied.
 	 *
 	 */
-	constructor(Upgradeability _prevImplementation) {
+	constructor(IPrevImplementation _prevImplementation) {
 		_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 		_grantRole(UPGRADEABILITY_MAINTAINER_ROLE, msg.sender);
 
@@ -51,11 +54,20 @@ abstract contract Upgradeability is AccessControl {
 	// ======================
 
 	/**
+	 * @notice Get next implementation address if set, zero address if not.
+	 * @dev Get next implementation address if set, zero address if not.
+	 * @return YellowClearingBase Next implementation address if set, zero address if not.
+	 */
+	function getNextImplementation() external view returns (INextImplementation) {
+		return nextImplementation;
+	}
+
+	/**
 	 * @notice Set next implementation address. Must not be zero address or self. Emit `NextImplementationSet` event.
 	 * @dev Require REGISTRY_MAINTAINER_ROLE to be invoked. Require next implementation not to be already set. Require supplied next implementation contract to have granted this contract PREVIOUS_IMPLEMENTATION_ROLE.
 	 * @param _nextImplementation Next implementation address.
 	 */
-	function setNextImplementation(Upgradeability _nextImplementation)
+	function setNextImplementation(INextImplementation _nextImplementation)
 		external
 		onlyRole(UPGRADEABILITY_MAINTAINER_ROLE)
 	{
@@ -75,13 +87,15 @@ abstract contract Upgradeability is AccessControl {
 	// ======================
 
 	// rightmost implementation - the newest impl in the upgradeability chain
-	function getRightmostImplementation() public returns (Upgradeability) {
+	function getRightmostImplementation() public view returns (address) {
 		if (address(nextImplementation) != address(0)) {
 			return nextImplementation.getRightmostImplementation();
 		} else {
-			return Upgradeability(_self);
+			return _self;
 		}
 	}
+
+	// TODO: isLeftImplementation is not compatible with V1
 
 	// left implementation - supplied impl is an ancestor, including indirect, in relation to this one
 	function isLeftImplementation(Upgradeability impl) public returns (bool) {
@@ -98,5 +112,5 @@ abstract contract Upgradeability is AccessControl {
 	// Events
 	// ======================
 
-	event NextImplementationSet(Upgradeability nextImplementation);
+	event NextImplementationSet(INextImplementation nextImplementation);
 }
