@@ -1,13 +1,11 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import '../YellowClearingUpgradeability.sol';
-import '../YellowRegistry.sol';
+import '../Upgradeability.sol';
+import '../Registry.sol';
 
-contract TESTYellowClearingV2 is YellowClearingUpgradeability, YellowRegistry {
-	constructor(YellowClearingUpgradeability previousImplementation)
-		YellowClearingUpgradeability(previousImplementation)
-	{}
+contract TESTYellowClearingV2 is Upgradeability, Registry {
+	constructor(Upgradeability previousImplementation) Upgradeability(previousImplementation) {}
 
 	// can introduce new storage variables
 	uint256 public newStorageVariable = 42;

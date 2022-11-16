@@ -2,26 +2,59 @@
 pragma solidity 0.8.16;
 
 import '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
+import '@openzeppelin/contracts/access/AccessControl.sol';
 
-import './YellowAccessControl.sol';
-import './YellowClearingUpgradeability.sol';
-import './IYellowParticipant.sol';
-import './YellowLocking.sol';
+import './Upgradeability.sol';
+import './Identity.sol';
+import './Locking.sol';
 
 // YellowParticipant
-abstract contract YellowRegistry is
-	YellowAccessControl,
-	YellowClearingUpgradeability,
-	IYellowParticipant,
-	YellowLocking
-{
+abstract contract Registry is AccessControl, Upgradeability, Identity, Locking {
+	// ======================
+	// Structs
+	// ======================
+
 	using ECDSA for bytes32;
+
+	// Participant status
+	enum ParticipantStatus {
+		// Participant is not registered or have been removed
+		None,
+		// Participant is registered but not yet validated
+		Pending,
+		// Participant is registered but do not have token staked
+		Inactive,
+		// Participant is registered and have token staked
+		Active,
+		// Participant is registered but is not allowed to participate
+		Suspended,
+		// Participant is registered but have migrated to the next implementation
+		Migrated
+	}
+
+	// Participant data
+	struct ParticipantData {
+		ParticipantStatus status;
+		uint64 registrationTime;
+	}
+
+	// ======================
+	// Roles
+	// ======================
+
+	bytes32 public constant REGISTRY_MAINTAINER_ROLE = keccak256('REGISTRY_MAINTAINER_ROLE');
+	bytes32 public constant REGISTRY_VALIDATOR_ROLE = keccak256('REGISTRY_VALIDATOR_ROLE');
+	bytes32 public constant AUDITOR_ROLE = keccak256('AUDITOR_ROLE');
+
+	// ======================
+	// Fields
+	// ======================
 
 	// Participant data mapping
 	mapping(address => ParticipantData) internal _participantData;
 
 	// ======================
-	// participant checks
+	// Participant checks
 	// ======================
 
 	/**
@@ -39,8 +72,8 @@ abstract contract YellowRegistry is
 	 * @param participant Address of participant to check.
 	 */
 	function requireParticipantNotPresentBackwards(address participant) public view {
-		if (address(_prevImplementation) != address(0)) {
-			YellowRegistry(address(_prevImplementation)).requireParticipantNotPresentBackwards(
+		if (address(prevImplementation) != address(0)) {
+			Registry(address(prevImplementation)).requireParticipantNotPresentBackwards(
 				participant
 			);
 		}
@@ -54,10 +87,8 @@ abstract contract YellowRegistry is
 	 * @param participant Address of participant to check.
 	 */
 	function requireParticipantNotPresentForwards(address participant) public view {
-		if (address(_nextImplementation) != address(0)) {
-			YellowRegistry(address(_nextImplementation)).requireParticipantNotPresentForwards(
-				participant
-			);
+		if (address(nextImplementation) != address(0)) {
+			Registry(address(nextImplementation)).requireParticipantNotPresentForwards(participant);
 		}
 
 		_requireParticipantNotPresent(participant);
@@ -89,57 +120,9 @@ abstract contract YellowRegistry is
 		return _participantData[participant];
 	}
 
-	/**
-	 * @notice Return identity payload structure for a supplied participant. Used to ease interaction with this contract.
-	 * @dev Return identity payload structure for a supplied participant. Used to ease interaction with this contract.
-	 * @param participant Address of participant to get identity payload for.
-	 * @return IdentityPayload Identity payload structure for a supplied participant.
-	 */
-	function getIdentityPayload(address participant) public view returns (IdentityPayload memory) {
-		uint64 nonce;
-
-		if (!hasParticipant(participant)) {
-			nonce = 0;
-		} else {
-			nonce = _participantData[participant].nonce + 1;
-		}
-
-		return
-			IdentityPayload({
-				yellowRegistry: address(_self),
-				participant: participant,
-				nonce: nonce
-			});
-	}
-
 	// ======================
-	// participant changes
+	// Participant changes
 	// ======================
-
-	/**
-	 * @notice Register participant by adding it to the registry with Pending status. Emit `ParticipantRegistered` event.
-	 * @dev Participant must not be present in this or any previous or subsequent implementations.
-	 * @param participant Virtual (no address, only public key exist) address of participant to add.
-	 * @param signature Participant identity payload signed by this same participant.
-	 */
-	function registerParticipant(address participant, bytes calldata signature) external {
-		requireParticipantNotPresentRecursive(participant);
-
-		IdentityPayload memory identityPayload = getIdentityPayload(participant);
-
-		require(
-			_recoverIdentitySigner(identityPayload, signature) == participant,
-			'Invalid signer'
-		);
-
-		_participantData[participant] = ParticipantData({
-			status: ParticipantStatus.Pending,
-			nonce: identityPayload.nonce,
-			registrationTime: uint64(block.timestamp)
-		});
-
-		emit ParticipantRegistered(participant);
-	}
 
 	// REVIEW: change docs comment after checks are added
 	/**
@@ -224,60 +207,7 @@ abstract contract YellowRegistry is
 	}
 
 	// ======================
-	// migrate participant
-	// ======================
-
-	// TODO: change dev docs
-	/**
-	 * @notice Migrate participant to the newest implementation present in upgrades chain. Emit `ParticipantMigratedFrom` and `ParticipantMigratedTo` events.
-	 * @dev NextImplementation must have been set. Participant must not have been migrated.
-	 * @param participant Address of participant to migrate.
-	 * @param signature Participant identity payload signed by that participant.
-	 */
-	function migrateParticipant(address participant, bytes calldata signature) external {
-		require(address(_nextImplementation) != address(0), 'Next implementation is not set');
-
-		_requireParticipantPresent(participant);
-
-		IdentityPayload memory identityPayload = getIdentityPayload(participant);
-
-		require(
-			_recoverIdentitySigner(identityPayload, signature) == participant,
-			'Invalid signer'
-		);
-
-		// Get previous participant data
-		ParticipantData memory currentData = _participantData[participant];
-		require(currentData.status != ParticipantStatus.Migrated, 'Participant already migrated');
-
-		// Update data to resemble migration
-		ParticipantData memory updatedData = currentData;
-		updatedData.nonce = identityPayload.nonce;
-
-		// Get token amount to migrate
-		uint256 migrateTokenAmount = _lockedBy[participant];
-
-		// Get newest (right-most) Registry in upgradeability chain
-		YellowRegistry newestRegistry = YellowRegistry(address(getRightmostImplementation()));
-
-		_migrateParticipantDataTo(newestRegistry, participant, updatedData);
-
-		_migrateLockedTokensTo(newestRegistry, participant, migrateTokenAmount);
-
-		// Mark participant as migrated on this implementation
-		_participantData[participant] = ParticipantData({
-			status: ParticipantStatus.Migrated,
-			nonce: updatedData.nonce,
-			registrationTime: updatedData.registrationTime
-		});
-
-		// Emit event
-		emit ParticipantMigratedFrom(participant, _self);
-		emit LockedTokensMigratedFrom(participant, migrateTokenAmount, _self);
-	}
-
-	// ======================
-	// internal functions
+	// Internal
 	// ======================
 
 	/**
@@ -298,60 +228,11 @@ abstract contract YellowRegistry is
 		require(!hasParticipant(participant), 'Participant already exist');
 	}
 
-	/**
-	 * @notice Recover signer of identity payload.
-	 * @dev Recover signer of identity payload.
-	 * @param identityPayload Identity payload that has been signed.
-	 * @param signature Signed identity payload.
-	 * @return address Address of the signer.
-	 */
-	function _recoverIdentitySigner(IdentityPayload memory identityPayload, bytes memory signature)
-		internal
-		pure
-		returns (address)
-	{
-		return keccak256(abi.encode(identityPayload)).toEthSignedMessageHash().recover(signature);
-	}
-
-	// TODO: change dev docs
-	/**
-	 * @notice Recursively migrate participant data to newest implementation in upgrades chain. Emit `ParticipantMigratedTo` event.
-	 * @dev Require PREVIOUS_IMPLEMENTATION_ROLE to invoke.
-	 * @param participant Address of participant to migrate data of.
-	 * @param data Participant data to migrate.
-	 */
-	function _migrateParticipantDataTo(
-		YellowRegistry to,
-		address participant,
-		ParticipantData memory data
-	) internal {
-		to._migrateParticipantData(participant, data);
-
-		emit ParticipantMigratedTo(participant, _self);
-	}
-
-	// TODO: change dev docs
-	/**
-	 * @notice Internal logic of migrating participant data. Can be overridden to change.
-	 * @dev Internal logic of migrating participant data. Can be overridden to change.
-	 * @param participant Address of participant to migrate data of.
-	 * @param data Participant data to migrate.
-	 */
-	function _migrateParticipantData(address participant, ParticipantData memory data)
-		public
-		virtual
-		onlyLeftImplementation(YellowClearingUpgradeability(msg.sender))
-	{
-		_participantData[participant] = data;
-	}
-
-	event ParticipantRegistered(address participant);
+	// ======================
+	// Events
+	// ======================
 
 	event ParticipantStatusChanged(address indexed participant, ParticipantStatus indexed status);
 
 	event ParticipantDataSet(address indexed participant, ParticipantData data);
-
-	event ParticipantMigratedFrom(address indexed participant, address indexed from);
-
-	event ParticipantMigratedTo(address indexed participant, address indexed to);
 }
