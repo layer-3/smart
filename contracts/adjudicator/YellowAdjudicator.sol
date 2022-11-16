@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 // import '@statechannels/nitro-protocol/contracts/MultiAssetHolder.sol';
 import '@statechannels/nitro-protocol/contracts/NitroAdjudicator.sol';
 
-abstract contract Adjudicator is NitroAdjudicator {
+contract YellowAdjudicator is NitroAdjudicator {
 	// function deposit(
 	// 	address asset,
 	// 	bytes32 channelId,

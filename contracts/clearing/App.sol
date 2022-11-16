@@ -7,12 +7,12 @@ import '@statechannels/nitro-protocol/contracts/interfaces/IForceMoveApp.sol';
 abstract contract App is IForceMoveApp {
 	struct Liability {
 		uint256 chainId;
-		address tokenAddress;
+		address token;
 		uint256 quantity;
 	}
 
 	struct StateData {
-		// from participant id => to participant id => liability[]
+		// from participant => to participant => liability[]
 		mapping(address => mapping(address => Liability[])) liabilities;
 	}
 

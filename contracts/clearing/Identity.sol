@@ -12,7 +12,7 @@ abstract contract Identity {
 		uint64 nonce;
 	}
 
-	mapping(address => uint64) private _nonce;
+	mapping(address => uint64) public nonce;
 
 	function getIdentityPayload(address participant) public view returns (bytes32) {
 		return
@@ -21,7 +21,7 @@ abstract contract Identity {
 					Payload({
 						implementation: address(this),
 						participant: participant,
-						nonce: _nonce[participant]
+						nonce: nonce[participant]
 					})
 				)
 			);
@@ -50,6 +50,6 @@ abstract contract Identity {
 			'invalid identity payload signature'
 		);
 
-		_nonce[participant]++;
+		nonce[participant]++;
 	}
 }

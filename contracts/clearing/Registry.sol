@@ -3,15 +3,13 @@ pragma solidity 0.8.17;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
 
-import './Identity.sol';
-
-abstract contract Registry is AccessControl, Identity {
+abstract contract Registry is AccessControl {
 	enum Status {
 		// Participant does not exists or have been deleted
 		None,
-		// Participant exists and is pending validation
+		// Participant exists and is pending activation
 		Pending,
-		// Participant exists and is validated
+		// Participant exists and is active
 		Active,
 		// Participant exists but is suspended
 		Suspended,
@@ -26,14 +24,12 @@ abstract contract Registry is AccessControl, Identity {
 	mapping(address => uint64) public registrationTime;
 	mapping(address => Status) public reinstateStatus;
 
-	function _requireParticipantExists(address participant) private view {
+	function _requireParticipantExists(address participant) internal view {
 		require(status[participant] != Status.None, 'participant does not exist');
 	}
 
-	function validateParticipant(address participant) external onlyRole(REGISTRY_VALIDATOR_ROLE) {
-		_requireParticipantExists(participant);
-
-		require(status[participant] == Status.Pending, 'participant is not pending validation');
+	function activateParticipant(address participant) external onlyRole(REGISTRY_VALIDATOR_ROLE) {
+		require(status[participant] == Status.Pending, 'participant is not pending activation');
 
 		status[participant] = Status.Active;
 
@@ -56,8 +52,6 @@ abstract contract Registry is AccessControl, Identity {
 	}
 
 	function reinstateParticipant(address participant) external onlyRole(REGISTRY_MODERATOR_ROLE) {
-		_requireParticipantExists(participant);
-
 		require(status[participant] == Status.Suspended, 'participant is not suspended');
 
 		status[participant] = reinstateStatus[participant];
