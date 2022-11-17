@@ -44,28 +44,29 @@ abstract contract Upgradeability is AccessControl {
 	// Modifiers
 	// ======================
 
-	modifier onlyRightImplementation(Upgradeability impl) {
-		require(isRightImplementation(impl), 'Not a right implementation');
+	modifier onlyPrevImplementation(Upgradeability impl) {
+		require(isPrevImplementation(impl), 'Not previous implementation');
 		_;
 	}
 
 	modifier onlyLeftImplementation(Upgradeability impl) {
-		require(isLeftImplementation(impl), 'Not a left implementation');
+		require(isLeftImplementation(impl), 'Not left implementation');
+		_;
+	}
+
+	modifier onlyNextImplementation(Upgradeability impl) {
+		require(isNextImplementation(impl), 'Not next implementation');
+		_;
+	}
+
+	modifier onlyRightImplementation(Upgradeability impl) {
+		require(isRightImplementation(impl), 'Not right implementation');
 		_;
 	}
 
 	// ======================
 	// Next Implementation
 	// ======================
-
-	/**
-	 * @notice Get next implementation address if set, zero address if not.
-	 * @dev Get next implementation address if set, zero address if not.
-	 * @return YellowClearingBase Next implementation address if set, zero address if not.
-	 */
-	function getNextImplementation() external view returns (INextImplementation) {
-		return nextImplementation;
-	}
 
 	/**
 	 * @notice Set next implementation address. Must not be zero address or self. Emit `NextImplementationSet` event.
@@ -100,33 +101,60 @@ abstract contract Upgradeability is AccessControl {
 		}
 	}
 
-	function isRightImplementation(Upgradeability impl) public returns (bool) {
-		return _isRightImplementation(Upgradeability(_self), impl);
+	function isPrevImplementation(Upgradeability impl) public view returns (bool) {
+		return _isNextImplementation(impl, Upgradeability(_self));
 	}
 
-	function isLeftImplementation(Upgradeability impl) public returns (bool) {
+	// _self is a predecessor, maybe indirect, of impl supplied
+	function isLeftImplementation(Upgradeability impl) public view returns (bool) {
 		return _isRightImplementation(impl, Upgradeability(_self));
+	}
+
+	function isNextImplementation(Upgradeability impl) public view returns (bool) {
+		return _isNextImplementation(Upgradeability(_self), impl);
+	}
+
+	// _self is an ancestor, maybe indirect, of impl supplied
+	function isRightImplementation(Upgradeability impl) public view returns (bool) {
+		return _isRightImplementation(Upgradeability(_self), impl);
 	}
 
 	// ======================
 	// Internal
 	// ======================
 
-	// the second in an ancestor, maybe indirect, of the first
-	function _isRightImplementation(Upgradeability first, Upgradeability second)
+	// A -> B
+	function _isNextImplementation(Upgradeability b, Upgradeability a)
 		internal
+		view
 		returns (bool)
 	{
-		address first_nextImpl = address(first.nextImplementation());
-
-		if (
-			first_nextImpl == address(0) || first_nextImpl == _self || address(second) == address(0)
-		) {
+		if (address(b) == address(0) || address(a) == address(0)) {
 			return false;
-		} else if (Upgradeability(first_nextImpl) == second) {
+		}
+
+		return Upgradeability(address(a.nextImplementation())) == b;
+	}
+
+	// A -> ... -> B
+	// the B is an ancestor, maybe indirect, of the A
+	function _isRightImplementation(Upgradeability b, Upgradeability a)
+		internal
+		view
+		returns (bool)
+	{
+		if (address(b) == address(0) || address(a) == address(0)) {
+			return false;
+		}
+
+		address a_nextImpl = address(a.nextImplementation());
+
+		if (a_nextImpl == address(0) || a_nextImpl == _self) {
+			return false;
+		} else if (Upgradeability(a_nextImpl) == a) {
 			return true;
 		} else {
-			return INextImplementation(first_nextImpl).isRightImplementation(second);
+			return INextImplementation(a_nextImpl).isRightImplementation(b);
 		}
 	}
 

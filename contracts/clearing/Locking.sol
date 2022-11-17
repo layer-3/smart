@@ -67,8 +67,4 @@ abstract contract Locking is AccessControl {
 	event TokenLocked(address indexed account, uint256 amount);
 
 	event TokenUnlocked(address indexed account, uint256 amount);
-
-	event LockedTokensMigratedFrom(address indexed account, uint256 amount, address indexed from);
-
-	event LockedTokensMigratedTo(address indexed account, uint256 amount, address indexed to);
 }

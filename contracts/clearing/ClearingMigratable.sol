@@ -41,19 +41,19 @@ abstract contract ClearingMigratable is ClearingChained {
 		);
 
 		// Migrate data and tokens to the newest implementation
-		_migrateParticipantDataTo(newestClearing, participant, currentData);
 		_migrateLockedTokensTo(newestClearing, participant, migrateTokenAmount);
+		_migrateParticipantData(participant, currentData);
 
 		// Emit event
-		emit ParticipantMigratedFrom(participant, _self);
 		emit LockedTokensMigratedFrom(participant, migrateTokenAmount, _self);
+		emit ParticipantMigratedFrom(participant, _self);
 	}
 
 	// Migrate from V1 to V2 (HERE)
 	function migrateParticipantData(
 		address participant,
 		IPrevImplementation.ParticipantData memory data
-	) external onlyRole(PREVIOUS_IMPLEMENTATION_ROLE) {
+	) public onlyRole(PREVIOUS_IMPLEMENTATION_ROLE) {
 		// TODO:
 	}
 
@@ -61,39 +61,32 @@ abstract contract ClearingMigratable is ClearingChained {
 	// Internal migrate participant
 	// ======================
 
+	function migrateParticipantDataConsequtive(
+		address participant,
+		IPrevImplementation.ParticipantData memory prevVersionData
+	) public onlyPrevImplementation(Upgradeability(msg.sender)) {
+		migrateParticipantData(participant, prevVersionData);
+
+		if (address(nextImplementation) != address(0)) {
+			nextImplementation.migrateParticipantDataConsequtive(
+				participant,
+				_participantData[participant]
+			);
+		} else {
+			emit ParticipantMigratedTo(participant, _self);
+		}
+	}
+
 	/**
 	 * @notice Recursively migrate participant data to newest implementation in upgrades chain. Emit `ParticipantMigratedTo` event.
 	 * @dev Require PREVIOUS_IMPLEMENTATION_ROLE to invoke.
 	 * @param participant Address of participant to migrate data of.
 	 * @param data Participant data to migrate.
 	 */
-	function _migrateParticipantDataTo(
-		ClearingMigratable to,
-		address participant,
-		ParticipantData memory data
-	) internal {
-		_participantData[participant] = ParticipantData({
-			status: ParticipantStatus.Migrated,
-			registrationTime: data.registrationTime
-		});
+	function _migrateParticipantData(address participant, ParticipantData memory data) internal {
+		_participantData[participant].status = ParticipantStatus.Migrated;
 
-		to.migrateParticipantData(participant, data);
-	}
-
-	/**
-	 * @notice Internal logic of migrating participant data. Can be overridden to change.
-	 * @dev Internal logic of migrating participant data. Can be overridden to change.
-	 * @param participant Address of participant to migrate data of.
-	 * @param data Participant data to migrate.
-	 */
-	function migrateParticipantData(address participant, ParticipantData memory data)
-		public
-		virtual
-		onlyLeftImplementation(Upgradeability(msg.sender))
-	{
-		_participantData[participant] = data;
-
-		emit ParticipantMigratedTo(participant, _self);
+		nextImplementation.migrateParticipantDataConsequtive(participant, data);
 	}
 
 	// ======================
@@ -127,4 +120,8 @@ abstract contract ClearingMigratable is ClearingChained {
 	event ParticipantMigratedFrom(address indexed participant, address indexed from);
 
 	event ParticipantMigratedTo(address indexed participant, address indexed to);
+
+	event LockedTokensMigratedFrom(address indexed account, uint256 amount, address indexed from);
+
+	event LockedTokensMigratedTo(address indexed account, uint256 amount, address indexed to);
 }
