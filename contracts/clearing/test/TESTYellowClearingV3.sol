@@ -9,12 +9,12 @@ contract TESTYellowClearingV3 is ClearingMigratable {
 		ClearingMigratable(previousImplementation)
 	{}
 
-	function migrateParticipantData(address participant, ParticipantData memory data)
-		public
-		override
-		onlyRightImplementation(this)
-	{
-		ParticipantData memory migratedData = ParticipantData(data.status, 42);
+	function migrateParticipantData(
+		address participant,
+		IPrevImplementation.ParticipantData memory data
+	) public override onlyRole(PREVIOUS_IMPLEMENTATION_ROLE) {
+		Registry.ParticipantStatus status = ParticipantStatus(uint8(data.status));
+		ParticipantData memory migratedData = ParticipantData(status, 42);
 
 		_participantData[participant] = migratedData;
 	}

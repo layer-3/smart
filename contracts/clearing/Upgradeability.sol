@@ -44,23 +44,27 @@ abstract contract Upgradeability is AccessControl {
 	// Modifiers
 	// ======================
 
+	// note: relation is reversed as Subject and Object are opposite here and in functions called
+	// A -> B
+	// B.foo onlyPrevImplementation(A) == B.isNextImplementation(A)
+
 	modifier onlyPrevImplementation(Upgradeability impl) {
-		require(isPrevImplementation(impl), 'Not previous implementation');
+		require(isNextImplementation(impl), 'Not previous implementation');
 		_;
 	}
 
 	modifier onlyLeftImplementation(Upgradeability impl) {
-		require(isLeftImplementation(impl), 'Not left implementation');
+		require(isRightImplementation(impl), 'Not left implementation');
 		_;
 	}
 
 	modifier onlyNextImplementation(Upgradeability impl) {
-		require(isNextImplementation(impl), 'Not next implementation');
+		require(isPrevImplementation(impl), 'Not next implementation');
 		_;
 	}
 
 	modifier onlyRightImplementation(Upgradeability impl) {
-		require(isRightImplementation(impl), 'Not right implementation');
+		require(isLeftImplementation(impl), 'Not right implementation');
 		_;
 	}
 

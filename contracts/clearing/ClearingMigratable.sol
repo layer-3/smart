@@ -53,7 +53,7 @@ abstract contract ClearingMigratable is ClearingChained {
 	function migrateParticipantData(
 		address participant,
 		IPrevImplementation.ParticipantData memory data
-	) public onlyRole(PREVIOUS_IMPLEMENTATION_ROLE) {
+	) public virtual onlyRole(PREVIOUS_IMPLEMENTATION_ROLE) {
 		// TODO:
 	}
 
