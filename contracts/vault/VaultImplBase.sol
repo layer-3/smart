@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.17;
 
 import '@openzeppelin/contracts/interfaces/draft-IERC1822.sol';
 import '@openzeppelin/contracts/proxy/ERC1967/ERC1967Upgrade.sol';

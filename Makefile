@@ -1,7 +1,7 @@
 .PHONY=smart-contracts
 
 ABIGEN_VERSION = 1.10.26-e5eb32ac
-SOLC_VERSION = 0.8.16
+SOLC_VERSION = 0.8.17
 
 OUT_DIR = ./bindings/
 
