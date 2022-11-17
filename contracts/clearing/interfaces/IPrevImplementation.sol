@@ -22,4 +22,10 @@ interface IPrevImplementation {
 	function getParticipantData(address participant) external view returns (ParticipantData memory);
 
 	function setParticipantData(address participant, ParticipantData calldata data) external;
+
+	function requireParticipantNotPresentBackwards(address participant) external view;
+
+	function requireParticipantNotPresentForwards(address participant) external view;
+
+	function requireParticipantNotPresentRecursive(address participant) external view;
 }

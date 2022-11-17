@@ -20,9 +20,7 @@ abstract contract ClearingChained is Registry, Locking, Upgradeability {
 	 */
 	function requireParticipantNotPresentBackwards(address participant) public view {
 		if (address(prevImplementation) != address(0)) {
-			Registry(address(prevImplementation)).requireParticipantNotPresentBackwards(
-				participant
-			);
+			prevImplementation.requireParticipantNotPresentBackwards(participant);
 		}
 
 		_requireParticipantNotPresent(participant);
@@ -35,7 +33,7 @@ abstract contract ClearingChained is Registry, Locking, Upgradeability {
 	 */
 	function requireParticipantNotPresentForwards(address participant) public view {
 		if (address(nextImplementation) != address(0)) {
-			Registry(address(nextImplementation)).requireParticipantNotPresentForwards(participant);
+			nextImplementation.requireParticipantNotPresentForwards(participant);
 		}
 
 		_requireParticipantNotPresent(participant);

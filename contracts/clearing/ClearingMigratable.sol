@@ -36,7 +36,9 @@ abstract contract ClearingMigratable is ClearingChained {
 		uint256 migrateTokenAmount = _lockedBy[participant];
 
 		// Get newest (right-most) YellowClearing in upgradeability chain
-		YellowClearing newestClearing = YellowClearing(address(getRightmostImplementation()));
+		ClearingMigratable newestClearing = ClearingMigratable(
+			address(getRightmostImplementation())
+		);
 
 		// Migrate data and tokens to the newest implementation
 		_migrateParticipantDataTo(newestClearing, participant, currentData);
@@ -51,7 +53,9 @@ abstract contract ClearingMigratable is ClearingChained {
 	function migrateParticipantData(
 		address participant,
 		IPrevImplementation.ParticipantData memory data
-	) external onlyRole(PREVIOUS_IMPLEMENTATION_ROLE) {}
+	) external onlyRole(PREVIOUS_IMPLEMENTATION_ROLE) {
+		// TODO:
+	}
 
 	// ======================
 	// Internal migrate participant
@@ -73,7 +77,7 @@ abstract contract ClearingMigratable is ClearingChained {
 			registrationTime: data.registrationTime
 		});
 
-		to._migrateParticipantData(participant, data);
+		to.migrateParticipantData(participant, data);
 	}
 
 	/**
@@ -82,7 +86,7 @@ abstract contract ClearingMigratable is ClearingChained {
 	 * @param participant Address of participant to migrate data of.
 	 * @param data Participant data to migrate.
 	 */
-	function _migrateParticipantData(address participant, ParticipantData memory data)
+	function migrateParticipantData(address participant, ParticipantData memory data)
 		public
 		virtual
 		onlyLeftImplementation(Upgradeability(msg.sender))
@@ -97,17 +101,17 @@ abstract contract ClearingMigratable is ClearingChained {
 	// ======================
 
 	function _migrateLockedTokensTo(
-		Locking to,
+		ClearingMigratable to,
 		address account,
 		uint256 amount
 	) internal {
 		bool success = yellowToken.transfer(address(to), amount);
 		require(success, 'Could not transfer Yellow token');
 
-		to._migrateLockedTokens(account, amount);
+		to.migrateLockedTokens(account, amount);
 	}
 
-	function _migrateLockedTokens(address account, uint256 amount)
+	function migrateLockedTokens(address account, uint256 amount)
 		public
 		virtual
 		onlyLeftImplementation(Upgradeability(msg.sender))

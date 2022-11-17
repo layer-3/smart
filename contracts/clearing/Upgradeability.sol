@@ -44,6 +44,11 @@ abstract contract Upgradeability is AccessControl {
 	// Modifiers
 	// ======================
 
+	modifier onlyRightImplementation(Upgradeability impl) {
+		require(isRightImplementation(impl), 'Not a right implementation');
+		_;
+	}
+
 	modifier onlyLeftImplementation(Upgradeability impl) {
 		require(isLeftImplementation(impl), 'Not a left implementation');
 		_;
@@ -95,16 +100,33 @@ abstract contract Upgradeability is AccessControl {
 		}
 	}
 
-	// TODO: isLeftImplementation is not compatible with V1
+	function isRightImplementation(Upgradeability impl) public returns (bool) {
+		return _isRightImplementation(Upgradeability(_self), impl);
+	}
 
-	// left implementation - supplied impl is an ancestor, including indirect, in relation to this one
 	function isLeftImplementation(Upgradeability impl) public returns (bool) {
-		if (address(prevImplementation) == address(0)) {
+		return _isRightImplementation(impl, Upgradeability(_self));
+	}
+
+	// ======================
+	// Internal
+	// ======================
+
+	// the second in an ancestor, maybe indirect, of the first
+	function _isRightImplementation(Upgradeability first, Upgradeability second)
+		internal
+		returns (bool)
+	{
+		address first_nextImpl = address(first.nextImplementation());
+
+		if (
+			first_nextImpl == address(0) || first_nextImpl == _self || address(second) == address(0)
+		) {
 			return false;
-		} else if (prevImplementation == impl) {
+		} else if (Upgradeability(first_nextImpl) == second) {
 			return true;
 		} else {
-			return prevImplementation.isLeftImplementation(impl);
+			return INextImplementation(first_nextImpl).isRightImplementation(second);
 		}
 	}
 

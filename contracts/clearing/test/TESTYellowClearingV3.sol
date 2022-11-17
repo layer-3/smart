@@ -9,10 +9,10 @@ contract TESTYellowClearingV3 is ClearingMigratable {
 		ClearingMigratable(previousImplementation)
 	{}
 
-	function _migrateParticipantData(address participant, ParticipantData memory data)
+	function migrateParticipantData(address participant, ParticipantData memory data)
 		public
 		override
-		onlyLeftImplementation(this)
+		onlyRightImplementation(this)
 	{
 		ParticipantData memory migratedData = ParticipantData(data.status, 42);
 
