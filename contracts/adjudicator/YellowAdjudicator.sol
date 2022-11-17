@@ -6,6 +6,7 @@ pragma experimental ABIEncoderV2;
 import '@statechannels/nitro-protocol/contracts/NitroAdjudicator.sol';
 
 contract YellowAdjudicator is NitroAdjudicator {
+	// TODO: check if msg.sender is participant of one of his associated addresses
 	// function deposit(
 	// 	address asset,
 	// 	bytes32 channelId,

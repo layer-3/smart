@@ -3,7 +3,9 @@ pragma solidity 0.8.17;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
 
-abstract contract Registry is AccessControl {
+import './Identity.sol';
+
+abstract contract Registry is AccessControl, Identity {
 	enum Status {
 		// Participant does not exists or have been deleted
 		None,
@@ -23,6 +25,11 @@ abstract contract Registry is AccessControl {
 	mapping(address => Status) public status;
 	mapping(address => uint64) public registrationTime;
 	mapping(address => Status) public reinstateStatus;
+
+	// participant => associated addresses
+	mapping(address => address[]) public associatedAddresses;
+	// associated address => participant
+	mapping(address => address) public associatedParticipant;
 
 	function _requireParticipantExists(address participant) internal view {
 		require(status[participant] != Status.None, 'participant does not exist');
@@ -61,5 +68,58 @@ abstract contract Registry is AccessControl {
 		emit ParticipantStatusChanged(participant, Status.Active);
 	}
 
+	function addAssociatedAddress(
+		address participant,
+		address associatedAddress,
+		bytes memory identityPayloadSignature
+	) external {
+		_requireParticipantExists(participant);
+
+		_identify(participant, identityPayloadSignature);
+
+		require(
+			associatedParticipant[associatedAddress] == address(0),
+			'associated address already in use'
+		);
+
+		associatedAddresses[participant].push(associatedAddress);
+		associatedParticipant[associatedAddress] = participant;
+
+		emit AssociatedAddressAdded(participant, associatedAddress);
+	}
+
+	function removeAssociatedAddress(
+		address participant,
+		address associatedAddress,
+		bytes memory identityPayloadSignature
+	) external {
+		_requireParticipantExists(participant);
+
+		_identify(participant, identityPayloadSignature);
+
+		require(
+			associatedParticipant[associatedAddress] == participant,
+			'associated address does not belong to participant'
+		);
+
+		delete associatedParticipant[associatedAddress];
+
+		address[] storage associatedAddrs = associatedAddresses[participant];
+		for (uint256 i = 0; i < associatedAddrs.length; i++) {
+			if (associatedAddrs[i] == associatedAddress) {
+				associatedAddrs[i] = associatedAddrs[associatedAddrs.length - 1];
+				associatedAddrs.pop();
+
+				break;
+			}
+		}
+
+		emit AssociatedAddressRemoved(participant, associatedAddress);
+	}
+
 	event ParticipantStatusChanged(address indexed participant, Status indexed status);
+
+	event AssociatedAddressAdded(address indexed participant, address indexed associatedAddress);
+
+	event AssociatedAddressRemoved(address indexed participant, address indexed associatedAddress);
 }

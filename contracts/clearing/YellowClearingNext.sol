@@ -1,8 +1,6 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import '@openzeppelin/contracts/utils/Address.sol';
-
 import './Channel.sol';
 import './App.sol';
 
@@ -25,6 +23,7 @@ interface IPreviousImplementation {
 		uint64 registrationTime;
 		Status reinstateStatus;
 		uint256 stackedYellowTokens;
+		uint256 lockedYellowTokens;
 	}
 
 	function status(address participant) external view returns (Status);
@@ -44,6 +43,7 @@ contract YellowClearing is Channel, App {
 		uint64 registrationTime;
 		Status reinstateStatus;
 		uint256 stackedYellowTokens;
+		uint256 lockedYellowTokens;
 	}
 
 	bytes32 public constant NEXT_IMPLEMENTATION_ROLE = keccak256('NEXT_IMPLEMENTATION_ROLE');
@@ -53,20 +53,21 @@ contract YellowClearing is Channel, App {
 
 	constructor(
 		IPreviousImplementation prevImpl,
-		address yellowAdj,
-		IERC20MetadataUpgradeable yellowTk
+		IERC20MetadataUpgradeable yellowTk,
+		address yellowAdj
 	) {
 		previousImplementation = prevImpl;
-
-		yellowAdjudicator = yellowAdj;
-		yellowToken = yellowTk;
 
 		_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
 		_grantRole(REGISTRY_MODERATOR_ROLE, msg.sender);
 		_grantRole(REGISTRY_VALIDATOR_ROLE, msg.sender);
 
-		_grantRole(CHANNEL_ADJUDICATOR_ROLE, yellowAdj);
+		yellowToken = yellowTk;
+
+		yellowAdjudicator = yellowAdj;
+
+		_grantRole(CHANNEL_ADJUDICATOR_ROLE, yellowAdjudicator);
 	}
 
 	function setNextImplementation(address nextImpl) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -91,7 +92,8 @@ contract YellowClearing is Channel, App {
 				status: status[participant],
 				registrationTime: registrationTime[participant],
 				reinstateStatus: reinstateStatus[participant],
-				stackedYellowTokens: stackedYellowTokens[participant]
+				stackedYellowTokens: stackedYellowTokens[participant],
+				lockedYellowTokens: lockedYellowTokens[participant]
 			});
 	}
 
@@ -127,7 +129,11 @@ contract YellowClearing is Channel, App {
 		registrationTime[participant] = prevData.registrationTime;
 		reinstateStatus[participant] = Status(uint8(prevData.reinstateStatus));
 
-		// TODO: other migrations (channel, stats, ...)
+		stackedYellowTokens[participant] = prevData.stackedYellowTokens;
+		lockedYellowTokens[participant] = prevData.lockedYellowTokens;
+		// TODO: transfer tokens from previous implementation to this one
+
+		// TODO: other migrations (stats, channel, ...)
 
 		previousImplementation.setParticipantMigrated(participant);
 

@@ -33,6 +33,7 @@ contract YellowClearing is Channel, App {
 		uint64 registrationTime;
 		Status reinstateStatus;
 		uint256 stackedYellowTokens;
+		uint256 lockedYellowTokens;
 	}
 
 	bytes32 public constant NEXT_IMPLEMENTATION_ROLE = keccak256('NEXT_IMPLEMENTATION_ROLE');
@@ -42,20 +43,21 @@ contract YellowClearing is Channel, App {
 
 	constructor(
 		IPreviousImplementation prevImpl,
-		address yellowAdj,
-		IERC20MetadataUpgradeable yellowTk
+		IERC20MetadataUpgradeable yellowTk,
+		address yellowAdj
 	) {
 		previousImplementation = prevImpl;
-
-		yellowAdjudicator = yellowAdj;
-		yellowToken = yellowTk;
 
 		_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
 		_grantRole(REGISTRY_MODERATOR_ROLE, msg.sender);
 		_grantRole(REGISTRY_VALIDATOR_ROLE, msg.sender);
 
-		_grantRole(CHANNEL_ADJUDICATOR_ROLE, yellowAdj);
+		yellowToken = yellowTk;
+
+		yellowAdjudicator = yellowAdj;
+
+		_grantRole(CHANNEL_ADJUDICATOR_ROLE, yellowAdjudicator);
 	}
 
 	function setNextImplementation(address nextImpl) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -80,7 +82,8 @@ contract YellowClearing is Channel, App {
 				status: status[participant],
 				registrationTime: registrationTime[participant],
 				reinstateStatus: reinstateStatus[participant],
-				stackedYellowTokens: stackedYellowTokens[participant]
+				stackedYellowTokens: stackedYellowTokens[participant],
+				lockedYellowTokens: lockedYellowTokens[participant]
 			});
 	}
 
