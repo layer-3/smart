@@ -2,11 +2,11 @@
 pragma solidity 0.8.17;
 
 import './Registry.sol';
-import './Locking.sol';
+import './Channel.sol';
 import './Upgradeability.sol';
 import './interfaces/IPrevImplementation.sol';
 
-abstract contract ClearingChained is Registry, Locking, Upgradeability {
+abstract contract ClearingChained is Registry, Channel, Upgradeability {
 	constructor(IPrevImplementation prevImplementation) Upgradeability(prevImplementation) {}
 
 	// ======================
@@ -70,6 +70,21 @@ abstract contract ClearingChained is Registry, Locking, Upgradeability {
 		});
 
 		emit ParticipantRegistered(participant);
+	}
+
+	// ======================
+	// Stacking
+	// ======================
+
+	function _requireEligibleForStacking(address participant) internal virtual override {
+		_requireParticipantPresent(participant);
+	}
+
+	function _requireEligibleForUnstacking(
+		address participant,
+		bytes memory identifyPayloadSignature
+	) internal virtual override {
+		_identifyRequest(participant, identifyPayloadSignature);
 	}
 
 	// ======================

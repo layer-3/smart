@@ -33,7 +33,7 @@ abstract contract ClearingMigratable is ClearingChained {
 		require(currentData.status != ParticipantStatus.Migrated, 'Participant already migrated');
 
 		// Get token amount to migrate
-		uint256 migrateTokenAmount = _lockedBy[participant];
+		uint256 migrateTokenAmount = lockedBy[participant];
 
 		// Get newest (right-most) YellowClearing in upgradeability chain
 		ClearingMigratable newestClearing = ClearingMigratable(
@@ -109,7 +109,7 @@ abstract contract ClearingMigratable is ClearingChained {
 		virtual
 		onlyLeftImplementation(Upgradeability(msg.sender))
 	{
-		_lockedBy[account] = amount;
+		lockedBy[account] = amount;
 		emit LockedTokensMigratedTo(account, amount, address(this));
 	}
 
