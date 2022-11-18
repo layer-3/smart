@@ -4,11 +4,20 @@ pragma solidity 0.8.17;
 import '@openzeppelin/contracts/utils/math/SafeCast.sol';
 
 import './Stacking.sol';
+import './Statistics.sol';
 
-abstract contract Channel is Stacking {
+abstract contract Channel is Stacking, Statistics {
 	using SafeCast for uint256;
 
+	// ======================
+	// Roles
+	// ======================
+
 	bytes32 public constant CHANNEL_ADJUDICATOR_ROLE = keccak256('CHANNEL_ADJUDICATOR_ROLE');
+
+	// ======================
+	// Fields
+	// ======================
 
 	uint8 public constant CHANNEL_INCREMENT = 4;
 	uint256 public constant YELLOW_TOKENS_PER_CHANNEL_INCREMENT = 250_000;
@@ -20,6 +29,10 @@ abstract contract Channel is Stacking {
 
 	mapping(address => uint8) public activeChannels;
 	mapping(address => uint64[]) public terminatedChannels;
+
+	// ======================
+	// View channels
+	// ======================
 
 	function yellowTokensPerChannelIncrement() public view returns (uint256) {
 		return YELLOW_TOKENS_PER_CHANNEL_INCREMENT * (10 ^ yellowToken.decimals());
@@ -37,6 +50,23 @@ abstract contract Channel is Stacking {
 			CHANNEL_INCREMENT;
 	}
 
+	function releasableTerminatedChannels(address participant) external view returns (uint8) {
+		uint8 releasableCount = 0;
+
+		uint64[] storage terminatedChans = terminatedChannels[participant];
+		for (uint256 i = 0; i < terminatedChans.length; i++) {
+			if (terminatedChans[i] + TERMINATED_CHANNEL_RELEASE_PERIOD <= block.timestamp) {
+				releasableCount++;
+			}
+		}
+
+		return releasableCount;
+	}
+
+	// ======================
+	// Affect channels
+	// ======================
+
 	function activateChannel(address participant) external onlyRole(CHANNEL_ADJUDICATOR_ROLE) {
 		uint8 engagedCount = engagedChannels(participant) + 1;
 
@@ -47,6 +77,7 @@ abstract contract Channel is Stacking {
 		}
 
 		activeChannels[participant]++;
+		_incrementChannels();
 
 		emit ChannelActivated(participant);
 	}
@@ -55,6 +86,7 @@ abstract contract Channel is Stacking {
 		require(activeChannels[participant] > 0, 'No active channel');
 
 		activeChannels[participant]--;
+		_decrementChannels();
 
 		emit ChannelDeactivated(participant);
 
@@ -69,20 +101,9 @@ abstract contract Channel is Stacking {
 		activeChannels[participant]--;
 		terminatedChannels[participant].push(uint64(block.timestamp));
 
+		_saveTerminatedChannelToStatistics(participant);
+
 		emit ChannelTerminated(participant);
-	}
-
-	function releasableTerminatedChannels(address participant) external view returns (uint8) {
-		uint8 releasableCount = 0;
-
-		uint64[] storage terminatedChans = terminatedChannels[participant];
-		for (uint256 i = 0; i < terminatedChans.length; i++) {
-			if (terminatedChans[i] + TERMINATED_CHANNEL_RELEASE_PERIOD <= block.timestamp) {
-				releasableCount++;
-			}
-		}
-
-		return releasableCount;
 	}
 
 	function releaseTerminatedChannels(address participant) external returns (uint8) {
@@ -110,6 +131,10 @@ abstract contract Channel is Stacking {
 
 		return releasedCount;
 	}
+
+	// ======================
+	// Events
+	// ======================
 
 	event ChannelActivated(address indexed participant);
 

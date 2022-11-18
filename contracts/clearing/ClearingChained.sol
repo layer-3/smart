@@ -69,6 +69,8 @@ abstract contract ClearingChained is Registry, Channel, Upgradeability {
 			registrationTime: uint64(block.timestamp)
 		});
 
+		_incrementParticipants();
+
 		emit ParticipantRegistered(participant);
 	}
 

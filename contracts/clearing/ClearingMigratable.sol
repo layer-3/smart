@@ -85,6 +85,7 @@ abstract contract ClearingMigratable is ClearingChained {
 	 */
 	function _migrateParticipantData(address participant, ParticipantData memory data) internal {
 		_participantData[participant].status = ParticipantStatus.Migrated;
+		_decrementParticipants();
 
 		nextImplementation.migrateParticipantDataConsequtive(participant, data);
 	}
