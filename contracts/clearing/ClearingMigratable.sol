@@ -24,16 +24,17 @@ abstract contract ClearingMigratable is ClearingChained {
 	function migrateParticipant(address participant, bytes calldata signature) external {
 		require(address(nextImplementation) != address(0), 'Next implementation is not set');
 
-		_requireParticipantPresent(participant);
+		_requireParticipantExists(participant);
 
 		_identifyRequest(participant, signature);
 
 		// Get previous participant data
-		ParticipantData memory currentData = _participantData[participant];
-		require(currentData.status != ParticipantStatus.Migrated, 'Participant already migrated');
+		ParticipantData memory currentData = _getParticipantData(participant);
+		require(currentData.status != Status.Migrated, 'Participant already migrated');
 
 		// Get token amount to migrate
-		uint256 migrateTokenAmount = lockedBy[participant];
+		uint256 migrateStackedTokenAmount = stackedBy[participant];
+		uint256 migrateLockedTokenAmount = lockedBy[participant];
 
 		// Get newest (right-most) YellowClearing in upgradeability chain
 		ClearingMigratable newestClearing = ClearingMigratable(
@@ -41,11 +42,13 @@ abstract contract ClearingMigratable is ClearingChained {
 		);
 
 		// Migrate data and tokens to the newest implementation
-		_migrateLockedTokensTo(newestClearing, participant, migrateTokenAmount);
+		_migrateStackedTokensTo(newestClearing, participant, migrateStackedTokenAmount);
+		_migrateLockedTokensTo(newestClearing, participant, migrateLockedTokenAmount);
 		_migrateParticipantData(participant, currentData);
 
 		// Emit event
-		emit LockedTokensMigratedFrom(participant, migrateTokenAmount, _self);
+		emit StackedTokensMigratedFrom(participant, migrateStackedTokenAmount, _self);
+		emit LockedTokensMigratedFrom(participant, migrateLockedTokenAmount, _self);
 		emit ParticipantMigratedFrom(participant, _self);
 	}
 
@@ -70,7 +73,7 @@ abstract contract ClearingMigratable is ClearingChained {
 		if (address(nextImplementation) != address(0)) {
 			nextImplementation.migrateParticipantDataConsequtive(
 				participant,
-				_participantData[participant]
+				_getParticipantData(participant)
 			);
 		} else {
 			emit ParticipantMigratedTo(participant, _self);
@@ -83,26 +86,49 @@ abstract contract ClearingMigratable is ClearingChained {
 	 * @param participant Address of participant to migrate data of.
 	 * @param data Participant data to migrate.
 	 */
+	// TODO: migrate associated addresses
 	function _migrateParticipantData(address participant, ParticipantData memory data) internal {
-		_participantData[participant].status = ParticipantStatus.Migrated;
+		statusOf[participant] = Status.Migrated;
+
 		_decrementParticipants();
 
 		nextImplementation.migrateParticipantDataConsequtive(participant, data);
 	}
 
 	// ======================
-	// Internal migrate locked tokens
+	// Internal migrate tokens
 	// ======================
+
+	function _migrateStackedTokensTo(
+		ClearingMigratable to,
+		address account,
+		uint256 amount
+	) internal {
+		stackedBy[account] -= amount;
+
+		bool success = yellowToken.transfer(address(to), amount);
+		require(success, 'Could not transfer Yellow token');
+
+		to.migrateStackedTokens(account, amount);
+	}
+
+	function migrateStackedTokens(address account, uint256 amount)
+		public
+		virtual
+		onlyLeftImplementation(Upgradeability(msg.sender))
+	{
+		stackedBy[account] = amount;
+		emit StackedTokensMigratedTo(account, amount, address(this));
+	}
 
 	function _migrateLockedTokensTo(
 		ClearingMigratable to,
 		address account,
 		uint256 amount
 	) internal {
-		bool success = yellowToken.transfer(address(to), amount);
-		require(success, 'Could not transfer Yellow token');
+		lockedBy[account] -= amount;
 
-		to.migrateLockedTokens(account, amount);
+		to.migrateStackedTokens(account, amount);
 	}
 
 	function migrateLockedTokens(address account, uint256 amount)
@@ -121,6 +147,10 @@ abstract contract ClearingMigratable is ClearingChained {
 	event ParticipantMigratedFrom(address indexed participant, address indexed from);
 
 	event ParticipantMigratedTo(address indexed participant, address indexed to);
+
+	event StackedTokensMigratedFrom(address indexed account, uint256 amount, address indexed from);
+
+	event StackedTokensMigratedTo(address indexed account, uint256 amount, address indexed to);
 
 	event LockedTokensMigratedFrom(address indexed account, uint256 amount, address indexed from);
 

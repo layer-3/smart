@@ -1,12 +1,11 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import './Registry.sol';
-import './Channel.sol';
+import './RegistryWithStacking.sol';
 import './Upgradeability.sol';
 import './interfaces/IPrevImplementation.sol';
 
-abstract contract ClearingChained is Registry, Channel, Upgradeability {
+abstract contract ClearingChained is RegistryWithStacking, Upgradeability {
 	constructor(IPrevImplementation prevImplementation) Upgradeability(prevImplementation) {}
 
 	// ======================
@@ -23,7 +22,7 @@ abstract contract ClearingChained is Registry, Channel, Upgradeability {
 			prevImplementation.requireParticipantNotPresentBackwards(participant);
 		}
 
-		_requireParticipantNotPresent(participant);
+		_requireParticipantNotExist(participant);
 	}
 
 	/**
@@ -36,7 +35,7 @@ abstract contract ClearingChained is Registry, Channel, Upgradeability {
 			nextImplementation.requireParticipantNotPresentForwards(participant);
 		}
 
-		_requireParticipantNotPresent(participant);
+		_requireParticipantNotExist(participant);
 	}
 
 	/**
@@ -64,29 +63,12 @@ abstract contract ClearingChained is Registry, Channel, Upgradeability {
 
 		_identifyRequest(participant, signature);
 
-		_participantData[participant] = ParticipantData({
-			status: ParticipantStatus.Pending,
-			registrationTime: uint64(block.timestamp)
-		});
+		statusOf[participant] = Status.Pending;
+		registrationTimeOf[participant] = uint64(block.timestamp);
 
 		_incrementParticipants();
 
 		emit ParticipantRegistered(participant);
-	}
-
-	// ======================
-	// Stacking
-	// ======================
-
-	function _requireEligibleForStacking(address participant) internal virtual override {
-		_requireParticipantPresent(participant);
-	}
-
-	function _requireEligibleForUnstacking(
-		address participant,
-		bytes memory identifyPayloadSignature
-	) internal virtual override {
-		_identifyRequest(participant, identifyPayloadSignature);
 	}
 
 	// ======================

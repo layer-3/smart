@@ -16,25 +16,17 @@ abstract contract Registry is AccessControl, Identity {
 	using ECDSA for bytes32;
 
 	// Participant status
-	enum ParticipantStatus {
+	enum Status {
 		// Participant is not registered or have been removed
 		None,
 		// Participant is registered but not yet validated
 		Pending,
-		// Participant is registered but do not have token staked
-		Inactive,
-		// Participant is registered and have token staked
+		// Participant is registered and have token stacked
 		Active,
 		// Participant is registered but is not allowed to participate
 		Suspended,
 		// Participant is registered but have migrated to the next implementation
 		Migrated
-	}
-
-	// Participant data
-	struct ParticipantData {
-		ParticipantStatus status;
-		uint64 registrationTime;
 	}
 
 	// ======================
@@ -43,42 +35,32 @@ abstract contract Registry is AccessControl, Identity {
 
 	bytes32 public constant REGISTRY_MAINTAINER_ROLE = keccak256('REGISTRY_MAINTAINER_ROLE');
 	bytes32 public constant REGISTRY_VALIDATOR_ROLE = keccak256('REGISTRY_VALIDATOR_ROLE');
-	bytes32 public constant AUDITOR_ROLE = keccak256('AUDITOR_ROLE');
+	bytes32 public constant REGISTRY_MODERATOR_ROLE = keccak256('REGISTRY_MODERATOR_ROLE');
 
 	// ======================
 	// Fields
 	// ======================
 
-	// Participant data mapping
-	mapping(address => ParticipantData) internal _participantData;
+	mapping(address => Status) public statusOf;
+	mapping(address => uint64) public registrationTimeOf;
+	mapping(address => Status) public reinstateStatusOf;
+
+	// participant => associated addresses
+	mapping(address => address[]) public associatedAddressesOf;
+	// associated address => participant
+	mapping(address => address) public associatedParticipantOf;
 
 	// ======================
 	// Participant checks
 	// ======================
 
 	/**
-	 * @notice Check if participant is present in the registry. Participant is not present if it is not stored in the mapping or has `ParticipantStatus.None`.
-	 * @dev Check if participant is present in the registry. Participant is not present if it is not stored in the mapping or has `ParticipantStatus.None`.
+	 * @notice Check if participant is present in the registry. Participant is not present if it is not stored in the mapping or has `Status.None`.
+	 * @dev Check if participant is present in the registry. Participant is not present if it is not stored in the mapping or has `Status.None`.
 	 * @return True if participant is present, false otherwise.
 	 */
-	function hasParticipant(address participant) public view returns (bool) {
-		return _participantData[participant].status != ParticipantStatus.None;
-	}
-
-	/**
-	 * @notice Get participant data stored in the registry. Revert if participant is not present.
-	 * @dev Get participant data stored in the registry. Revert if participant is not present.
-	 * @param participant Address of participant to get data about.
-	 * @return ParticipantData Participant data.
-	 */
-	function getParticipantData(address participant)
-		external
-		view
-		returns (ParticipantData memory)
-	{
-		_requireParticipantPresent(participant);
-
-		return _participantData[participant];
+	function participantExists(address participant) public view returns (bool) {
+		return _participantExists(participant);
 	}
 
 	// ======================
@@ -92,79 +74,114 @@ abstract contract Registry is AccessControl, Identity {
 	 * @param participant Address of participant to validate.
 	 */
 	function validateParticipant(address participant) external onlyRole(REGISTRY_VALIDATOR_ROLE) {
-		_requireParticipantPresent(participant);
-		require(
-			_participantData[participant].status == ParticipantStatus.Pending,
-			'Invalid status'
-		);
+		_requireParticipantExists(participant);
+		require(statusOf[participant] == Status.Pending, 'Invalid status');
 
 		// status changes to either Active or Inactive depending on internal logic yet to be added
-		_participantData[participant].status = ParticipantStatus.Active;
+		statusOf[participant] = Status.Active;
 
-		emit ParticipantStatusChanged(participant, ParticipantStatus.Active);
+		emit ParticipantStatusChanged(participant, Status.Active);
 	}
 
 	// REVIEW: change docs comment after checks are added
 	/**
 	 * @notice Suspend participant and set their status to Suspended. Emit `ParticipantStatusChanged` event.
-	 * @dev Require AUDITOR_ROLE to invoke. Participant must be present and not migrated
+	 * @dev Require REGISTRY_MODERATOR_ROLE to invoke. Participant must be present and not migrated
 	 * @param participant Address of participant to suspend.
 	 */
-	function suspendParticipant(address participant) external onlyRole(AUDITOR_ROLE) {
-		_requireParticipantPresent(participant);
+	function suspendParticipant(address participant) external onlyRole(REGISTRY_MODERATOR_ROLE) {
+		_requireParticipantExists(participant);
 
-		ParticipantStatus status = _participantData[participant].status;
+		Status status = statusOf[participant];
 		require(
-			status != ParticipantStatus.None &&
-				status != ParticipantStatus.Suspended &&
-				status != ParticipantStatus.Migrated,
+			status != Status.None && status != Status.Suspended && status != Status.Migrated,
 			'Invalid status'
 		);
 
-		_participantData[participant].status = ParticipantStatus.Suspended;
+		reinstateStatusOf[participant] = status;
 
-		emit ParticipantStatusChanged(participant, ParticipantStatus.Suspended);
+		statusOf[participant] = Status.Suspended;
+
+		emit ParticipantStatusChanged(participant, Status.Suspended);
 	}
 
 	// REVIEW: change docs comment after checks are added
 	/**
 	 * @notice Reinstate participant and, depending on checks to be added, set their status to either Active or Inactive. Emit `ParticipantStatusChanged` event.
-	 * @dev Require AUDITOR_ROLE to invoke. Participant must have been suspended previously.
+	 * @dev Require REGISTRY_MODERATOR_ROLE to invoke. Participant must have been suspended previously.
 	 * @param participant Address of participant to reinstate.
 	 */
-	function reinstateParticipant(address participant) external onlyRole(AUDITOR_ROLE) {
-		_requireParticipantPresent(participant);
-		require(
-			_participantData[participant].status == ParticipantStatus.Suspended,
-			'Invalid status'
-		);
+	function reinstateParticipant(address participant) external onlyRole(REGISTRY_MODERATOR_ROLE) {
+		_requireParticipantExists(participant);
+		require(statusOf[participant] == Status.Suspended, 'Invalid status');
 
-		// status changes to either Active or Inactive depending on internal logic yet to be added
-		_participantData[participant].status = ParticipantStatus.Active;
+		statusOf[participant] = reinstateStatusOf[participant];
 
-		emit ParticipantStatusChanged(participant, ParticipantStatus.Active);
+		delete reinstateStatusOf[participant];
+
+		emit ParticipantStatusChanged(participant, Status.Active);
 	}
 
-	/**
-	 * @notice Set participant data to data supplied. Emit `ParticipantDataChanged` event.
-	 * @dev Require REGISTRY_MAINTAINER_ROLE to invoke. Participant must not have been migrated.
-	 * @param participant Address of participant to set data of.
-	 * @param data Data to set.
-	 */
-	function setParticipantData(address participant, ParticipantData memory data)
+	function setParticipantStatus(address participant, Status status)
 		external
 		onlyRole(REGISTRY_MAINTAINER_ROLE)
 	{
-		require(participant != address(0), 'Invalid participant address');
+		statusOf[participant] = status;
+
+		emit ParticipantStatusSet(participant, status);
+	}
+
+	// ======================
+	// Associated address
+	// ======================
+
+	function addAssociatedAddress(
+		address participant,
+		address associatedAddress,
+		bytes memory identityPayloadSignature
+	) external {
+		_requireParticipantExists(participant);
+
+		_identifyRequest(participant, identityPayloadSignature);
 
 		require(
-			_participantData[participant].status != ParticipantStatus.Migrated,
-			'Participant already migrated'
+			associatedParticipantOf[associatedAddress] == address(0),
+			'associated address already in use'
 		);
 
-		_participantData[participant] = data;
+		associatedAddressesOf[participant].push(associatedAddress);
+		associatedParticipantOf[associatedAddress] = participant;
 
-		emit ParticipantDataSet(participant, data);
+		emit AssociatedAddressAdded(participant, associatedAddress);
+	}
+
+	function removeAssociatedAddress(
+		address participant,
+		address associatedAddress,
+		bytes memory identityPayloadSignature
+	) external {
+		_requireParticipantExists(participant);
+
+		_identifyRequest(participant, identityPayloadSignature);
+
+		require(
+			associatedParticipantOf[associatedAddress] == participant,
+			'associated address does not belong to participant'
+		);
+
+		delete associatedParticipantOf[associatedAddress];
+
+		address[] storage associatedAddrs = associatedAddressesOf[participant];
+		for (uint256 i = 0; i < associatedAddrs.length; i++) {
+			if (associatedAddrs[i] == associatedAddress) {
+				associatedAddrs[i] = associatedAddrs[associatedAddrs.length - 1];
+				associatedAddrs.pop();
+
+				break;
+			}
+		}
+
+		emit AssociatedAddressRemoved(participant, associatedAddress);
 	}
 
 	// ======================
@@ -176,8 +193,8 @@ abstract contract Registry is AccessControl, Identity {
 	 * @dev Require participant it present in this registry.
 	 * @param participant Address of participant to check.
 	 */
-	function _requireParticipantPresent(address participant) internal view {
-		require(hasParticipant(participant), 'Participant does not exist');
+	function _requireParticipantExists(address participant) internal view {
+		require(_participantExists(participant), 'Participant does not exist');
 	}
 
 	/**
@@ -185,15 +202,23 @@ abstract contract Registry is AccessControl, Identity {
 	 * @dev Require participant it not present in this registry.
 	 * @param participant Address of participant to check.
 	 */
-	function _requireParticipantNotPresent(address participant) internal view {
-		require(!hasParticipant(participant), 'Participant already exist');
+	function _requireParticipantNotExist(address participant) internal view {
+		require(!_participantExists(participant), 'Participant already exist');
+	}
+
+	function _participantExists(address participant) internal view returns (bool) {
+		return statusOf[participant] != Status.None;
 	}
 
 	// ======================
 	// Events
 	// ======================
 
-	event ParticipantStatusChanged(address indexed participant, ParticipantStatus indexed status);
+	event ParticipantStatusChanged(address indexed participant, Status indexed status);
 
-	event ParticipantDataSet(address indexed participant, ParticipantData data);
+	event ParticipantStatusSet(address indexed participant, Status indexed status);
+
+	event AssociatedAddressAdded(address indexed participant, address indexed associatedAddress);
+
+	event AssociatedAddressRemoved(address indexed participant, address indexed associatedAddress);
 }

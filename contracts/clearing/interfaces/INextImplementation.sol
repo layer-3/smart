@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import '../Registry.sol';
+import '../RegistryWithStacking.sol';
 import './IPrevImplementation.sol';
 import '../Upgradeability.sol';
 
@@ -19,6 +19,6 @@ interface INextImplementation {
 
 	function migrateParticipantDataConsequtive(
 		address participant,
-		Registry.ParticipantData memory prevVersionData
+		RegistryWithStacking.ParticipantData memory prevVersionData
 	) external;
 }

@@ -18,7 +18,7 @@ interface IPrevImplementation {
 		uint64 registrationTime;
 	}
 
-	function hasParticipant(address participant) external view returns (bool);
+	function participantExists(address participant) external view returns (bool);
 
 	function getParticipantData(address participant) external view returns (ParticipantData memory);
 
