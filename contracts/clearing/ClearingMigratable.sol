@@ -55,9 +55,24 @@ abstract contract ClearingMigratable is ClearingChained {
 	// Migrate from V1 to V2 (HERE)
 	function migrateParticipantData(
 		address participant,
-		IPrevImplementation.ParticipantData memory data
+		IPrevImplementation.ParticipantData memory prevData
 	) public virtual onlyRole(PREVIOUS_IMPLEMENTATION_ROLE) {
-		// TODO:
+		if (prevData.status == IPrevImplementation.Status.Pending) {
+			statusOf[participant] = Status.Pending;
+		} else if (
+			prevData.status == IPrevImplementation.Status.Inactive ||
+			prevData.status == IPrevImplementation.Status.Active
+		) {
+			statusOf[participant] = Status.Active;
+		} else if (prevData.status == IPrevImplementation.Status.Suspended) {
+			statusOf[participant] = Status.Suspended;
+		} else {
+			revert('Invalid previous implementation participant status');
+		}
+
+		registrationTimeOf[participant] = prevData.registrationTime;
+
+		emit ParticipantMigratedTo(participant, address(this));
 	}
 
 	// ======================
@@ -112,6 +127,7 @@ abstract contract ClearingMigratable is ClearingChained {
 		to.migrateStackedTokens(account, amount);
 	}
 
+	// example code in the next implementation
 	function migrateStackedTokens(address account, uint256 amount)
 		public
 		virtual
@@ -131,6 +147,7 @@ abstract contract ClearingMigratable is ClearingChained {
 		to.migrateStackedTokens(account, amount);
 	}
 
+	// example code in the next implementation
 	function migrateLockedTokens(address account, uint256 amount)
 		public
 		virtual
@@ -138,6 +155,27 @@ abstract contract ClearingMigratable is ClearingChained {
 	{
 		lockedBy[account] = amount;
 		emit LockedTokensMigratedTo(account, amount, address(this));
+	}
+
+	function _migrateAssociatedAddresses(
+		ClearingMigratable to,
+		address account,
+		address[] memory associatedAddresses
+	) internal {
+		to.migrateAssociatedAddresses(account, associatedAddresses);
+	}
+
+	// example code in the next implementation
+	function migrateAssociatedAddresses(address account, address[] memory associatedAddresses)
+		public
+		virtual
+		onlyLeftImplementation(Upgradeability(msg.sender))
+	{
+		associatedAddressesOf[account] = associatedAddresses;
+
+		for (uint256 i = 0; i < associatedAddresses.length; i++) {
+			associatedParticipantOf[associatedAddresses[i]] = account;
+		}
 	}
 
 	// ======================
