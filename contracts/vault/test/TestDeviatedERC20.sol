@@ -2,14 +2,14 @@
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
-import './BadERC20.sol';
+import './UnstandardizedERC20.sol';
 
-contract TestBadERC20 is BadERC20, Ownable {
+contract TestUnstandardizedERC20 is UnstandardizedERC20, Ownable {
 	constructor(
 		string memory name_,
 		string memory symbol_,
 		uint256 amountToMint
-	) BadERC20(name_, symbol_) {
+	) UnstandardizedERC20(name_, symbol_) {
 		_setBalance(msg.sender, amountToMint);
 	}
 

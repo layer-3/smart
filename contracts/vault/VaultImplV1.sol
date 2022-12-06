@@ -7,7 +7,7 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
 import './VaultImplBase.sol';
 import './IVault.sol';
-import './IBadERC20.sol';
+import './IUnstandardizedERC20.sol';
 
 // TODO: Benchmark if storing error messages as constants is cheaper than using string literals.
 
@@ -233,7 +233,11 @@ contract VaultImplV1 is VaultImplBase, IVault {
 			if (asset == address(0)) {
 				require(msg.value == amount, 'Incorrect msg.value');
 			} else {
-				IBadERC20(asset).transferFrom(payload.destination, address(this), amount);
+				IUnstandardizedERC20(asset).transferFrom(
+					payload.destination,
+					address(this),
+					amount
+				);
 
 				// protected from reentrancy by marking signatures as used
 				require(_retrieveTransferResult(), 'Could not deposit ERC20');
@@ -292,7 +296,7 @@ contract VaultImplV1 is VaultImplBase, IVault {
 
 				require(success, 'Could not transfer ETH');
 			} else {
-				IBadERC20(asset).transfer(payload.destination, amount);
+				IUnstandardizedERC20(asset).transfer(payload.destination, amount);
 
 				require(_retrieveTransferResult(), 'Could not transfer ERC20');
 			}

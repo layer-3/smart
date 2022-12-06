@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/utils/Context.sol';
 
-contract BadERC20 is Context {
+contract UnstandardizedERC20 is Context {
 	mapping(address => uint256) private _balances;
 
 	mapping(address => mapping(address => uint256)) private _allowances;
