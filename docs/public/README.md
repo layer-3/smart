@@ -10,9 +10,9 @@ Here are addresses of deployed last versions of smart contracts:
 
 | Chain    | Address                                                                                                                          |
 | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Ethereum | `0xD2Dfaca637C537C192c6dc3CeDb7b139B1b377C4` [↗](https://etherscan.io/address/0xd2dfaca637c537c192c6dc3cedb7b139b1b377c4)        |
-| Goerli   | `0x21b6EB69A082B857191695Ad43B835bB8E1AcD4D` [↗](https://goerli.etherscan.io/address/0x21b6eb69a082b857191695ad43b835bb8e1acd4d) |
-| Polygon  | `0x4D81a9D7cddfa4f4fA6a804679F2A62810dF9EF1` [↗](https://polygonscan.com/address/0x4D81a9D7cddfa4f4fA6a804679F2A62810dF9EF1)     |
+| Ethereum | `0x0dF64f2a52DCc61028945bb6EFaE601fD43E9d33` [↗](https://etherscan.io/address/0x0dF64f2a52DCc61028945bb6EFaE601fD43E9d33)        |
+| Goerli   | `0xA67C2dfa3697E1b87bbBb6257a5B8FeAccBD201b` [↗](https://goerli.etherscan.io/address/0xA67C2dfa3697E1b87bbBb6257a5B8FeAccBD201b) |
+| Polygon  | `0x1c4f55FbB4c6d3Fb4Fbc0f933c6478c9564994c9` [↗](https://polygonscan.com/address/0x1c4f55FbB4c6d3Fb4Fbc0f933c6478c9564994c9)     |
 
 ### YellowClearingV1
 
