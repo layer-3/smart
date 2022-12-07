@@ -28,7 +28,12 @@ import { connect, connectGroup } from '../../src/contracts';
 import { depositParams, setAddressParams, withdrawParams } from './src/transactions';
 import { PartialPayload, addAllocation, generalPayload } from './src/payload';
 
-import type { TESTVaultProxy, TestERC20, VaultImplV1 as VaultImplT } from '../../typechain';
+import type {
+  TESTVaultProxy,
+  TestERC20,
+  TestUnstandardizedERC20,
+  VaultImplV1 as VaultImplT,
+} from '../../typechain';
 import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const AddressZero = ethers.constants.AddressZero;
@@ -58,6 +63,8 @@ describe('Vault implementation V1', () => {
   let ERC20AsAdmin: TestERC20;
   let ERC20AsSomeone: TestERC20;
 
+  let UnstandardizedERC20: TestUnstandardizedERC20;
+
   beforeEach(async () => {
     const VaultImplFactory = await ethers.getContractFactory('VaultImplV1');
     const VaultImplDirect = await VaultImplFactory.connect(implAdmin).deploy();
@@ -86,6 +93,13 @@ describe('Vault implementation V1', () => {
     )) as TestERC20;
 
     [ERC20AsAdmin, ERC20AsSomeone] = connectGroup(ERC20, [tokenAdmin, someone]);
+
+    const UnstandardizedERC20Factory = await ethers.getContractFactory('TestUnstandardizedERC20');
+    UnstandardizedERC20 = (await UnstandardizedERC20Factory.connect(tokenAdmin).deploy(
+      'BadTestToken',
+      'BTOK',
+      ethers.utils.parseEther('1000'),
+    )) as TestUnstandardizedERC20;
   });
 
   before(async () => {
@@ -269,6 +283,23 @@ describe('Vault implementation V1', () => {
 
         expect(await ERC20.balanceOf(VaultImpl.address)).to.equal(AMOUNT);
         expect(await ERC20.balanceOf(someone.address)).to.equal(balanceBefore.sub(AMOUNT));
+      });
+
+      it('can deposit BAD ERC20', async () => {
+        await UnstandardizedERC20.connect(tokenAdmin).setUserBalance(someone.address, AMOUNT);
+
+        const balanceBefore = await UnstandardizedERC20.balanceOf(someone.address);
+
+        await UnstandardizedERC20.connect(someone).approve(VaultImpl.address, AMOUNT);
+
+        payload = addAllocation(payload, UnstandardizedERC20.address, AMOUNT.toNumber());
+
+        await VaultImplAsSomeone.deposit(...(await depositParams(payload, broker1, coSigner1)));
+
+        expect(await UnstandardizedERC20.balanceOf(VaultImpl.address)).to.equal(AMOUNT);
+        expect(await UnstandardizedERC20.balanceOf(someone.address)).to.equal(
+          balanceBefore.sub(AMOUNT),
+        );
       });
 
       it('revert when supplied and specified ETH differ', async () => {
@@ -494,6 +525,20 @@ describe('Vault implementation V1', () => {
         await VaultImplAsSomeone.withdraw(...(await withdrawParams(payload, broker1, coSigner1)));
 
         expect(await ERC20.balanceOf(someone.address)).to.equal(balanceBefore.add(AMOUNT));
+      });
+
+      it('can withdraw BAD ERC20', async () => {
+        await UnstandardizedERC20.connect(tokenAdmin).setUserBalance(VaultImpl.address, AMOUNT);
+
+        const balanceBefore = await UnstandardizedERC20.balanceOf(someone.address);
+
+        payload = addAllocation(payload, UnstandardizedERC20.address, AMOUNT.toNumber());
+
+        await VaultImplAsSomeone.withdraw(...(await withdrawParams(payload, broker1, coSigner1)));
+
+        expect(await UnstandardizedERC20.balanceOf(someone.address)).to.equal(
+          balanceBefore.add(AMOUNT),
+        );
       });
 
       it('revert on withdraw to zero address', async () => {

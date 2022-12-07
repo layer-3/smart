@@ -7,6 +7,7 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
 import './VaultImplBase.sol';
 import './IVault.sol';
+import './IUnstandardizedERC20.sol';
 
 // TODO: Benchmark if storing error messages as constants is cheaper than using string literals.
 
@@ -120,11 +121,10 @@ contract VaultImplV1 is VaultImplBase, IVault {
 	 * @param brokerAddress Address derived from broker public key.
 	 * @param coSignerAddress Address derived from coSigner public key.
 	 */
-	function setup(address brokerAddress, address coSignerAddress)
-		external
-		onlyProxy
-		onlyRole(DEFAULT_ADMIN_ROLE)
-	{
+	function setup(
+		address brokerAddress,
+		address coSignerAddress
+	) external onlyProxy onlyRole(DEFAULT_ADMIN_ROLE) {
 		require(!_isSetup, 'Vault is already setup');
 
 		_requireValidAddress(brokerAddress);
@@ -233,14 +233,14 @@ contract VaultImplV1 is VaultImplBase, IVault {
 			if (asset == address(0)) {
 				require(msg.value == amount, 'Incorrect msg.value');
 			} else {
-				bool success = IERC20(asset).transferFrom(
+				IUnstandardizedERC20(asset).transferFrom(
 					payload.destination,
 					address(this),
 					amount
 				);
 
-				// require successful deposit before updating holdings (protect against reentrancy)
-				require(success, 'Could not deposit ERC20');
+				// protected from reentrancy by marking signatures as used
+				require(_retrieveTransferResult(), 'Could not deposit ERC20');
 			}
 
 			_ledgerId.increment();
@@ -296,9 +296,9 @@ contract VaultImplV1 is VaultImplBase, IVault {
 
 				require(success, 'Could not transfer ETH');
 			} else {
-				bool success = IERC20(asset).transfer(payload.destination, amount);
+				IUnstandardizedERC20(asset).transfer(payload.destination, amount);
 
-				require(success, 'Could not transfer ERC20');
+				require(_retrieveTransferResult(), 'Could not transfer ERC20');
 			}
 
 			_ledgerId.increment();
@@ -310,6 +310,30 @@ contract VaultImplV1 is VaultImplBase, IVault {
 				payload.allocations[i].amount,
 				payload.rid
 			);
+		}
+	}
+
+	/**
+	 * @notice Retrieve the result of `transfer` or `transferFrom` function, supposing it is the latest called function.
+	 * @dev Tackles the inconsistency in ERC20 implementations regarding the return value of `transfer` and `transferFrom`. More: https://github.com/ethereum/solidity/issues/4116.
+	 * @return result Result of `transfer` or `transferFrom` function.
+	 */
+	function _retrieveTransferResult() internal pure returns (bool result) {
+		assembly {
+			switch returndatasize()
+			case 0 {
+				// This is UnstandardizedToken
+				result := not(0) // result is true
+			}
+			case 32 {
+				// This is ERC20 compliant token
+				returndatacopy(0, 0, 32)
+				result := mload(0) // result == return data of external call
+			}
+			default {
+				// This is not an ERC20 token
+				revert(0, 0)
+			}
 		}
 	}
 }

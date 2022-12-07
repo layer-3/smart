@@ -23,6 +23,7 @@
   - [`setCoSignerAddress`](#setcosigneraddress)
   - [`deposit`](#deposit)
   - [`withdraw`](#withdraw)
+  - [`_retrieveTransferResult`](#_retrievetransferresult)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -410,3 +411,24 @@ Withdraw assets with given payload to the destination specified in the payload. 
 |`brokerSignature` | bytes | Payload signed by the Broker.
 |
 |`coSignerSignature` | bytes | Payload signed by the coSigner.|
+
+### `_retrieveTransferResult`
+
+📋   &nbsp;&nbsp;
+Retrieve the result of `transfer` or `transferFrom` function, supposing it is the latest called function.
+
+> Tackles the inconsistency in ERC20 implementations regarding the return value of `transfer` and `transferFrom`. More: https://github.com/ethereum/solidity/issues/4116.
+
+
+#### Declaration
+
+```solidity
+  function _retrieveTransferResult(
+  ) internal returns (bool result)
+```
+
+#### Returns
+
+| Type | Description |
+| --- | --- |
+|`result` | Result of `transfer` or `transferFrom` function.
