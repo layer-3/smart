@@ -322,7 +322,7 @@ contract VaultImplV1 is VaultImplBase, IVault {
 		assembly {
 			switch returndatasize()
 			case 0 {
-				// This is BadToken
+				// This is UnstandardizedToken
 				result := not(0) // result is true
 			}
 			case 32 {
