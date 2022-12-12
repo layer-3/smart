@@ -23,6 +23,8 @@ contract VirtualMarginApp is IForceMoveApp {
 		INitroTypes.Signature leaderSignature;
 		INitroTypes.Signature receiverSignature;
 		uint256 version;
+		uint256 leaderMargin;
+		uint256 receiverMargin;
 	}
 
 	enum AllocationIndices {
@@ -87,7 +89,7 @@ contract VirtualMarginApp is IForceMoveApp {
 
 			_requireValidMarginProof(fixedPart, candidate.variablePart);
 
-			_requireCorrectOutcomes(
+			_requireValidOutcomeTransition(
 				proof[0].variablePart.outcome,
 				candidate.variablePart.outcome,
 				fixedPart.participants[0],
@@ -113,11 +115,13 @@ contract VirtualMarginApp is IForceMoveApp {
 	function _requireValidMarginProof(
 		FixedPart memory fixedPart,
 		VariablePart memory variablePart
-	) internal pure {
+	) internal pure returns (uint256 leaderMargin, uint256 receiverMargin) {
 		MarginProof memory marginProof = abi.decode(variablePart.appData, (MarginProof));
 
+		// correct margin version
 		require(marginProof.version == variablePart.turnNum, 'version != turnNum');
 
+		// correct margin signatures
 		address recoveredLeader = NitroUtils.recoverSigner(
 			keccak256(abi.encode(NitroUtils.getChannelId(fixedPart), marginProof.version)),
 			marginProof.leaderSignature
@@ -132,9 +136,19 @@ contract VirtualMarginApp is IForceMoveApp {
 			recoveredReceiver == fixedPart.participants[fixedPart.participants.length - 1],
 			'invalid signature for voucher'
 		); // could be incorrect channelId or incorrect signature
+
+		// correct outcome adjustments
+		require(
+			variablePart.outcome[0].allocations[0].amount == leaderMargin,
+			'incorrect leader margin'
+		);
+		require(
+			variablePart.outcome[0].allocations[1].amount == receiverMargin,
+			'incorrect receiver margin'
+		);
 	}
 
-	function _requireCorrectOutcomes(
+	function _requireValidOutcomeTransition(
 		Outcome.SingleAssetExit[] memory oldOutcome,
 		Outcome.SingleAssetExit[] memory newOutcome,
 		address Leader,
