@@ -2,10 +2,17 @@ import { writeFileSync } from 'node:fs';
 
 import { gasUsed } from '../helpers';
 
-import { deployYellowAdjudicator, depositForSwaps, getSwapParams, randomWallet } from './fixtures';
+import {
+  deployYellowAdjudicator,
+  depositForSwaps,
+  getSwapParams,
+  randomWallet,
+  setSeed,
+} from './fixtures';
 import { BENCHMARK_STEPS, emptyYellowAdjudicatorGasResults } from './yellowAdjudicatorGas';
 
 async function main(): Promise<void> {
+  setSeed(42);
   const gasResults = emptyYellowAdjudicatorGasResults;
 
   await Promise.all(

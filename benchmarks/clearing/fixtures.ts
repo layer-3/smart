@@ -6,9 +6,9 @@ import {
   getVariablePart,
   signStates,
 } from '@statechannels/nitro-protocol';
+import { ParamType, entropyToMnemonic } from 'ethers/lib/utils';
 
 import type { Wallet } from 'ethers';
-import type { ParamType } from 'ethers/lib/utils';
 import type {
   FixedPart,
   SignedVariablePart,
@@ -16,16 +16,48 @@ import type {
 } from '@statechannels/nitro-protocol/dist/src/contract/state'; //TODO: remove explicit import path when implicit becomes available
 import type { YellowAdjudicator } from '../../typechain';
 
+function _randomUnprefixedByte(): string {
+  return randomNum(10, 99).toString();
+}
+
+function randomBytes(num: number): string {
+  let bytes = '0x';
+
+  for (let i = 0; i < num; i++) {
+    bytes += _randomUnprefixedByte();
+  }
+
+  return bytes;
+}
+
 export function randomWallet(): Wallet {
-  return ethers.Wallet.createRandom();
+  const entropy = randomBytes(16);
+  const mnemonic = entropyToMnemonic(entropy);
+  return ethers.Wallet.fromMnemonic(mnemonic);
 }
 
 function randomAddress(): string {
   return randomWallet().address;
 }
+function prng(seed: number): () => number {
+  if (typeof seed == 'undefined') {
+    return () => 0;
+  }
+
+  let l = seed % 2_147_483_647;
+  if (l <= 0) l += 2_147_483_646;
+
+  return () => (l = ((l * 16_807) % 2_147_483_647) - 1) / 2_147_483_646;
+}
+
+let randomPartial = prng(Date.now());
+
+export function setSeed(seed: number): void {
+  randomPartial = prng(seed);
+}
 
 function randomNum(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  return Math.floor(randomPartial() * (max - min + 1)) + min;
 }
 
 interface Liability {
