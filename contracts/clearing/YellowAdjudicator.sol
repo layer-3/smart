@@ -25,8 +25,6 @@ contract YellowAdjudicator is NitroAdjudicator {
 	// REVIEW: hashedPostSwapSpecs => swapWasPerformed
 	mapping(bytes32 => bool) internal _swapPerformed;
 
-	function test(SwapSpecs memory swapSpecs) external pure {}
-
 	// 21_400 gas for empty function
 	function swap(
 		FixedPart calldata fixedPart,
