@@ -13,6 +13,7 @@ import { BENCHMARK_STEPS, emptyYellowAdjudicatorGasResults } from './yellowAdjud
 
 async function main(): Promise<void> {
   setSeed(42);
+
   const gasResults = emptyYellowAdjudicatorGasResults;
 
   await Promise.all(

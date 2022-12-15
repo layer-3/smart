@@ -91,6 +91,7 @@ function encodeSwapSpecs(swapSpecs: SwapSpecs): string {
       {
         type: 'tuple',
         components: [
+          { name: 'swapSpecsFinalizationTimestamp', type: 'uint64' },
           { name: 'brokerA', type: 'address' },
           { name: 'brokerB', type: 'address' },
           {
@@ -107,7 +108,6 @@ function encodeSwapSpecs(swapSpecs: SwapSpecs): string {
               },
             ],
           } as ParamType,
-          { name: 'swapSpecsFinalizationTimestamp', type: 'uint64' },
         ],
       } as ParamType,
     ],
